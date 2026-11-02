@@ -17,7 +17,7 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 
-const ROOT = 'E:/moren/lc-coach';
+const ROOT = path.resolve(__dirname, '..');
 const R = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 let pass = 0, fail = 0;

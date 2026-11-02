@@ -11,7 +11,19 @@ const fs = require('fs');
 const path = require('path');
 
 const API = process.env.LC_API || 'http://127.0.0.1:8099';
-const SRC = 'E:/moren/leetcode';
+
+/* 素材目录：当初灌题库用的原始 Markdown 放在这里。
+   本仓库不含这些素材（它们是外部资料，且有版权考虑），所以：
+   要重跑这个脚本，自己把素材放好，再用环境变量指过去：
+       LC_SRC="D:/somewhere/leetcode" node content-src/seed.js
+   没设就直说，别让它去读一个别人机器上不存在的路径然后报一堆 ENOENT。 */
+const SRC = process.env.LC_SRC || '';
+if (!SRC && !process.argv.includes('--dry')) {
+  console.error('没有指定素材目录。设置 LC_SRC 环境变量指向素材根目录，例如：');
+  console.error('  LC_SRC="D:/data/leetcode" node content-src/seed.js --dry');
+  console.error('（--dry 模式不读素材，只打印将要写入的内容，所以可以不带 LC_SRC）');
+  process.exit(1);
+}
 const DRY = process.argv.includes('--dry');
 const WIPE = process.argv.includes('--wipe');
 

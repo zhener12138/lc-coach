@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const ROOT = 'E:/moren/lc-coach';
+const ROOT = path.resolve(__dirname, '..');
 const R = f => fs.readFileSync(path.join(ROOT, 'static', f), 'utf8');
 const B = 'http://127.0.0.1:8099';
 

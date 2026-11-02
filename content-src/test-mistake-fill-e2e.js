@@ -10,7 +10,7 @@
  * 否则节点是 null、fill 静默不生效，测试还可能因为断言写得太松而"通过"。
  */
 const fs = require('fs'), vm = require('vm'), path = require('path');
-const ROOT = 'E:/moren/lc-coach';
+const ROOT = path.resolve(__dirname, '..');
 const R = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 let pass = 0, fail = 0;

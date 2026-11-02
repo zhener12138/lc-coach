@@ -1,7 +1,7 @@
 // 一次性修复 b16.js 的引号问题：把占位常量恢复成真正的字符字面量，
 // 并把 Java 代码行改用 JS 双引号包裹，从而可以安全包含单引号。
 const fs = require('fs');
-const p = 'E:/moren/lc-coach/content-src/gen/b16.js';
+const p = require('path').join(__dirname, 'b16.js');
 const lines = fs.readFileSync(p, 'utf8').split('\n');
 
 // 各题所在行区间（1-based，从 grep 得到）：n-queens 441-665，islands 666-876，rotting 877-末尾

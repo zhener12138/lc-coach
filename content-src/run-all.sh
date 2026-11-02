@@ -8,7 +8,14 @@
 #    按格式 grep 会把跑通过的脚本误判成没跑。
 cd "$(dirname "$0")" || exit 1
 
-NODE=E:/nodejs/node.exe
+# node 的位置因机器而异，先按 PATH 找，找不到再退回本机那个绝对路径。
+# 写死 E:/nodejs/node.exe 会让别人 clone 下来直接跑不起来。
+NODE="$(command -v node 2>/dev/null || true)"
+if [ -z "$NODE" ] && [ -x "E:/nodejs/node.exe" ]; then NODE="E:/nodejs/node.exe"; fi
+if [ -z "$NODE" ]; then
+  echo "找不到 node。装一个，或把 node 加到 PATH 里。"
+  exit 1
+fi
 pass=0
 fail=0
 total=0

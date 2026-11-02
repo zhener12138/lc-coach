@@ -11,7 +11,7 @@
  * 关键是 innerHTML setter 里要 hydrate 出真实节点，否则 $('#day-prev') 永远是 null。
  */
 const fs = require('fs'), vm = require('vm'), path = require('path');
-const ROOT = 'E:/moren/lc-coach';
+const ROOT = path.resolve(__dirname, '..');
 const R = f => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const BASE = 'http://127.0.0.1:8099';
 

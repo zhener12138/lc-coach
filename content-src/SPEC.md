@@ -166,7 +166,7 @@ codeJava:
 写完后跑：
 
 ```bash
-cd E:/moren/lc-coach
+cd lc-coach
 E:/nodejs/node.exe content-src/verify.js
 ```
 
@@ -182,5 +182,5 @@ E:/nodejs/node.exe content-src/verify.js
 ## 快速验证单题
 
 ```bash
-E:/moren/lc-coach/content-src/verify.js --slug 3sum
+node content-src/verify.js --slug 3sum
 ```
