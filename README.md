@@ -388,6 +388,47 @@ spring:
 
 修法不是让大家记得多传一个参数，而是在 `log()` 里直接把字符串按 `StandardCharsets.UTF_8` 写 `System.out`。**验证方式是故意不带任何编码参数启动**，日志照样是可读的中文 —— 这才说明不靠外部参数救命。
 
+## 临时目录不可写：一个把我自己坑进去的故障
+
+### 症状
+
+用户提交的代码在力扣上通过了，这里却报编译失败，界面上只有一行：
+
+```
+编译过程出错：C:\Users\...\Temp\...\lcgrade4584956653082003117
+```
+
+**一个路径，没有类型，没有原因。** 用户完全没法判断到底是自己代码的问题还是环境的问题。
+
+### 根因
+
+`Files.createTempDirectory("lcgrade")` 只看 `java.io.tmpdir`。而那个目录**虽然存在，ACL 却不允许建子目录** —— 这是最容易误判的一点：`ls` 看得到目录，`mkdir` 却 `Permission denied`。
+
+更糟的是 `AccessDeniedException.getMessage()` **只返回路径本身**，不带异常类型也不带原因，所以界面上就成了一句纯路径。**报错不解释等于没报错。**
+
+### 两层都要修，第二层更致命
+
+| 层次 | 后果 | 修法 |
+| --- | --- | --- |
+| `CodeGrader` 建不了编译产物目录 | 评分永远失败 | `newOutDir()` 按 `java.io.tmpdir` → `data/grade-tmp` 顺序试探，谁先能建出来就用谁 |
+| Spring Boot 建不了 Tomcat baseDir | **整个服务起不来** | `App.main()` 里 `SpringApplication.run` 之前先 `ensureTempDir()` |
+
+第二层是在修第一层时发现的：服务直接 `exit 1`，栈顶是 `WebServerException: Unable to create tempDir`。**这说明「某个功能坏了」和「整个项目打不开」之间只差一个 tmpdir。**
+
+### 三个实现要点
+
+1. **「目录存在」和「能建子目录」是两件事。** `canCreateIn()` 是真的建一个探针目录再删掉，不是 `Files.exists()`。
+2. **改 `java.io.tmpdir` 不够，还要改 `server.tomcat.basedir`。** Tomcat 走的是自己的配置项。
+3. **降级候选里要有一个确定可写的位置。** 第一位是项目目录下的 `.jtmp/`（已被 `.gitignore` 忽略），最后才退到 `~/.lc-coach/tmp`。
+
+启动成功时日志第一行会明说换了哪个目录：
+
+```
+临时目录不可用（C:\Users\...\Temp\dsh-uohuIR\），已改用 E:\moren\lc-coach\.jtmp
+```
+
+找不到任何可写位置时不硬崩，而是打一行警告让服务继续起 —— **编译评分用不了是少一个功能，服务打不开是整个项目不能用，这两个后果差太远。**
+
 ## 模板库的「可直接用 / 片段」是怎么判出来的
 
 模板库里的代码有两种，用同一把尺子量会得出错误结论：
@@ -540,7 +581,8 @@ H2 文件库：`data/lccoach.mv.db`（MODE=MySQL，AUTO_SERVER=TRUE）。删掉�
 | 模板可用性标记 | `test-snippet-kinds.js` 18 项断言；`snippet-kinds.json` 判定数与库内条数一致、无漏判 |
 | AI 资讯接入 | `test-aihot.js` 37 项断言（三个接口通 / 缓存真拦请求 6ms / 日期乱写不崩 / 前端渲染 / 后端 If-None-Match、304、429 冷却、single-flight 全在） |
 | AI 资讯渲染 | `.probe/ViewProbe.js` 用真实 app.js 渲染，实测 23210 字符、20 条精选、10 条热点、无裸露 undefined/null |
-| 全量回归 | 15 个脚本 508 项断言全过（`bash content-src/run-all.sh` 一条命令跑完） |
+| 全量回归 | 16 个脚本 530 项断言全过（`bash content-src/run-all.sh` 一条命令跑完） |
+| 临时目录降级 | `test-tmpdir.js` 21 项断言（App 在 Spring 启动前探测 tmpdir / 真建目录探测而非只看存在 / 探针用完即删 / 同时改 Tomcat basedir / 评分器多候选降级 / 报错说人话 / 编译垃圾不残留 / `.jtmp` 已 gitignore） |
 | 模板库可分发 | `test-snippets-seed.js` 22 项断言：干净数据库启动后 52 段模板自动出现，且与 `content/snippets.json` 逐条对得上 |
 | 复制 | `test-copy.js` 32 项断言（安全上下文 / 局域网 IP / 权限被拒 / 两条路全废四个场景） |
 | 锐评 | `test-roast.js` 37 项断言（四档文案分界 / 编译失败优先 / 靶子来自最弱维度的真实 evidence / 8 种情况都给了 advice / 同分数同文案 / XSS 转义 / 接线正确） |

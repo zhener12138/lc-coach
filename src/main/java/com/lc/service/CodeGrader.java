@@ -423,7 +423,7 @@ public class CodeGrader {
 
         Path outDir = null;
         try {
-            outDir = Files.createTempDirectory("lcgrade");
+            outDir = newOutDir();
             DiagnosticCollector<JavaFileObject> diags = new DiagnosticCollector<>();
             StandardJavaFileManager fm = compiler.getStandardFileManager(diags, null, StandardCharsets.UTF_8);
             List<String> opts = List.of(
@@ -445,11 +445,62 @@ public class CodeGrader {
             }
         } catch (Exception e) {
             out.ok = false;
-            out.errors.add("编译过程出错：" + e.getMessage());
+            out.errors.add("编译环境出错（不是你的代码问题）：" + describe(e));
         } finally {
             if (outDir != null) deleteQuietly(outDir);
         }
         return out;
+    }
+
+    /**
+     * 找一个能真正建目录的地方放编译产物。
+     *
+     * 踩过的坑：原来直接用 Files.createTempDirectory("lcgrade")，它只看
+     * java.io.tmpdir。而某些环境（受限沙箱、容器、只读挂载的 /tmp）里那个目录
+     * 存在却不可写，于是抛 AccessDeniedException。
+     *
+     * 更坑的是 AccessDeniedException.getMessage() **只返回路径本身**，
+     * 不带任何原因，界面上就变成一句「编译过程出错：C:\...\lcgrade123」——
+     * 用户看到自己的代码在力扣能过、到这里「编译不过」，却完全不知道发生了什么。
+     *
+     * 所以这里按顺序试几个候选，谁先能建出来就用谁。
+     */
+    private static Path newOutDir() throws Exception {
+        List<Path> candidates = new ArrayList<>();
+        String tmp = System.getProperty("java.io.tmpdir");
+        if (tmp != null && !tmp.isBlank()) candidates.add(Path.of(tmp));
+        Path local = Path.of("data", "grade-tmp");   // 项目目录下，通常一定有写权限
+        candidates.add(local);
+
+        Exception last = null;
+        for (Path base : candidates) {
+            try {
+                Files.createDirectories(base);
+                return Files.createTempDirectory(base, "lcgrade");
+            } catch (Exception e) {
+                last = e;
+            }
+        }
+        throw last == null ? new java.io.IOException("没有可写的临时目录") : last;
+    }
+
+    /** 把异常翻成一句人能看懂的话：类型 + 路径 + 为什么会这样。 */
+    private static String describe(Exception e) {
+        String type = e.getClass().getSimpleName();
+        if (e instanceof java.nio.file.AccessDeniedException) {
+            java.nio.file.AccessDeniedException ae = (java.nio.file.AccessDeniedException) e;
+            return "没有写入权限，建不了临时目录。「" + ae.getFile()
+                    + "」不允许创建子目录（权限被系统或安全软件拒绝）。"
+                    + "这不是你代码的问题，重试一次；还是不行就把项目目录下的 data/ 权限检查一下。";
+        }
+        String m = e.getMessage();
+        String where = "";
+        if (e instanceof java.nio.file.FileSystemException) {
+            java.nio.file.FileSystemException fe = (java.nio.file.FileSystemException) e;
+            if (fe.getFile() != null) where = "（" + fe.getFile() + "）";
+        }
+        return type + where + (m == null || m.isBlank() || m.equals(where.replaceAll("（|）", ""))
+                ? "" : "：" + m);
     }
 
     private static void deleteQuietly(Path p) {

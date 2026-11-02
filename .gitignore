@@ -5,6 +5,9 @@ target/
 data/
 *.log
 
+# ---- 运行时临时目录（tmpdir 不可写时 App 会降级到这里）----
+.jtmp/
+
 # ---- 模板编译校验的中间产物（1442 个 .class，可重新生成）----
 .verify-out/
 .schedtest/
