@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "枚举所有子数组 · 求和比较",
+      "idea": "题目要「和 ≥ target 的最短连续子数组」，那就把所有连续子数组都试一遍：外层定左端点，内层从它开始往右累加，一旦累加和 ≥ target 就记录长度并 break（因为再往后加只会更长）。\n\n为什么一定超时？n = 10⁵ 时子数组个数约 5×10⁹，必然超时。\n\n但这里有个小优化值得注意：内层一旦满足就 break，不要傻傻扫到底。因为子数组越长、和越大，对「最短」没有帮助。这个 break 已经隐含了「单调性」的直觉——而滑动窗口正是把这个直觉系统化。\n\n**关键理解：为什么这题能用滑动窗口，而「和为 k 的子数组」不能？** 因为这题数组全是正数，加元素和一定变大、减元素和一定变小，具备单调性；一旦有负数，加一个负数可能让和变小，窗口就不能随意收缩了。这个区别是面试高频追问，务必想清楚。\n\n复杂度 O(n²) 时间，O(1) 空间。",
+      "pseudocode": "输入：正整数 target，正整数数组 nums\n输出：和大于等于 target 的最短连续子数组长度，不存在返回 0\n\n1. n = nums 长度，best = 正无穷\n2. left 从 0 循环到 n-1：\n     a. sum = 0\n     b. right 从 left 循环到 n-1：\n          sum 加上 nums[right]\n          如果 sum 大于等于 target：\n             best = min(best, right - left + 1)\n             跳出内层循环（再往后只会更长）\n3. 如果 best 还是正无穷：返回 0\n4. 返回 best\n\n复杂度：时间 O(n²)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        int n = nums.length;\n        int best = Integer.MAX_VALUE;\n\n        for (int left = 0; left < n; left++) {\n            int sum = 0;\n            for (int right = left; right < n; right++) {\n                sum += nums[right];\n                if (sum >= target) {\n                    best = Math.min(best, right - left + 1);\n                    break;   // 再往后加只会更长，没必要继续\n                }\n            }\n        }\n        return best == Integer.MAX_VALUE ? 0 : best;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "better",
+      "title": "前缀和 + 二分查找",
+      "idea": "把「子数组求和」换成「前缀和相减」是这类题的通法：定义 prefix[i] = nums[0..i-1] 的和，那么 nums[left..right] 的和 = prefix[right+1] - prefix[left]。\n\n因为数组全是正数，prefix 是**严格递增**的。于是对每个 left，要找最小的 right 使 prefix[right+1] >= prefix[left] + target——这正是在一个有序数组里做二分查找（lowerBound）！\n\n对每个 left 做一次 O(log n) 二分，总共 O(n log n)。\n\n相比暴力版改了什么？把内层的线性扫描换成二分，用「前缀和有序」这个性质做加速。时间从 O(n²) 降到 O(n log n)。\n\n为什么它不是最优？因为它还是对每个 left 独立二分，没有利用「left 越大、right 也越大」这个单调性。而滑动窗口恰好利用了这个单调性，把总操作次数压到 O(n)。\n\n实现要点：prefix 长度是 n+1，prefix[0] = 0；二分找的是「第一个 >= 目标值的位置」，用自己写的 lowerBound 比 Arrays.binarySearch 更可控（后者找不到时返回负值，容易踩坑）。\n\n复杂度 O(n log n) 时间，O(n) 空间。",
+      "pseudocode": "输入：目标 target，正数组 nums\n输出：最短子数组长度\n\n1. n = nums 长度\n2. prefix[0] = 0\n   i 从 0 到 n-1：prefix[i+1] = prefix[i] + nums[i]\n3. best = 正无穷\n4. left 从 0 循环到 n-1：\n     a. want = prefix[left] + target\n     b. 在 prefix 里二分查找第一个大于等于 want 的位置 pos\n        （在 prefix 的下标区间 [left+1, n] 里找）\n     c. 如果找到了：\n          best = min(best, pos - left)\n5. 如果 best 还是正无穷：返回 0\n6. 返回 best\n\n为什么能二分：数组全是正数 → 前缀和严格递增 → 有序\n\n复杂度：时间 O(n log n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        int n = nums.length;\n        int[] prefix = new int[n + 1];\n        for (int i = 0; i < n; i++) prefix[i + 1] = prefix[i] + nums[i];\n\n        int best = Integer.MAX_VALUE;\n        for (int left = 0; left < n; left++) {\n            int want = prefix[left] + target;\n            // 在 [left+1, n] 里找第一个 >= want 的下标\n            int pos = lowerBound(prefix, left + 1, n, want);\n            if (pos <= n) {\n                best = Math.min(best, pos - left);\n            }\n        }\n        return best == Integer.MAX_VALUE ? 0 : best;\n    }\n\n    // 返回 [lo, hi] 中第一个 >= want 的下标，找不到返回 hi+1\n    private int lowerBound(int[] arr, int lo, int hi, int want) {\n        while (lo <= hi) {\n            int mid = lo + (hi - lo) / 2;\n            if (arr[mid] < want) {\n                lo = mid + 1;\n            } else {\n                hi = mid - 1;\n            }\n        }\n        return lo;\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "滑动窗口 · 满足就收缩",
+      "idea": "这是本题的标准答案，也是「最短子数组」类题目的模板。\n\n思路：right 一直往右扩张，把元素加进窗口和；**每当窗口和 ≥ target，就尝试收缩左边界**——记录当前长度，然后把 left 右移、从和里减去 nums[left]，看还能不能更短。一直收缩到和 < target 为止，再继续扩张 right。\n\n为什么这样不会漏解？因为对每个 right，我们能保证：当窗口和刚刚满足条件时，当前的 left 就是「以这个 right 结尾的最短起点」。所有 (right, 最优 left) 组合都会被检查到。\n\n为什么时间是 O(n)？虽然代码里有嵌套的 while，但 left 和 right 都只向右移动，各自最多移动 n 次，总操作次数 O(2n)。**这是滑动窗口能过、暴力过不了的本质区别：不是「没有两层循环」，而是「两个指针都不回头」**。\n\n相比前缀和二分版改了什么？利用了「left 增大时最优 right 也单调增大」这个性质，把对每个 left 独立二分，变成两个指针同步推进，O(n log n) 降到 O(n)。\n\n**必须记住的前提**：这题能用滑动窗口，是因为数组全是正数（单调性）。如果题目出现负数，就得换前缀和 + 哈希表，滑动窗口会失效。面试时被追问「如果有负数怎么办」，答这句就是满分。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：目标 target，正数组 nums\n输出：最短子数组长度\n\n1. n = nums 长度，left = 0，sum = 0，best = 正无穷\n2. right 从 0 循环到 n-1：\n     a. sum 加上 nums[right]                  // 扩张右边界\n     b. 当 sum 大于等于 target 循环：          // 满足条件就收缩\n           best = min(best, right - left + 1)\n           sum 减去 nums[left]                // 先减，再左移\n           left 加 1\n3. 如果 best 还是正无穷：返回 0\n4. 返回 best\n\n为什么 O(n)：left 和 right 都只向右走，各最多 n 步，总 2n 次操作。\n前提：数组全为正数才有单调性；有负数则滑动窗口失效。\n\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int minSubArrayLen(int target, int[] nums) {\n        int n = nums.length;\n        int left = 0, sum = 0;\n        int best = Integer.MAX_VALUE;\n\n        for (int right = 0; right < n; right++) {\n            sum += nums[right];            // 扩张\n            // 满足条件就不断尝试收缩，找更短的\n            while (sum >= target) {\n                best = Math.min(best, right - left + 1);\n                sum -= nums[left];\n                left++;\n            }\n        }\n        return best == Integer.MAX_VALUE ? 0 : best;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

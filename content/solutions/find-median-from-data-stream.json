@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "全部存起来，取中位数时排序",
+      "idea": "设计题：支持 `addNum` 添加数字、`findMedian` 返回中位数。\n\n最直接的想法：**用一个 `ArrayList` 存全部数字，`findMedian` 时排序再取中间。**\n\n**这版的用途是暴露性能瓶颈：**\n- `addNum` 是 O(1)；\n- `findMedian` 是 O(n log n)。\n\n**如果交替调用 n 次，总共 O(n² log n)——在大数据流下必然超时。** 力扣本题的调用次数是 5×10^4，暴力版会 TLE。\n\n**设计题的分析方法很重要：先问「哪个操作最频繁」。** 这题 `addNum` 和 `findMedian` 都可能频繁调用，所以**两个操作都不能是 O(n)**，必须都接近 O(log n)。**这个判断直接指向堆。**\n\n**中位数的定义要精确：**\n- 元素个数 n 为奇数：中位数是第 `(n+1)/2` 个（1-indexed），下标 `n/2`（0-indexed）；\n- n 为偶数：中位数是中间两个的平均值，下标 `n/2 - 1` 和 `n/2`。\n\n**用 0-indexed 的下标写：**\n```\nif (n % 2 == 1) return (double) list.get(n / 2);\nelse return (list.get(n/2 - 1) + list.get(n/2)) / 2.0;\n```\n\n**`/ 2.0` 比 `/ 2` 重要**——整数除法会截断小数，这是本题最低级也最常见的错误。\n\n坑：\n1. 偶数时是 `n/2 - 1` 和 `n/2`；\n2. 必须 `/ 2.0`；\n3. 排序会破坏原顺序——但中位数不关心顺序，所以没关系。",
+      "pseudocode": "数据结构：一个列表 data\n\naddNum(num)：\n1. data 追加 num\n\nfindMedian()：\n2. 对 data 排序\n3. n = data 长度\n4. 如果 n 是奇数：return data[n 除以 2] 转成 double\n5. 否则：return (data[n 除以 2 减 1] 加 data[n 除以 2]) 除以 2.0\n\naddNum 是 O(1)，findMedian 是 O(n log n)，频繁调用会超时\n两个操作都可能频繁，所以都不能是 O(n)\n复杂度：addNum O(1)；findMedian O(n log n)",
+      "codeJava": "import java.util.*;\n\nclass MedianFinder {\n    private final List<Integer> data = new ArrayList<>();\n\n    public MedianFinder() {\n    }\n\n    public void addNum(int num) {\n        data.add(num);\n    }\n\n    public double findMedian() {\n        Collections.sort(data);\n        int n = data.size();\n        if (n % 2 == 1) return (double) data.get(n / 2);\n        return (data.get(n / 2 - 1) + data.get(n / 2)) / 2.0;\n    }\n}",
+      "timeComplexity": "addNum O(1)，findMedian O(n log n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "插入时保持有序，二分找位置",
+      "idea": "上一版的瓶颈在排序。**但数据是「逐个插入」的，如果每次插入时就维护好有序性，`findMedian` 就能 O(1)。**\n\n做法：`addNum` 时用**二分查找**定位插入位置（`Collections.binarySearch`），然后 `list.add(pos, num)`。\n\n**复杂度分析（这题的关键）：**\n- 二分找位置是 O(log n)；\n- **但 `ArrayList.add(pos, num)` 是 O(n)**，因为要搬移后面的所有元素。\n\n**所以整体还是 O(n)，只是常数比排序小。** 这版不能通过性能测试。\n\n**这个「看似优化实则没优化」的现象非常值得记住：** 优化前一定要分析**每一步**的复杂度，不能只盯着「把排序换成二分」这个表面动作。**数据结构选错了，局部优化救不了整体复杂度。**\n\n**正确答案是换数据结构。** 要让「插入」和「取中间」都 O(log n)，需要一种能在中间高效插入的结构——**堆正是为此而生**（下一版）。\n\n**还有一个洞察：中位数只关心「中间那几个元素」，不关心整体有序。** 所以维护完整有序是**过度工作**——你花 O(n) 成本做了一件只用到一小部分成果的事。**这是「需求驱动优化」的典型案例：想清楚真正需要什么，才能少做无用功。**\n\n坑：\n1. `Collections.binarySearch` 返回负数时，插入位置是 `-(返回值) - 1`；\n2. 找到时返回值可能不唯一（有重复元素），但不影响正确性；\n3. 中位数取法与上一版相同。",
+      "pseudocode": "数据结构：一个保持有序的列表 data\n\naddNum(num)：\n1. pos = 在 data 里二分查找 num\n2. 如果 pos 小于 0：pos = 负的 pos 减 1      // 没找到，转成插入点\n3. data 在 pos 处插入 num\n\nfindMedian()：\n4. n = data 长度\n5. 如果 n 是奇数：return data[n 除以 2] 转成 double\n6. 否则：return (data[n 除以 2 减 1] 加 data[n 除以 2]) 除以 2.0\n\n二分找位置是 O(log n)，但列表中间插入是 O(n)，整体仍是 O(n)\n中位数只关心中间元素，维护完全有序是过度工作\n复杂度：addNum O(n)；findMedian O(1)",
+      "codeJava": "import java.util.*;\n\nclass MedianFinder {\n    private final List<Integer> data = new ArrayList<>();\n\n    public MedianFinder() {\n    }\n\n    public void addNum(int num) {\n        int pos = Collections.binarySearch(data, num);\n        if (pos < 0) pos = -pos - 1;\n        data.add(pos, num);\n    }\n\n    public double findMedian() {\n        int n = data.size();\n        if (n % 2 == 1) return (double) data.get(n / 2);\n        return (data.get(n / 2 - 1) + data.get(n / 2)) / 2.0;\n    }\n}",
+      "timeComplexity": "addNum O(n)，findMedian O(1)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "双堆：大顶堆放左半，小顶堆放右半",
+      "idea": "这题的正解是**两个堆**，思路优美且是设计题的标杆。\n\n**核心思想：把数据从中间劈成两半。**\n- `left`：**大顶堆**，存较小的一半，**堆顶是左半的最大值**；\n- `right`：**小顶堆**，存较大的一半，**堆顶是右半的最小值**。\n\n**这样中位数就在两个堆顶之间：**\n- 两堆大小相等 → 中位数 = `(left.peek() + right.peek()) / 2.0`；\n- left 比 right 多 1 个 → 中位数 = `left.peek()`。\n\n**为什么大顶堆放左、小顶堆放右？** 因为你需要**快速拿到靠近中间的那两个元素**。左半最靠中间的是最大值（大顶堆的堆顶），右半最靠中间的是最小值（小顶堆的堆顶）。**堆顶正好是你要的。**\n\n**插入规则（这是最容易写错的地方）：**\n1. **先压 left**（大顶堆）；\n2. **把 left 的最大值搬到 right**（`right.offer(left.poll())`）；\n3. **如果 right 比 left 大，把 right 的最小值搬回 left**（`left.offer(right.poll())`）。\n\n**这个三步流程保证了两个不变量：**\n- **有序性**：left 的所有元素 ≤ right 的所有元素（因为每次都是搬「边界」元素）；\n- **平衡性**：`left.size()` 等于 `right.size()` 或比它多 1。\n\n**为什么不能简化成「比较后直接塞进对应堆」？** 那样需要额外判空、额外比较，反而更容易出 bug。**这个「先塞一边、再搬运」的三步法是最不容易写错的写法，强烈推荐背下来。**\n\n**复杂度：`addNum` O(log n)，`findMedian` O(1)，空间 O(n)。这是本题的最优。**\n\n**为什么这是最优？** 因为中位数依赖「中间两元素」，而**任何精确维护中间元素的结构都至少需要 O(log n) 的插入**（信息论下界）。堆达到了这个下界。\n\n坑：\n1. `left` 必须是大顶堆：`new PriorityQueue<>(Collections.reverseOrder())`；\n2. 三步搬运的顺序不能乱；\n3. 返回时用 `/ 2.0`；\n4. `findMedian` 前要保证 `left` 非空（题目保证至少调用过一次 `addNum`）。",
+      "pseudocode": "数据结构：left 是大顶堆（存较小一半），right 是小顶堆（存较大一半）\n\naddNum(num)：\n1. left 压入 num\n2. right 压入 left 弹出堆顶             // 把左半最大值交给右半\n3. 如果 right 大小 大于 left 大小：\n     left 压入 right 弹出堆顶           // 把右半最小值还给左半\n\nfindMedian()：\n4. 如果 left 大小 大于 right 大小：return left 堆顶 转成 double\n5. 否则：return (left 堆顶 加 right 堆顶) 除以 2.0\n\nleft 堆顶是左半最大值，right 堆顶是右半最小值，中位数就在两者之间\n先塞 left、再搬运、再平衡，这三步保证有序且平衡\n复杂度：addNum O(log n)；findMedian O(1)",
+      "codeJava": "import java.util.*;\n\nclass MedianFinder {\n    private final PriorityQueue<Integer> left = new PriorityQueue<>(Collections.reverseOrder());\n    private final PriorityQueue<Integer> right = new PriorityQueue<>();\n\n    public MedianFinder() {\n    }\n\n    public void addNum(int num) {\n        left.offer(num);\n        right.offer(left.poll());\n        if (right.size() > left.size()) {\n            left.offer(right.poll());\n        }\n    }\n\n    public double findMedian() {\n        if (left.size() > right.size()) return (double) left.peek();\n        return (left.peek() + right.peek()) / 2.0;\n    }\n}",
+      "timeComplexity": "addNum O(log n)，findMedian O(1)",
+      "spaceComplexity": "O(n)"
+    }
+  ]
+}

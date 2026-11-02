@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "转字符串再反转，用 long 判溢出",
+      "idea": "把整数反转（`123` → `321`，`-123` → `-321`）。**如果反转后超出 32 位有符号整数范围 `[-2^31, 2^31-1]`，返回 0。**\n\n最直接的想法：**转成字符串，反转，再转回数字。** 用 `long` 接住结果，最后判断是否在 int 范围内。\n\n**为什么这算暴力？**\n- 有多余的字符串转换开销（`String.valueOf` + `StringBuilder.reverse` + `Long.parseLong`）；\n- 空间 O(位数) 而不是 O(1)。\n\n**但它很容易写对，而且把「溢出检测」这个难点简化成了「用 long 装然后比大小」。** 在真实工程里，**这种先保证正确、再考虑优化的顺序是对的。**\n\n**处理负号的小技巧：** 用 `StringBuilder` 反转后，负号的 `-` 会跑到末尾。所以更好的做法是**先判断正负，对绝对值操作，最后补回符号**。\n\n**溢出判定：** `if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE) return 0;`\n\n坑：\n1. 负号处理（先取绝对值再补回）；\n2. 反转后前导零会自动消失（`120` → `021` → `21`，转数字时自然处理）；\n3. **必须用 long 接住**，否则 `Integer.parseInt` 遇到 `2147483648` 会抛异常。",
+      "pseudocode": "输入：整数 x\n输出：反转后的整数，溢出则 0\n\n1. neg = (x 小于 0)\n2. s = 把 x 的绝对值转成字符串\n3. rev = 把 s 反转\n4. val = 把 rev 转成 long\n5. 如果 neg：val = 负 val\n6. 如果 val 小于 int 最小值 或 大于 int 最大值：return 0\n7. return val 转成 int\n\n用 long 接住反转结果，最后统一判溢出\n字符串转换有开销，空间是 O(位数)\n复杂度：时间 O(log x)；空间 O(log x)",
+      "codeJava": "class Solution {\n    public int reverse(int x) {\n        boolean neg = x < 0;\n        long abs = Math.abs((long) x);\n        String s = Long.toString(abs);\n        String rev = new StringBuilder(s).reverse().toString();\n        long val = Long.parseLong(rev);\n        if (neg) val = -val;\n        if (val < Integer.MIN_VALUE || val > Integer.MAX_VALUE) return 0;\n        return (int) val;\n    }\n}",
+      "timeComplexity": "O(log x)",
+      "spaceComplexity": "O(log x)"
+    },
+    {
+      "tier": "better",
+      "title": "数学法：逐位取模拼数，用 long 防溢出",
+      "idea": "不用字符串，用纯数学：**反复取 `x % 10` 拿到最低位，把它拼到结果末尾，然后 `x /= 10`。**\n\n```\nlong res = 0;\nwhile (x != 0) {\n    res = res * 10 + x % 10;\n    x /= 10;\n}\n```\n\n**注意 `x % 10` 在 Java 里对负数返回负数**（比如 `-123 % 10 = -3`），**但因为整个过程都在负数域里运算，结果自动就是负的，反而省掉了符号处理。** 这是 Java 取模的一个「歪打正着」的便利。**但这个性质依赖语言，面试时说清楚「我用 Java 的负数取模特性，其他语言需要额外处理」。**\n\n**为什么用 long 而不是 int？** 因为 `res * 10` 在接近边界时会溢出，**用 long 可以撑到 `2^63`，远超 int 范围，最后统一比较。** 这是最简单可靠的防溢出方式。\n\n**为什么还只是「较好」？** 因为题目暗示了「不能用 long」的进阶要求（很多面试官会追问「如果环境没有 64 位整数怎么办」）。**正解是在乘之前就预判溢出。**\n\n**但必须说：用 long 是工程上最推荐的做法。** 代码短、易读、不可能出错。**面试时可以先用这版，再主动说明「如果没有 long，我会在乘之前检查边界」——这样展示的是工程判断力 + 对底层约束的理解。**\n\n坑：\n1. 循环条件 `x != 0`（负数也满足）；\n2. `res` 用 long；\n3. 最后判范围再强转 int。",
+      "pseudocode": "输入：x\n输出：反转值，溢出则 0\n\n1. res = 0（long 类型）\n2. 当 x 不等于 0 循环：\n     res = res 乘 10 加 (x 模 10)\n     x = x 除以 10\n3. 如果 res 小于 int 最小值 或 大于 int 最大值：return 0\n4. return res 转成 int\n\nJava 对负数取模返回负数，整个过程自然保持符号，省掉符号处理\n用 long 撑住中间结果，最后统一判范围\n复杂度：时间 O(log x)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int reverse(int x) {\n        long res = 0;\n        while (x != 0) {\n            res = res * 10 + x % 10;\n            x /= 10;\n        }\n        if (res < Integer.MIN_VALUE || res > Integer.MAX_VALUE) return 0;\n        return (int) res;\n    }\n}",
+      "timeComplexity": "O(log x)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "optimal",
+      "title": "乘之前预判溢出，全程 int",
+      "idea": "**不用 long，在每次 `res * 10 + digit` 之前就检查会不会溢出。**\n\n溢出条件（以正数为例，`res` 即将变成 `res * 10 + digit`）：\n- 如果 `res > Integer.MAX_VALUE / 10`，**那么 `res * 10` 一定溢出**；\n- 如果 `res == Integer.MAX_VALUE / 10`，**那么还要看 `digit > 7`**（因为 `MAX_VALUE = 2147483647`，末尾是 7）。\n\n负数对称处理（`MIN_VALUE = -2147483648`，末尾是 8）：\n- `res < Integer.MIN_VALUE / 10` → 溢出；\n- `res == Integer.MIN_VALUE / 10` 且 `digit < -8` → 溢出。\n\n**为什么这个细节值得记？** 因为 `MAX_VALUE / 10 = 214748364`，末尾 `7`；`MIN_VALUE / 10 = -214748364`，末尾 `-8`。**这两个数字（7 和 8）不是随便来的，正是 int 边界值的最后一位。**\n\n**更简洁的写法（推荐）：统一用「除法回代」检查**\n```\nint digit = x % 10;\nif (res > Integer.MAX_VALUE / 10 || (res == Integer.MAX_VALUE / 10 && digit > 7)) return 0;\nif (res < Integer.MIN_VALUE / 10 || (res == Integer.MIN_VALUE / 10 && digit < -8)) return 0;\nres = res * 10 + digit;\n```\n\n**为什么这是最优？**\n- 时间 O(log x)（位数），空间 O(1)；\n- **完全不需要 64 位整数**，在任何只有 32 位整数的环境（比如某些嵌入式、某些语言）都能跑。\n\n**这个技巧的通用性强：** 任何「乘法累加可能溢出」的场景，都可以用「先除一下看边界」的方式预判。**比如大数乘法、累加求和、二分里的 `mid = (lo + hi) / 2` 改写成 `lo + (hi - lo) / 2`，都是同一类思想。**\n\n坑：\n1. 两个方向的边界都要检查；\n2. `digit > 7` 和 `digit < -8` 里的 7 和 8 是 int 边界的末位；\n3. 检查必须在 `res * 10 + digit` **之前**；\n4. 只要触发一次就立刻返回 0。",
+      "pseudocode": "输入：x\n输出：反转值，溢出则 0\n\n1. res = 0\n2. 当 x 不等于 0 循环：\n     digit = x 模 10\n     如果 res 大于 int 最大值 除以 10：return 0\n     如果 res 等于 int 最大值 除以 10 且 digit 大于 7：return 0\n     如果 res 小于 int 最小值 除以 10：return 0\n     如果 res 等于 int 最小值 除以 10 且 digit 小于 负 8：return 0\n     res = res 乘 10 加 digit\n     x = x 除以 10\n3. return res\n\n在乘法之前预判溢出，全程不需要 64 位整数\n7 和 8 是 int 边界值的最后一位，不是随意取的数字\n复杂度：时间 O(log x)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int reverse(int x) {\n        int res = 0;\n        while (x != 0) {\n            int digit = x % 10;\n            if (res > Integer.MAX_VALUE / 10) return 0;\n            if (res == Integer.MAX_VALUE / 10 && digit > 7) return 0;\n            if (res < Integer.MIN_VALUE / 10) return 0;\n            if (res == Integer.MIN_VALUE / 10 && digit < -8) return 0;\n            res = res * 10 + digit;\n            x /= 10;\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(log x)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

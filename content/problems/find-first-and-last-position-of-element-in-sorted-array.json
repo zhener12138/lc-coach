@@ -1,0 +1,49 @@
+{
+  "slug": "find-first-and-last-position-of-element-in-sorted-array",
+  "frontendId": "34",
+  "titleEn": "Find First and Last Position of Element in Sorted Array",
+  "titleCn": "在排序数组中查找元素的第一个和最后一个位置",
+  "difficulty": "Medium",
+  "tags": "数组,二分查找",
+  "contentHtml": "<p>Given an array of integers <code>nums</code> sorted in non-decreasing order, find the starting and ending position of a given <code>target</code> value.</p>\n\n<p>If <code>target</code> is not found in the array, return <code>[-1, -1]</code>.</p>\n\n<p>You must&nbsp;write an algorithm with&nbsp;<code>O(log n)</code> runtime complexity.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<pre><strong>Input:</strong> nums = [5,7,7,8,8,10], target = 8\n<strong>Output:</strong> [3,4]\n</pre><p><strong>Example 2:</strong></p>\n<pre><strong>Input:</strong> nums = [5,7,7,8,8,10], target = 6\n<strong>Output:</strong> [-1,-1]\n</pre><p><strong>Example 3:</strong></p>\n<pre><strong>Input:</strong> nums = [], target = 0\n<strong>Output:</strong> [-1,-1]\n</pre>\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= nums.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>-10<sup>9</sup>&nbsp;&lt;= nums[i]&nbsp;&lt;= 10<sup>9</sup></code></li>\n\t<li><code>nums</code> is a non-decreasing array.</li>\n\t<li><code>-10<sup>9</sup>&nbsp;&lt;= target&nbsp;&lt;= 10<sup>9</sup></code></li>\n</ul>",
+  "contentCnHtml": "<p>给你一个按照非递减顺序排列的整数数组 <code>nums</code>，和一个目标值 <code>target</code>。请你找出给定目标值在数组中的开始位置和结束位置。</p>\n\n<p>如果数组中不存在目标值 <code>target</code>，返回&nbsp;<code>[-1, -1]</code>。</p>\n\n<p>你必须设计并实现时间复杂度为&nbsp;<code>O(log n)</code>&nbsp;的算法解决此问题。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [<code>5,7,7,8,8,10]</code>, target = 8\n<strong>输出：</strong>[3,4]</pre>\n\n<p><strong>示例&nbsp;2：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [<code>5,7,7,8,8,10]</code>, target = 6\n<strong>输出：</strong>[-1,-1]</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [], target = 0\n<strong>输出：</strong>[-1,-1]</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= nums.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>-10<sup>9</sup>&nbsp;&lt;= nums[i]&nbsp;&lt;= 10<sup>9</sup></code></li>\n\t<li><code>nums</code>&nbsp;是一个非递减数组</li>\n\t<li><code>-10<sup>9</sup>&nbsp;&lt;= target&nbsp;&lt;= 10<sup>9</sup></code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int[] searchRange(int[] nums, int target) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "find-first-and-last-position-of-element-in-sorted-array",
+      "tier": "brute",
+      "title": "线性扫描找首尾",
+      "idea": "最直接：从头到尾扫一遍，第一次遇到 target 记下 start，最后一次遇到记下 end。扫完 start 还是初始值说明没找到，返回 [-1, -1]。\n\n为什么这版一定对？因为它把「首」和「尾」的定义直接翻译成了「第一次出现」和「最后一次出现」，没有任何推理跳跃。\n\n为什么不够好？O(n)。题目明确要求 O(log n)（进阶部分），而且数据量到 10⁵ 时，如果 target 出现很多次，二分会快几十倍。\n\n为什么值得先写？因为它把**两个必须处理的边界**摆到明面上了：\n1. **找不到时返回 `[-1, -1]`**，不是 `[]`，也不是 `[0, 0]`；\n2. 判断「没找到」要单独用一个标记（比如 start 初值设成 -1），不能靠 start == 0 判断——因为答案可能真的是 0。这个坑在二分版里同样存在。\n\n先把返回值语义钉死，再优化查找方式，是最稳的写法顺序。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：有序数组 nums（可能有重复），target\n输出：长度为 2 的数组，[首次出现下标, 末次出现下标]，找不到返回 [-1, -1]\n\n1. start = -1，end = -1\n2. i 从 0 循环到 nums 长度减 1：\n     如果 nums[i] 等于 target：\n        如果 start 还是 -1：start = i\n        end = i\n3. 返回 [start, end]\n\n坑：不能用 start 等于 0 判断没找到，因为答案可能真是 0\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int[] searchRange(int[] nums, int target) {\n        int start = -1, end = -1;\n\n        for (int i = 0; i < nums.length; i++) {\n            if (nums[i] == target) {\n                if (start == -1) start = i;   // 第一次\n                end = i;                      // 一直更新到最后一个\n            }\n        }\n        return new int[]{start, end};\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "find-first-and-last-position-of-element-in-sorted-array",
+      "tier": "better",
+      "title": "两次二分 · 分别找左右边界",
+      "idea": "既然要找「第一个」和「最后一个」，那就写两个二分，各自专注于一个目标。\n\n**找左边界**：标准二分，但命中 target 时**不返回**，而是 `right = mid - 1` 继续往左收缩，同时把 mid 记下来。这样循环结束时记下的就是最左边的那个。\n\n**找右边界**：镜像对称，命中时 `left = mid + 1` 往右收缩，记下 mid，最后得到最右边的。\n\n为什么「命中不立即返回」是关键？因为重复元素可能有一大段，第一次命中的 mid 只是其中随便一个，不一定是边界。必须继续收缩到越界才能确定边界。**这是「二分查边界」与「二分查存在」的本质区别**，也是 34 题的核心考点。\n\n相比线性版改了什么？把两次 O(n) 扫描换成两次 O(log n) 二分。\n\n为什么还不是最优？因为代码里有两段几乎一样的逻辑（只是收缩方向相反），重复度高、容易写错一半。下一版把它抽成一个函数。但概念上这一步非常值得写：它清楚地展示了「命中后往哪边收缩决定求的是哪个边界」。\n\n坑：\n1. 左边界查找里 `right = mid - 1` 是必须的（不能是 `mid`），否则死循环；\n2. 用 `ans = -1` 初始值，`if (ans == -1) return {-1, -1}` 提前剪枝——如果连左边界都没有，就不用找右边界了；\n3. 返回 `new int[]{l, r}`，不能返回 `null`。\n\n复杂度 O(log n) 时间，O(1) 空间。",
+      "pseudocode": "输入：有序数组 nums，target\n输出：[左边界, 右边界] 或 [-1, -1]\n\n找左边界 findLeft()：\n  left = 0，right = n - 1，ans = -1\n  当 left 小于等于 right：\n     mid = left + (right - left) / 2\n     如果 nums[mid] 等于 target：ans = mid，right = mid - 1   // 记住后继续往左\n     否则如果 nums[mid] 小于 target：left = mid + 1\n     否则：right = mid - 1\n  return ans\n\n找右边界 findRight()：\n  同样的循环，但命中时 ans = mid，left = mid + 1   // 往右收缩\n\n主流程：\n  l = findLeft()\n  如果 l 等于 -1：return [-1, -1]\n  r = findRight()\n  return [l, r]\n\n关键：命中后不返回，继续往目标方向收缩，才能得到边界\n复杂度：时间 O(log n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int[] searchRange(int[] nums, int target) {\n        int l = findLeft(nums, target);\n        if (l == -1) return new int[]{-1, -1};   // 左边界都没有，右边界也不用找\n        int r = findRight(nums, target);\n        return new int[]{l, r};\n    }\n\n    private int findLeft(int[] nums, int target) {\n        int left = 0, right = nums.length - 1, ans = -1;\n        while (left <= right) {\n            int mid = left + (right - left) / 2;\n            if (nums[mid] == target) {\n                ans = mid;\n                right = mid - 1;      // 命中不返回，继续往左收缩\n            } else if (nums[mid] < target) {\n                left = mid + 1;\n            } else {\n                right = mid - 1;\n            }\n        }\n        return ans;\n    }\n\n    private int findRight(int[] nums, int target) {\n        int left = 0, right = nums.length - 1, ans = -1;\n        while (left <= right) {\n            int mid = left + (right - left) / 2;\n            if (nums[mid] == target) {\n                ans = mid;\n                left = mid + 1;       // 命中不返回，继续往右收缩\n            } else if (nums[mid] < target) {\n                left = mid + 1;\n            } else {\n                right = mid - 1;\n            }\n        }\n        return ans;\n    }\n}",
+      "timeComplexity": "O(log n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "find-first-and-last-position-of-element-in-sorted-array",
+      "tier": "optimal",
+      "title": "下界函数复用 · lowerBound 与 upperBound",
+      "idea": "上一版两个函数有 90% 的代码重复。这版把重复彻底消掉：抽一个通用的 `bound(nums, target, lower)` 函数，用一个布尔参数控制「找下界还是上界」。\n\n更漂亮的写法是定义两个纯函数语义：\n- `lowerBound(t)` = **第一个 >= t 的下标**（可能等于 n）\n- `upperBound(t)` = **第一个 > t 的下标**（可能等于 n）\n\n于是答案就是：\n- 左边界 = `lowerBound(target)`\n- 右边界 = `upperBound(target) - 1`\n- 只要左边界越界或那块值不等于 target，就返回 `[-1, -1]`\n\n为什么这个表达最优雅？因为它把「找 target 的左右边界」转化成了「找两个与 target 无关的通用边界」。**lowerBound 和 upperBound 是 C++ STL 里的标准概念**，面试时说出这两个词，能立刻显得你有系统性认知而不是临时凑出两个二分。\n\n为什么 `upperBound - 1` 就是右边界？因为 `upperBound(target)` 是第一个比 target 大的位置，那么它左边一格必然是最后一个等于 target 的位置（如果 target 存在的话）。\n\n返回值的判定也要跟着变：`if (lb == n || nums[lb] != target) return new int[]{-1, -1};`——注意 `lb == n` 必须在 `nums[lb]` 之前判断，否则越界。**这个短路顺序是 Java 里的常见坑**。\n\n相比两次二分版改了什么？代码从两段重复变成一个通用函数 + 三行组合，出错面大幅缩小，且模板可复用到几乎所有「找边界」的题（比如 704、35、278、162 都用同一个 lowerBound 骨架）。\n\n复杂度 O(log n) 时间，O(1) 空间。",
+      "pseudocode": "输入：有序数组 nums，target\n输出：[左边界, 右边界] 或 [-1, -1]\n\nlowerBound(t)：返回第一个大于等于 t 的下标（可能等于 n）\n  left = 0，right = n\n  当 left 小于 right：\n     mid = left + (right - left) / 2\n     如果 nums[mid] 小于 t：left = mid + 1\n     否则：right = mid\n  return left\n\nupperBound(t)：返回第一个大于 t 的下标（可能等于 n）\n  同上，只是判断条件改成 nums[mid] 小于等于 t 时 left = mid + 1\n\n主流程：\n  lb = lowerBound(target)\n  如果 lb 等于 n 或 nums[lb] 不等于 target：return [-1, -1]   // 短路顺序不能反\n  ub = upperBound(target)\n  return [lb, ub - 1]\n\nlowerBound / upperBound 是标准概念，模板可复用到所有找边界的题\n复杂度：时间 O(log n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int[] searchRange(int[] nums, int target) {\n        int lb = bound(nums, target, true);\n        // 短路顺序必须这样写：先判越界，再取值\n        if (lb == nums.length || nums[lb] != target) {\n            return new int[]{-1, -1};\n        }\n        int ub = bound(nums, target, false);\n        return new int[]{lb, ub - 1};\n    }\n\n    // lower=true 求下界（第一个 >= target），false 求上界（第一个 > target）\n    private int bound(int[] nums, int target, boolean lower) {\n        int left = 0, right = nums.length;   // 左闭右开\n        while (left < right) {\n            int mid = left + (right - left) / 2;\n            if (nums[mid] < target || (!lower && nums[mid] == target)) {\n                left = mid + 1;\n            } else {\n                right = mid;\n            }\n        }\n        return left;\n    }\n}",
+      "timeComplexity": "O(log n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

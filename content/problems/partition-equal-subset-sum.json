@@ -1,0 +1,49 @@
+{
+  "slug": "partition-equal-subset-sum",
+  "frontendId": "416",
+  "titleEn": "Partition Equal Subset Sum",
+  "titleCn": "分割等和子集",
+  "difficulty": "Medium",
+  "tags": "数组,动态规划,背包问题,0-1 背包",
+  "contentHtml": "<p>Given an integer array <code>nums</code>, return <code>true</code> <em>if you can partition the array into two subsets such that the sum of the elements in both subsets is equal or </em><code>false</code><em> otherwise</em>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [1,5,11,5]\n<strong>Output:</strong> true\n<strong>Explanation:</strong> The array can be partitioned as [1, 5, 5] and [11].\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [1,2,3,5]\n<strong>Output:</strong> false\n<strong>Explanation:</strong> The array cannot be partitioned into equal sum subsets.\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 200</code></li>\n\t<li><code>1 &lt;= nums[i] &lt;= 100</code></li>\n</ul>",
+  "contentCnHtml": "<p>给你一个 <strong>只包含正整数 </strong>的 <strong>非空 </strong>数组 <code>nums</code> 。请你判断是否可以将这个数组分割成两个子集，使得两个子集的元素和相等。</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [1,5,11,5]\n<strong>输出：</strong>true\n<strong>解释：</strong>数组可以分割成 [1, 5, 5] 和 [11] 。</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [1,2,3,5]\n<strong>输出：</strong>false\n<strong>解释：</strong>数组不能分割成两个元素和相等的子集。\n</pre>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 <= nums.length <= 200</code></li>\n\t<li><code>1 <= nums[i] <= 100</code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public boolean canPartition(int[] nums) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "partition-equal-subset-sum",
+      "tier": "brute",
+      "title": "递归：每个数选或不选",
+      "idea": "题目问「能不能把数组分成两个和相等的子集」。**第一步永远是转化**：如果总和是奇数，直接不可能（两个整数的和不可能等于奇数）；如果总和是偶数，问题就变成「能不能从数组里挑一些数，让它们的和恰好等于总和的一半」。\n\n于是问题变成「子集和」问题。最直接的写法：`f(i, rest)` 表示「从第 i 个数往后，能不能凑出 rest」。每个数两种选择——选（`f(i+1, rest-nums[i])`）或不选（`f(i+1, rest)`），任一成功即可。\n\n**这个「选或不选」的二叉展开是 0/1 背包问题的原型。** 后面所有的背包题（分割等和、目标和、零钱兑换 II）都是它的变体，区别只在「每个物品能用几次」和「问可行性还是问方案数」。**把这棵树想透，背包就通了。**\n\n为什么慢？`(i, rest)` 这个状态被多条路径重复到达，指数级。\n\n坑：\n1. 总和奇数要立刻返回 false，这是最重要的剪枝；\n2. `rest == 0` 返回 true（已经凑够）；`rest < 0` 返回 false（超了）；\n3. `i` 走到末尾时 `rest` 必须恰好为 0 才行。",
+      "pseudocode": "输入：数组 nums\n输出：能否分成两个等和子集\n\n1. total = 所有元素之和\n2. 如果 total 是奇数：return false\n3. return f(0, total 除以 2)\n\nf(i, rest)：从下标 i 往后能否凑出 rest\n4. 如果 rest 等于 0：return true\n5. 如果 i 等于 nums 长度 或 rest 小于 0：return false\n6. 不选：f(i 加 1, rest)\n7. 选：f(i 加 1, rest 减 nums[i])\n8. return 选 或 不选\n\n总和为奇数直接无解，这是最重要的剪枝\n「选或不选」的二叉展开是 0/1 背包的原型\n复杂度：时间 O(2 的 n 次方)；空间 O(n)",
+      "codeJava": "class Solution {\n    public boolean canPartition(int[] nums) {\n        int total = 0;\n        for (int x : nums) total += x;\n        if (total % 2 != 0) return false;\n        return f(nums, 0, total / 2);\n    }\n\n    private boolean f(int[] nums, int i, int rest) {\n        if (rest == 0) return true;\n        if (i == nums.length || rest < 0) return false;\n        return f(nums, i + 1, rest) || f(nums, i + 1, rest - nums[i]);\n    }\n}",
+      "timeComplexity": "O(2ⁿ)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "partition-equal-subset-sum",
+      "tier": "better",
+      "title": "二维布尔 DP：前 i 个数能否凑出 j",
+      "idea": "把递归参数直接变成数组下标：`dp[i][j]` 表示「用前 i 个数能否凑出 j」。转移：\n\n`dp[i][j] = dp[i-1][j] || (j >= nums[i-1] && dp[i-1][j-nums[i-1]])`\n\n前一项是不选第 i 个数，后一项是选它。\n\n**为什么用二维而不是一维？** 因为二维版本来源更清晰，不容易写错。**面试时建议先写二维讲清逻辑，再压缩成一维。** 这样面试官能确认你真的理解转移，而不是背了个模板。\n\n**填表顺序：** 外层 i 从小到大（因为 `dp[i]` 依赖 `dp[i-1]`），内层 j 从 0 到 target。**内层的方向在一维版里才是关键约束，二维版无所谓。**\n\n**边界：** `dp[i][0] = true` 对所有 i 成立（凑 0 什么都不选即可），`dp[0][j] = false` 对 j>0 成立（没有数字可用）。Java 数组默认 false，所以只要设 `dp[i][0] = true`。\n\n**复杂度 O(n · target)。** target 是总和的一半，力扣本题总和最大 20000，target 最大 10000，n 最大 200，所以是 200 万次操作。\n\n坑：\n1. `dp[i][0]`（第一列）必须全 true；\n2. 转移里 `j >= nums[i-1]` 的条件不能省，否则越界；\n3. `nums[i-1]` 和 `dp[i]` 的下标偏移不同，别写混。",
+      "pseudocode": "输入：nums\n输出：能否等分\n\n1. total = 元素之和；如果 total 是奇数：return false\n2. target = total 除以 2；n = nums 长度\n3. dp = (n 加 1) 乘 (target 加 1) 的布尔数组\n4. 对 i 从 0 到 n：dp[i][0] = true\n5. 对 i 从 1 到 n：\n     对 j 从 1 到 target：\n        dp[i][j] = dp[i 减 1][j]\n        如果 j 大于等于 nums[i 减 1] 且 dp[i 减 1][j 减 nums[i 减 1]]：\n           dp[i][j] = true\n6. return dp[n][target]\n\n先写二维讲清转移，再压缩成一维，面试更稳\n复杂度：时间 O(n 乘 target)；空间 O(n 乘 target)",
+      "codeJava": "class Solution {\n    public boolean canPartition(int[] nums) {\n        int total = 0;\n        for (int x : nums) total += x;\n        if (total % 2 != 0) return false;\n\n        int target = total / 2;\n        int n = nums.length;\n        boolean[][] dp = new boolean[n + 1][target + 1];\n        for (int i = 0; i <= n; i++) dp[i][0] = true;\n\n        for (int i = 1; i <= n; i++) {\n            int v = nums[i - 1];\n            for (int j = 1; j <= target; j++) {\n                dp[i][j] = dp[i - 1][j];\n                if (j >= v && dp[i - 1][j - v]) dp[i][j] = true;\n            }\n        }\n        return dp[n][target];\n    }\n}",
+      "timeComplexity": "O(n · target)",
+      "spaceComplexity": "O(n · target)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "partition-equal-subset-sum",
+      "tier": "optimal",
+      "title": "一维 DP 倒序，0/1 背包标准写法",
+      "idea": "二维压一维，但这次**内层 j 必须从大到小**——这是 0/1 背包和完全背包唯一的分水岭。\n\n原因：压缩后 `dp[j]` 在更新前代表「上一行（前 i-1 个数）能否凑出 j」。转移要用 `dp[j-v]`，我们希望用的是**上一行的** `dp[j-v]`（因为每个数只能用一次，不能重复选刚选过的那个）。\n\n- 如果 j **从大到小**遍历，`dp[j-v]` 里的下标 j-v 比 j 小，**还没被本轮更新过**，所以拿到的正是上一行的值。正确。\n- 如果 j **从小到大**，`dp[j-v]` 已经被本轮更新过（用上了当前这个数），相当于一个数可以被用多次——那就变成了**完全背包**。\n\n**这个「方向决定物品能用几次」的结论必须背下来，因为它是最容易搞反的地方。** 记住口诀：**0/1 倒序，完全正序。**\n\n**还可以加两条剪枝，都是真优化：**\n- **早退判断**：如果 `dp[target]` 已经是 true，直接返回（不用算完）；\n- **单元素剪枝**：如果某个数大于 target，它永远不能入选，可以先过滤（力扣数据里不常见，但边界安全）。\n\n**为什么这是最优？** 时间 O(n·target) 是背包问题公认的复杂度（这是 NP 完全问题的伪多项式解法，没有更好的通用解）；空间 O(target) 是压缩后下界。\n\n坑：\n1. 内层必须**倒序**；\n2. `dp[0] = true` 不能漏；\n3. 循环上界是 `j >= v`，写成 `j > v` 会漏掉 j==v 的情况。",
+      "pseudocode": "输入：nums\n输出：能否等分\n\n1. total = 元素之和；如果 total 是奇数：return false\n2. target = total 除以 2\n3. dp = 长度 target 加 1 的布尔数组；dp[0] = true\n4. 对 nums 里每个 v：\n     对 j 从 target 递减到 v：                // 必须倒序\n        dp[j] = dp[j] 或 dp[j 减 v]\n     如果 dp[target]：return true\n5. return dp[target]\n\n倒序保证 dp[j 减 v] 用的是上一行，即每个数只用一次\n口诀：0/1 背包倒序，完全背包正序\n复杂度：时间 O(n 乘 target)；空间 O(target)",
+      "codeJava": "class Solution {\n    public boolean canPartition(int[] nums) {\n        int total = 0;\n        for (int x : nums) total += x;\n        if (total % 2 != 0) return false;\n\n        int target = total / 2;\n        boolean[] dp = new boolean[target + 1];\n        dp[0] = true;\n\n        for (int v : nums) {\n            for (int j = target; j >= v; j--) {\n                if (dp[j - v]) dp[j] = true;\n            }\n            if (dp[target]) return true;\n        }\n        return dp[target];\n    }\n}",
+      "timeComplexity": "O(n · target)",
+      "spaceComplexity": "O(target)",
+      "sortOrder": 3
+    }
+  ]
+}

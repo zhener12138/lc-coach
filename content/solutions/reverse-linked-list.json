@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "先存成数组 · 再重建链表",
+      "idea": "如果不能一下子想到指针操作，最稳的办法是「降维」：先遍历一遍把值存进数组或列表，再从后往前建一个新链表。\n\n为什么这版能过？时间复杂度 O(n)，力扣不会卡你。但空间是 O(n)，不符合题目「迭代或递归」的进阶要求。\n\n为什么值得先写？因为它把「反转的语义」说清楚了：原来第一个变最后一个、原来最后一个变第一个。很多人在指针里绕晕，就是因为没先想清这个语义。\n\n注意坑：不要用 `new ListNode(val)` 反复插到头部来复用原节点——那样其实是在原地操作，反而绕回了指针题。这版就是老老实实建新节点，语义最干净。\n\n另一个更偷懒的写法是先把所有值存进 ArrayList，然后遍历原链表，把值反着填回去（改 val 不改 next）。这版空间 O(n)、代码 8 行，面试时可以作为「思路正确」的交代，但要说明它不是最优。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：链表头节点 head\n输出：反转后的链表头\n\n1. vals = 空列表\n2. p = head\n   当 p 不为空：把 p.val 加入 vals；p = p.next\n3. 建虚拟头 dummy，tail = dummy\n4. i 从 vals 长度-1 递减到 0：\n     tail.next = new ListNode(vals[i])\n     tail = tail.next\n5. 返回 dummy.next\n\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public ListNode reverseList(ListNode head) {\n        List<Integer> vals = new ArrayList<>();\n        for (ListNode p = head; p != null; p = p.next) {\n            vals.add(p.val);\n        }\n\n        ListNode dummy = new ListNode(0);\n        ListNode tail = dummy;\n        for (int i = vals.size() - 1; i >= 0; i--) {\n            tail.next = new ListNode(vals.get(i));\n            tail = tail.next;\n        }\n        return dummy.next;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "递归 · 先反转后半段再挂回来",
+      "idea": "递归的思考方式：**假设后半段已经反转好了**，我怎么把它接上？\n\n关键一步：调用 reverseList(head.next) 之后，head.next 已经变成了反转后链表的「尾节点」，而反转后链表的头是 newHead。于是我要做两件事：\n1. head.next.next = head ——让原来的第二个节点指回 head；\n2. head.next = null ——把 head 原来的向后的指针断掉，否则会形成环。\n\n第 2 步极其容易漏。漏了会怎样？head 和 head.next 互相指向，链表成环，力扣直接报「超出内存限制」或死循环。这是递归版第一大坑。\n\n递归终止条件：head == null 或 head.next == null 时返回 head（空链表或单节点，反转后就是自己）。\n\n相比数组版改了什么？不需要额外数组，只用递归调用栈。空间从 O(n) 的堆内存变成 O(n) 的栈空间——严格说还是 O(n)，但常数小、代码短。\n\n为什么它不是最优？因为递归对超长链表（10⁴ 以上）可能栈溢出，而迭代版没有这个风险。面试官问「链表很长怎么办」，答「用迭代」就是标准回应。\n\n复杂度 O(n) 时间，O(n) 栈空间。",
+      "pseudocode": "输入：head\n输出：反转后的头\n\n1. 如果 head 为空 或 head.next 为空：返回 head\n2. newHead = reverseList(head.next)      // 先反转后半段\n3. head.next.next = head                 // 让后一个指回自己\n4. head.next = null                      // 断开原指针，否则成环\n5. 返回 newHead\n\n第 4 步最容易漏，漏了就成环\n复杂度：时间 O(n)；空间 O(n) 递归栈",
+      "codeJava": "class Solution {\n    public ListNode reverseList(ListNode head) {\n        // 空链表或单节点，反转后就是自己\n        if (head == null || head.next == null) return head;\n\n        // 先反转后半段，newHead 是最终的头\n        ListNode newHead = reverseList(head.next);\n\n        // 此时 head.next 已成为反转段的尾节点，让它指回 head\n        head.next.next = head;\n        // 必须断开，否则 head 与其后继互相指向形成环\n        head.next = null;\n\n        return newHead;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "迭代三指针 · prev/curr/next",
+      "idea": "这是链表反转的标准答案，也是链表题的「基本功第一课」，必须能闭着眼写出来。\n\n核心：维护三个指针 prev（已反转部分的头）、curr（当前待处理节点）、next（暂存后继，防止断链后找不到）。每一步做四件事：\n1. next = curr.next ——先存后继，否则改了 curr.next 就丢了；\n2. curr.next = prev ——掉头指向前面；\n3. prev = curr ——已反转部分扩展；\n4. curr = next ——继续下一个。\n\n顺序不能乱。尤其是第 1 步必须最先做，这是整个循环的保命步骤。\n\n为什么它比递归好？零额外空间、不会栈溢出、常数最小。这就是题目进阶要求的答案。\n\n面试建议：写完后自己用一个 3 节点链表走一遍，检查最后一轮的返回值。最后要返回 prev 而不是 curr——因为循环结束时 curr 已经是 null，prev 才是新的头。这是第二大坑。\n\n**这个模板的复用价值极高**：反转部分链表（第 92 题）、K 个一组反转（第 25 题）、回文链表、重排链表，全都是在它上面加几行。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：head\n输出：反转后的头\n\n1. prev = null，curr = head\n2. 当 curr 不为空循环：\n     a. next = curr.next       // 第一步：先存后继，否则断链后找不到\n     b. curr.next = prev       // 掉头\n     c. prev = curr            // 扩展已反转部分\n     d. curr = next            // 前进\n3. 返回 prev                  // 不是 curr！curr 此时是 null\n\n四步顺序不能乱，a 必须最先\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public ListNode reverseList(ListNode head) {\n        ListNode prev = null;\n        ListNode curr = head;\n\n        while (curr != null) {\n            ListNode next = curr.next;   // 1. 先存后继，这一步不能放到后面\n            curr.next = prev;            // 2. 掉头\n            prev = curr;                 // 3. 已反转部分前移\n            curr = next;                 // 4. 继续下一个\n        }\n        // 结束时 curr 为 null，prev 才是新的头\n        return prev;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

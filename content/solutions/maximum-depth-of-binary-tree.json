@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "BFS 层序遍历 · 层数就是深度",
+      "idea": "深度 = 从根到最远叶子的节点数。最直观的理解就是「一层一层数，数到没有节点为止」。用队列做 BFS：每轮把当前层全部弹出，同时把它们的子节点入队，轮数就是深度。\n\n为什么这一定对？因为 BFS 是按层推进的，第 k 轮处理的正好是第 k 层的所有节点。轮数天然等于层数 = 深度。\n\n为什么这版算「暴力」？时间 O(n) 已是最优，但空间是 O(最宽层的节点数)，完全二叉树时是 O(n/2)——**比 DFS 的 O(h) 大得多**。而且它要把整个队列装满，常数也更大。\n\n为什么值得先写？因为它把「深度 = 层数」这个等价关系说清楚了，而这正是很多人第一反应能想到的。而且 BFS 模板本身用途极广（层序、右视图、锯齿遍历、最小深度都是它）。\n\n坑：每轮必须先记录 `int size = queue.size()`，再循环 size 次。如果直接 `while (!queue.isEmpty())` 内层不清空，就会把「下一层」的节点也当成本层处理，答案变成 1（或无穷）。**这是 BFS 分层最经典的错误。**\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：root\n输出：最大深度\n\n1. 如果 root 为空：return 0\n2. queue 放入 root，depth = 0\n3. 当 queue 不为空 循环：\n     size = queue 当前长度        // 必须提前记下本层节点数\n     重复 size 次：\n        node = queue 弹出\n        如果 node.left 不为空：queue 放入 node.left\n        如果 node.right 不为空：queue 放入 node.right\n     depth = depth + 1\n4. 返回 depth\n\n坑：必须用 size 锁住本层，否则会把下一层也当成本层\n复杂度：时间 O(n)；空间 O(最宽层)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int maxDepth(TreeNode root) {\n        if (root == null) return 0;\n\n        Deque<TreeNode> queue = new ArrayDeque<>();\n        queue.offer(root);\n        int depth = 0;\n\n        while (!queue.isEmpty()) {\n            int size = queue.size();   // 锁住本层节点数\n            for (int i = 0; i < size; i++) {\n                TreeNode node = queue.poll();\n                if (node.left != null) queue.offer(node.left);\n                if (node.right != null) queue.offer(node.right);\n            }\n            depth++;\n        }\n        return depth;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "递归 · 后序自底向上取较大",
+      "idea": "深度有天然的自相似结构：**一棵树的深度 = 1 + max(左子树深度, 右子树深度)**。空树深度为 0。这个定义直接就是递归。\n\n为什么叫「后序」？因为必须先算出左右子树的结果，才能算自己——这正是后序遍历（左、右、根）的顺序。**「树上的自底向上聚合类问题」几乎都是后序递归**：深度、节点数、直径、是否平衡、最大路径和，全是一个模板。\n\n为什么它比 BFS 好？空间从 O(最宽层) 降到 O(树高 h)。对平衡树 h = log n，远小于 n。\n\n相比 BFS 版改了什么？把「显式队列逐层推进」换成「隐式调用栈自底向上汇总」，代码从 15 行缩到 4 行，空间也更好。\n\n坑：\n1. 空节点返回 0，不是 1。写成 1 会让答案多一层。\n2. `Math.max(left, right) + 1` 的 +1 代表「加上当前节点自己」，别漏。\n\n这题的递归版是后面所有树形 DP 的入口。**建议把这 4 行背下来**，因为它是 543（直径）、110（平衡）、124（最大路径和）的共同骨架。\n\n复杂度 O(n) 时间，O(h) 空间。",
+      "pseudocode": "输入：root\n输出：最大深度\n\ndepth(node)：\n  如果 node 为空：return 0        // 空树深度是 0\n  leftDepth  = depth(node.left)\n  rightDepth = depth(node.right)\n  return max(leftDepth, rightDepth) + 1     // 加上自己这一层\n\n主流程：return depth(root)\n\n这是后序递归：先算子问题，再算自己\n骨架可复用到直径、平衡判断、最大路径和\n复杂度：时间 O(n)；空间 O(h)",
+      "codeJava": "class Solution {\n    public int maxDepth(TreeNode root) {\n        if (root == null) return 0;\n        int leftDepth = maxDepth(root.left);\n        int rightDepth = maxDepth(root.right);\n        return Math.max(leftDepth, rightDepth) + 1;   // +1 是当前节点自己\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(h)"
+    },
+    {
+      "tier": "optimal",
+      "title": "后序递归 + 全局剪枝意识",
+      "idea": "上一版的递归已经是 O(n) 时间、O(h) 空间，理论上就是最优了——每个节点必须至少被看一次，不可能更快。所以第三版的价值不在于「更快」，而在于**把它写成一个可复用的、带工程意识的模板**。三个提升点：\n\n**提升一：把「求深度」抽象成返回值语义清晰的递归。** 明确约定 `depth(node)` 返回「以 node 为根的子树深度」，这样递归的每一步都有清晰含义，不会写着写着混乱。这是写树形 DP 的第一原则：**先定义函数的语义，再写转移**。\n\n**提升二：识别「只需要一层信息」还是「需要多层信息」。** 这题只要深度，返回一个 int 就够。但 543 题（直径）需要「深度」和「过程中见到的最大直径」两个信息——那就要么用成员变量，要么返回数组。**能判断出「这题要不要额外状态」是树形 DP 的核心能力**，比会写递归更值钱。\n\n**提升三：早停的可能性。** 这题没法剪枝（必须看全部节点）。但同类题里 often 有剪枝空间：比如「判断是否平衡」可以在发现某子树不平衡时立刻返回 -1 向上传播，避免继续递归。**把「能不能提前返回」当作写递归时的固定自问**，是从「会写」到「写得好」的分水岭。\n\n所以这一版给出的代码和上一版几乎一样，但注释里写清了三条工程判断。面试时把这三条讲出来，比多写两行代码有分量得多。\n\n复杂度 O(n) 时间，O(h) 空间——已是理论最优。",
+      "pseudocode": "输入：root\n输出：最大深度\n\n约定语义：depth(node) 返回以 node 为根的子树深度\n  （写递归前先把语义定死，这是树形 DP 第一原则）\n\ndepth(node)：\n  如果 node 为空：return 0\n  返回 max( depth(node.left), depth(node.right) ) + 1\n\n主流程：return depth(root)\n\n三条工程判断：\n  1. 这题只需一层信息（深度），返回 int 就够\n  2. 若是 543（直径）就需两层信息，要用成员变量或返回数组\n  3. 这题无法剪枝；但「是否平衡」类可返回 -1 提前短路\n复杂度：时间 O(n) 已是最优；空间 O(h)",
+      "codeJava": "class Solution {\n    public int maxDepth(TreeNode root) {\n        return depth(root);\n    }\n\n    // 语义：返回以 node 为根的子树深度；空树为 0\n    private int depth(TreeNode node) {\n        if (node == null) return 0;\n\n        int left = depth(node.left);\n        int right = depth(node.right);\n        return Math.max(left, right) + 1;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(h)"
+    }
+  ]
+}

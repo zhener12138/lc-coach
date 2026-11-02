@@ -1,0 +1,49 @@
+{
+  "slug": "counting-bits",
+  "frontendId": "338",
+  "titleEn": "Counting Bits",
+  "titleCn": "比特位计数",
+  "difficulty": "Easy",
+  "tags": "位运算,动态规划",
+  "contentHtml": "<p>Given an integer <code>n</code>, return <em>an array </em><code>ans</code><em> of length </em><code>n + 1</code><em> such that for each </em><code>i</code><em> </em>(<code>0 &lt;= i &lt;= n</code>)<em>, </em><code>ans[i]</code><em> is the <strong>number of </strong></em><code>1</code><em><strong>&#39;s</strong> in the binary representation of </em><code>i</code>.</p>\nDo not solve it with built-in functions (i.e., like <code>__builtin_popcount</code> in C++).\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> n = 2\n<strong>Output:</strong> [0,1,1]\n<strong>Explanation:</strong>\n0 --&gt; 0\n1 --&gt; 1\n2 --&gt; 10\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> n = 5\n<strong>Output:</strong> [0,1,1,2,1,2]\n<strong>Explanation:</strong>\n0 --&gt; 0\n1 --&gt; 1\n2 --&gt; 10\n3 --&gt; 11\n4 --&gt; 100\n5 --&gt; 101\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= n &lt;= 10<sup>5</sup></code></li>\n</ul>\n\n<p>&nbsp;</p>\n<p><strong>Follow up:</strong></p>\n\n<ul>\n\t<li>It is very easy to come up with a solution with a runtime of <code>O(n log n)</code>. Can you do it in linear time <code>O(n)</code> and possibly in a single pass?</li>\n</ul>",
+  "contentCnHtml": "<p>给你一个整数 <code>n</code> ，对于&nbsp;<code>0 &lt;= i &lt;= n</code> 中的每个 <code>i</code> ，计算其二进制表示中 <strong><code>1</code> 的个数</strong> ，返回一个长度为 <code>n + 1</code> 的数组 <code>ans</code> 作为答案。</p>\n\n<p>不要使用内置函数来解决（例如，C++ 中的 <code>__builtin_popcount</code>）。</p>\n\n<p>&nbsp;</p>\n\n<div>\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>n = 2\n<strong>输出：</strong>[0,1,1]\n<strong>解释：</strong>\n0 --&gt; 0\n1 --&gt; 1\n2 --&gt; 10\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>n = 5\n<strong>输出：</strong>[0,1,1,2,1,2]\n<strong>解释：</strong>\n0 --&gt; 0\n1 --&gt; 1\n2 --&gt; 10\n3 --&gt; 11\n4 --&gt; 100\n5 --&gt; 101\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= n &lt;= 10<sup>5</sup></code></li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>进阶：</strong></p>\n\n<ul>\n\t<li>很容易就能实现时间复杂度为 <code>O(n log n)</code> 的解决方案，你可以在线性时间复杂度 <code>O(n)</code> 内用一趟扫描解决此问题吗？</li>\n</ul>\n</div>",
+  "javaTemplate": "class Solution {\n    public int[] countBits(int n) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "counting-bits",
+      "tier": "brute",
+      "title": "对每个数逐位统计 1 的个数",
+      "idea": "输出 `[0, n]` 每个数的二进制中 1 的个数。\n\n最直接的想法：**对每个数 x，循环 32 次，看每一位是不是 1。**\n\n**为什么这算暴力？** 因为它是 O(n · 32) = O(32n)，虽然有 O(n) 的 DP 解法能去掉那个常数 32。**但注意：理论上 O(32n) 也是 O(n)（32 是常数），只是实际慢一个数量级。**\n\n**这一版的价值：先把「数 1 的个数」这件事写对。** 两种常用写法：\n1. **移位法**：`while (x != 0) { cnt += x & 1; x >>>= 1; }`\n2. **消低位法**：`while (x != 0) { x &= x - 1; cnt++; }` —— **每次消掉最低位的 1，循环次数等于 1 的个数，比移位法快。**\n\n**为什么用 `>>>=` 而不是 `>>=`？** 因为 Java 的 `>>` 是**算术右移**（保留符号位，负数高位补 1），会导致死循环；`>>>` 是**逻辑右移**（高位补 0）。**这是 Java 位运算的必知细节，面试经常被问。**\n\n**`x & (x - 1)` 这个技巧必须掌握**，它出现在很多题里（比如 191 题、判断 2 的幂）。**它的含义是「把最低位的 1 变成 0」。**\n\n坑：\n1. 用 `>>>` 不用 `>>`；\n2. `x & (x - 1)` 消掉最低位的 1；\n3. 0 的答案是 0。",
+      "pseudocode": "输入：整数 n\n输出：长度 n 加 1 的数组，第 i 项是 i 的二进制中 1 的个数\n\n1. res = 长度 n 加 1 的数组\n2. 对 i 从 0 到 n：\n     x = i；cnt = 0\n     当 x 不等于 0 循环：\n        x = x 位与 (x 减 1)               // 消掉最低位的 1\n        cnt 加 1\n     res[i] = cnt\n3. return res\n\n每个数独立统计，总共 O(32 乘 n)\nx 位与 (x 减 1) 能消掉最低位的 1，循环次数等于 1 的个数\n复杂度：时间 O(n log n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int[] countBits(int n) {\n        int[] res = new int[n + 1];\n        for (int i = 0; i <= n; i++) {\n            int x = i;\n            int cnt = 0;\n            while (x != 0) {\n                x &= (x - 1);\n                cnt++;\n            }\n            res[i] = cnt;\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "counting-bits",
+      "tier": "better",
+      "title": "DP：当前数是它右移一位的答案加上最低位",
+      "idea": "关键观察：**`i` 的二进制，就是 `i >> 1` 的二进制末尾补上 `i` 的最低位。**\n\n所以：`countBits(i) = countBits(i >> 1) + (i & 1)`。\n\n**为什么这个转移这么自然？** 因为右移一位就是把最右边那一位扔掉，所以「1 的个数」只少了「被扔掉的那一位」。**这是「子问题 + 增量」的经典结构，和爬楼梯完全同构。**\n\n**复杂度从 O(n log n) 降到 O(n)。** 每个 i 只做一次移位、一次与、一次加。\n\n**为什么还只是「较好」？** 因为它有一个**缓存友好的问题**：`i >> 1` 是「i 的一半」，访问顺序是跳跃的（0, 1, 1, 2, 2, 3, 3...），**不是严格顺序访问**。虽然对 CPU 缓存影响不大（因为 i/2 总在 i 之前算过），但下一版能做到严格顺序访问，更友好。\n\n**不过这版的优雅程度其实很高**，`res[i] = res[i >> 1] + (i & 1)` 一行就是全部核心。**面试时写这一版完全合格**。\n\n坑：\n1. `res[0] = 0`（默认就是，不用显式写）；\n2. 循环从 1 开始；\n3. `i >> 1` 对非负数是安全的（本题 i ≥ 0）。",
+      "pseudocode": "输入：n\n输出：数组\n\n1. res = 长度 n 加 1 的数组\n2. 对 i 从 1 到 n：\n     res[i] = res[i 右移 1 位] 加 (i 位与 1)\n3. return res\n\ni 的二进制就是 i 右移一位再补上最低位\n子问题加增量的结构，和爬楼梯同构\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int[] countBits(int n) {\n        int[] res = new int[n + 1];\n        for (int i = 1; i <= n; i++) {\n            res[i] = res[i >> 1] + (i & 1);\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "counting-bits",
+      "tier": "optimal",
+      "title": "DP：消掉最低位的 1，严格顺序访问",
+      "idea": "另一个转移：**`i` 消掉最低位的 1 得到 `i & (i-1)`，那个数比 `i` 小，且 1 的个数少 1。**\n\n所以：`res[i] = res[i & (i - 1)] + 1`。\n\n**为什么这版比上一版好？** 关键在于**访问模式**：\n- 上一版：`i >> 1` 大约是 i 的一半，**访问点落在数组前半部分，跨度过大**；\n- 这一版：`i & (i-1)` **总是紧邻 i 之前的一个数**（最多差一个低位），**访问局部性极好，CPU 缓存命中率高**。\n\n**在 n 很大时（比如 10^8），这个差异会体现为实测速度的明显差别。** 这就是「理论复杂度相同、实际性能不同」的典型例子——**面试里能指出这一点，说明你有真正的工程直觉，而不是只会算 Big-O。**\n\n**`i & (i - 1)` 的含义再强调一次：把最低位的 1 变成 0。** 所以它必然 `≥ 0` 且 `< i`，**这是转移合法性的保证**：子问题一定已经算过。\n\n**三种解法的对比：**\n\n| 版本 | 时间 | 关键手段 |\n|---|---|---|\n| 暴力 | O(n log n) | 每个数独立数位 |\n| DP 移位 | O(n) | 子问题 + 最低位 |\n| DP 消位 | O(n) | 子问题 + 缓存友好 |\n\n**这条升级路径展示的是「从能跑到跑得快」的完整过程**，比只背最优解有价值得多。\n\n坑：\n1. `res[0] = 0` 天然成立；\n2. 循环从 1 开始；\n3. `i & (i-1)` 一定小于 i。",
+      "pseudocode": "输入：n\n输出：数组\n\n1. res = 长度 n 加 1 的数组\n2. 对 i 从 1 到 n：\n     res[i] = res[i 位与 (i 减 1)] 加 1\n3. return res\n\ni 位与 (i 减 1) 消掉最低位的 1，那个数一定更小且已被算过\n访问位置紧邻 i 之前，缓存局部性比右移版好\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int[] countBits(int n) {\n        int[] res = new int[n + 1];\n        for (int i = 1; i <= n; i++) {\n            res[i] = res[i & (i - 1)] + 1;\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 3
+    }
+  ]
+}

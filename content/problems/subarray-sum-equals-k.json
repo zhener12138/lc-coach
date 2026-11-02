@@ -1,0 +1,49 @@
+{
+  "slug": "subarray-sum-equals-k",
+  "frontendId": "560",
+  "titleEn": "Subarray Sum Equals K",
+  "titleCn": "和为 K 的子数组",
+  "difficulty": "Medium",
+  "tags": "数组,哈希表,前缀和",
+  "contentHtml": "<p>Given an array of integers <code>nums</code> and an integer <code>k</code>, return <em>the total number of subarrays whose sum equals to</em> <code>k</code>.</p>\n\n<p>A subarray is a contiguous <strong>non-empty</strong> sequence of elements within an array.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<pre><strong>Input:</strong> nums = [1,1,1], k = 2\n<strong>Output:</strong> 2\n</pre><p><strong>Example 2:</strong></p>\n<pre><strong>Input:</strong> nums = [1,2,3], k = 3\n<strong>Output:</strong> 2\n</pre>\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 2 * 10<sup>4</sup></code></li>\n\t<li><code>-1000 &lt;= nums[i] &lt;= 1000</code></li>\n\t<li><code>-10<sup>7</sup> &lt;= k &lt;= 10<sup>7</sup></code></li>\n</ul>",
+  "contentCnHtml": "<p>给你一个整数数组 <code>nums</code> 和一个整数&nbsp;<code>k</code> ，请你统计并返回 <em>该数组中和为&nbsp;<code>k</code><strong>&nbsp;</strong>的子数组的个数&nbsp;</em>。</p>\n\n<p>子数组是数组中元素的连续非空序列。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [1,1,1], k = 2\n<strong>输出：</strong>2\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [1,2,3], k = 3\n<strong>输出：</strong>2\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 2 * 10<sup>4</sup></code></li>\n\t<li><code>-1000 &lt;= nums[i] &lt;= 1000</code></li>\n\t<li><code>-10<sup>7</sup> &lt;= k &lt;= 10<sup>7</sup></code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int subarraySum(int[] nums, int k) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "subarray-sum-equals-k",
+      "tier": "brute",
+      "title": "枚举所有子数组 · 直接求和",
+      "idea": "最直白：把所有连续子数组都列一遍，各自求和，等于 k 就计数加一。\n\n为什么这种题不能套滑动窗口？因为数组里可能有负数。滑动窗口的前提是「窗口和随元素增减单调变化」，一旦有负数，加一个负数会让和变小，收缩左边界反而可能让和变大，双指针的正确性就崩了。这是本题最重要的认知。\n\n为什么暴力必超时？n = 2×10⁴ 时子数组约 2×10⁸ 个，每个求和 O(n)，总量级 O(n³)；即便用增量求和优化到 O(n²)（内层边扩边加），2×10⁸ 也悬。\n\n值不值得先写？值得。它确认了「连续子数组」和「求和」两个要素，也在脑子里建立了「以每个右端点结尾的所有子数组」这个视角——最优解正是从这个视角切进去的。\n\n复杂度 O(n²) 时间（增量求和版），O(1) 空间。",
+      "pseudocode": "输入：整数数组 nums（可含负数），目标 k\n输出：和为 k 的连续子数组个数\n\n1. n = nums 长度，count = 0\n2. left 从 0 循环到 n-1：\n     a. sum = 0\n     b. right 从 left 循环到 n-1：\n          sum 加上 nums[right]          // 增量求和，不用重新累加\n          如果 sum 等于 k：count 加 1\n3. 返回 count\n\n为什么不能滑动窗口：数组含负数 → 前缀和不再单调 → 收缩左边界不安全\n复杂度：时间 O(n²)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int subarraySum(int[] nums, int k) {\n        int n = nums.length;\n        int count = 0;\n\n        for (int left = 0; left < n; left++) {\n            int sum = 0;\n            for (int right = left; right < n; right++) {\n                sum += nums[right];      // 增量求和\n                if (sum == k) count++;\n            }\n        }\n        return count;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "subarray-sum-equals-k",
+      "tier": "better",
+      "title": "前缀和数组 · 两数相减找 k",
+      "idea": "换个视角：子数组 nums[i..j] 的和 = prefix[j+1] - prefix[i]。要求它等于 k，就是求 prefix[j+1] - prefix[i] = k，也就是 prefix[i] = prefix[j+1] - k。\n\n于是问题变成：对每个位置 j，数一数它前面有多少个前缀和等于 prefix[j] - k。\n\n第一版实现就用最朴素的方式：先把完整的前缀和数组算出来，然后双重循环枚举所有 (i, j) 对，判断差值是否为 k。\n\n相比暴力版改了什么？不再对每对 (i,j) 求一次和，而是查表相减，把内层从「求和」变成「一次减法」。理论上还是 O(n²)，但常数小很多。\n\n为什么还不是最优？因为内层仍在枚举历史前缀和。如果能把「历史前缀和出现次数」用哈希表存起来，查询就变成 O(1)——这就是终极版。\n\n注意前缀和的存储：长度 n+1，prefix[0] = 0，这样从下标 0 开始的子数组也能被正确统计。\n\n复杂度 O(n²) 时间，O(n) 空间。",
+      "pseudocode": "输入：整数数组 nums，目标 k\n输出：和为 k 的子数组个数\n\n1. n = nums 长度\n2. prefix[0] = 0\n   i 从 0 到 n-1：prefix[i+1] = prefix[i] + nums[i]\n3. count = 0\n4. j 从 1 到 n：\n     i 从 0 到 j-1：\n        如果 prefix[j] - prefix[i] 等于 k：count 加 1\n5. 返回 count\n\n等价写法：对每个 j，找前面有多少个 prefix[i] 等于 prefix[j] - k\n复杂度：时间 O(n²)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int subarraySum(int[] nums, int k) {\n        int n = nums.length;\n        int[] prefix = new int[n + 1];\n        for (int i = 0; i < n; i++) prefix[i + 1] = prefix[i] + nums[i];\n\n        int count = 0;\n        for (int j = 1; j <= n; j++) {\n            for (int i = 0; i < j; i++) {\n                // nums[i..j-1] 的和\n                if (prefix[j] - prefix[i] == k) count++;\n            }\n        }\n        return count;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "subarray-sum-equals-k",
+      "tier": "optimal",
+      "title": "前缀和 + 哈希表 · 一趟 O(n)",
+      "idea": "本题标准答案，也是「子数组和」类题目的万能模板。\n\n核心：把「找有多少个 prefix[i] == prefix[j] - k」从线性扫描变成哈希表 O(1) 查询。做法是一边算前缀和，一边把「已出现过的前缀和 → 出现次数」记进 map，然后立刻查询 map 里 prefix - k 出现了几次。\n\n**必须先把 map.put(0, 1) 放进去。** 为什么？因为 prefix - k == 0 表示「从开头到当前位置」这一整个子数组的和就是 k，这个前缀和 0 对应的「第 0 个位置」必须存在。漏了这一行，所有从下标 0 开始的合法子数组都统计不到。这是本题第一大坑。\n\n第二大坑：先查询再写入当前前缀和。顺序反了会把「自己」算进去，导致单个元素等于 k 的情况被重复计数。\n\n**为什么这里能用哈希表而不是滑动窗口？** 因为有负数，前缀和不单调，无法收缩边界。但哈希表不依赖单调性，只依赖「相等」，所以照样成立。这个对比是面试高频追问。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：整数数组 nums，目标 k\n输出：和为 k 的子数组个数\n\n1. 建 HashMap map，key 是前缀和，value 是出现次数\n2. map.put(0, 1)                 // 关键：空前缀算出现一次\n3. prefix = 0，count = 0\n4. 对 nums 里的每个 x：\n     a. prefix 加上 x\n     b. 如果 map 里有 (prefix - k)：\n          count 加上 map 里 (prefix - k) 的次数\n     c. 把 prefix 的出现次数加 1 写回 map\n5. 返回 count\n\n两个必踩的坑：\n  1) 忘了 map.put(0,1)：从下标 0 开始的子数组全部漏掉\n  2) 先写 map 再查询：把当前自己算进去，导致重复计数\n\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int subarraySum(int[] nums, int k) {\n        Map<Integer, Integer> map = new HashMap<>();\n        map.put(0, 1);   // 空前缀出现一次，保证从下标 0 开始的子数组能被统计\n\n        int prefix = 0, count = 0;\n        for (int x : nums) {\n            prefix += x;\n            // 先查：之前有多少个前缀和等于 prefix - k\n            count += map.getOrDefault(prefix - k, 0);\n            // 再存：把自己加入历史，顺序不能反\n            map.put(prefix, map.getOrDefault(prefix, 0) + 1);\n        }\n        return count;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 3
+    }
+  ]
+}

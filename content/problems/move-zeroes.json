@@ -1,0 +1,48 @@
+{
+  "slug": "move-zeroes",
+  "frontendId": "283",
+  "titleEn": "Move Zeroes",
+  "titleCn": "移动零",
+  "difficulty": "Easy",
+  "tags": "数组,双指针",
+  "contentHtml": "<p>Given an integer array <code>nums</code>, move all <code>0</code>&#39;s to the end of it while maintaining the relative order of the non-zero elements.</p>\n\n<p><strong>Note</strong> that you must do this in-place without making a copy of the array.</p>\n\n<p><strong>Example 1:</strong></p>\n<pre><strong>Input:</strong> nums = [0,1,0,3,12]\n<strong>Output:</strong> [1,3,12,0,0]\n</pre><p><strong>Example 2:</strong></p>\n<pre><strong>Input:</strong> nums = [0]\n<strong>Output:</strong> [0]\n</pre>\n\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 10<sup>4</sup></code></li>\n\t<li><code>-2<sup>31</sup> &lt;= nums[i] &lt;= 2<sup>31</sup> - 1</code></li>\n</ul>\n\n<strong>Follow up:</strong> Could you minimize the total number of operations done?",
+  "contentCnHtml": "<p>给定一个数组 <code>nums</code>，编写一个函数将所有 <code>0</code> 移动到数组的末尾，同时保持非零元素的相对顺序。</p>\n\n<p><strong>请注意</strong>&nbsp;，必须在不复制数组的情况下原地对数组进行操作。</p>\n\n<p><strong>示例 1:</strong></p>\n\n<pre>\n<strong>输入:</strong> nums = <code>[0,1,0,3,12]</code>\n<strong>输出:</strong> <code>[1,3,12,0,0]</code>\n</pre>\n\n<p><strong>示例 2:</strong></p>\n\n<pre>\n<strong>输入:</strong> nums = <code>[0]</code>\n<strong>输出:</strong> <code>[0]</code></pre>\n\n<p><strong>提示</strong>:</p>\n<meta charset=\"UTF-8\" />\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 10<sup>4</sup></code></li>\n\t<li><code>-2<sup>31</sup>&nbsp;&lt;= nums[i] &lt;= 2<sup>31</sup>&nbsp;- 1</code></li>\n</ul>\n\n<p><b>进阶：</b>你能尽量减少完成的操作次数吗？</p>",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "move-zeroes",
+      "tier": "brute",
+      "title": "遇到 0 就整体左移 · 逐位搬",
+      "idea": "最直白的想法：从左往右扫，一旦遇到 0，就把后面所有元素整体往前挪一位，末尾补 0，然后 i 不动（因为挪过来的新元素还没检查）。\n\n这是最符合\"人的直觉\"的写法，但每次遇到 0 都要搬 O(n) 个元素，如果数组里 0 很多，就是 O(n²)。\n\n写它的价值：确认你理解\"必须原地修改、不能新建数组\"。",
+      "pseudocode": "1. i = 0\n2. 当 i < n：\n     a. 如果 nums[i] == 0：\n          j 从 i 循环到 n-2：nums[j] = nums[j+1]   ← 整体左移\n          nums[n-1] = 0                          ← 末尾补 0\n          （i 不前进，因为新来的数还没看）\n     b. 否则 i++\n\n复杂度：时间 O(n²)；空间 O(1)",
+      "codeJava": "class Solution {\n    public void moveZeroes(int[] nums) {\n        int n = nums.length;\n        int i = 0;\n        while (i < n) {\n            if (nums[i] == 0) {\n                for (int j = i; j < n - 1; j++) {\n                    nums[j] = nums[j + 1];\n                }\n                nums[n - 1] = 0;\n            } else {\n                i++;\n            }\n        }\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "move-zeroes",
+      "tier": "better",
+      "title": "非零元素前移 + 末尾补零",
+      "idea": "换个角度看：题目要的是「所有非零元素保持相对顺序挤到前面，0 全丢后面」。\n那就别管 0 了，只做一件事：**把非零元素一个个往前放**。\n\n用一个写指针 write，遍历读指针 read：遇到非零就写到 nums[write]，write++。\n遍历完后，从 write 到末尾全部填 0。\n\n这就是「**双指针：读指针探路，写指针落位**」的标准模板。\n这个模板后面在「删除重复项」「移除元素」等题里会反复出现，值得记住。\n\nO(n) 时间，两趟（一趟搬非零，一趟补零）。还能一趟吗？能。",
+      "pseudocode": "1. write = 0\n2. read 从 0 循环到 n-1：\n     如果 nums[read] != 0：\n         nums[write] = nums[read]\n         write++\n3. 从 write 循环到 n-1：nums[i] = 0\n\n注意：write 一定 ≤ read，所以不会覆盖还没读的数据。\n\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public void moveZeroes(int[] nums) {\n        int write = 0;\n        for (int read = 0; read < nums.length; read++) {\n            if (nums[read] != 0) {\n                nums[write++] = nums[read];\n            }\n        }\n        for (int i = write; i < nums.length; i++) {\n            nums[i] = 0;\n        }\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "move-zeroes",
+      "tier": "optimal",
+      "title": "交换法 · 一趟扫描",
+      "idea": "上一版要两趟。能不能一趟？\n\n可以：读指针遇到非零元素时，**直接和写指针位置交换**，而不是覆盖。\n因为写指针指向的位置，要么就是读指针自己（前面没有 0），要么是前面遇到的 0 的位置。\n交换之后，那个 0 就被换到后面去了，天然完成了\"补零\"。\n\n关键细节：如果 write == read（前面没遇到过 0），交换是自己和自己换，虽然无害但多做了一次赋值，所以加 `if (write != read)` 判断更干净。\n\n这版一趟 O(n)，代码只多两行。是这道题的最优写法。",
+      "pseudocode": "1. write = 0\n2. read 从 0 循环到 n-1：\n     如果 nums[read] != 0：\n         如果 write != read：交换 nums[write] 和 nums[read]\n         write++\n\n为什么交换就够了：write 位置要么是 read 自己，要么是之前跳过的 0，\n把非零换到前面、0 换到后面，正好是题目要的。\n\n复杂度：时间 O(n) 一趟；空间 O(1)",
+      "codeJava": "class Solution {\n    public void moveZeroes(int[] nums) {\n        int write = 0;\n        for (int read = 0; read < nums.length; read++) {\n            if (nums[read] != 0) {\n                if (write != read) {\n                    int tmp = nums[write];\n                    nums[write] = nums[read];\n                    nums[read] = tmp;\n                }\n                write++;\n            }\n        }\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

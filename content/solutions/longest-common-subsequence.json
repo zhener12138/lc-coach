@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "递归：两串逐位比较",
+      "idea": "最长公共子序列（LCS）是二维字符串 DP 的母题。递归定义非常干净：\n\n- 若 `t1[i] == t2[j]`，这个字符一定可以算进答案：`1 + f(i+1, j+1)`；\n- 否则，至少有一个字符用不上：`max(f(i+1, j), f(i, j+1))`。\n\n**为什么相等时可以直接「都往后走一步」？** 这是一个需要证明的贪心：如果两个串当前字符相同，那么存在一个最优解包含这一对字符。直觉是「既然能白拿一个，不拿只会更差」。严格证明用交换论证——把最优解里的这个公共字符提前配对，不会减少长度。**这个性质是 LCS 能和编辑距离、最长回文子序列共用一套骨架的基础。**\n\n暴力版没有缓存，`(i,j)` 状态被大量重复访问。两个串长度都是 n 时，递归树大致是 2 的 (i+j) 次方。\n\n坑：\n1. 两个串任一走到末尾就返回 0；\n2. 相等时是 `i+1, j+1` 同时前进，不是只前进一个；\n3. 不等时是取 max，不是加。",
+      "pseudocode": "输入：字符串 text1，text2\n输出：最长公共子序列长度\n\n1. return f(0, 0)\n\nf(i, j)：从 i 和 j 开始的最长公共子序列长度\n2. 如果 i 等于 text1 长度 或 j 等于 text2 长度：return 0\n3. 如果 text1 第 i 位 等于 text2 第 j 位：\n     return 1 加 f(i 加 1, j 加 1)\n4. return max(f(i 加 1, j), f(i, j 加 1))\n\n相等时两个指针必须同时前进\n同一对 (i, j) 被反复访问，指数级\n复杂度：时间 O(2 的 i 加 j 次方)；空间 O(i 加 j)",
+      "codeJava": "class Solution {\n    public int longestCommonSubsequence(String text1, String text2) {\n        return f(text1, text2, 0, 0);\n    }\n\n    private int f(String a, String b, int i, int j) {\n        if (i == a.length() || j == b.length()) return 0;\n        if (a.charAt(i) == b.charAt(j)) return 1 + f(a, b, i + 1, j + 1);\n        return Math.max(f(a, b, i + 1, j), f(a, b, i, j + 1));\n    }\n}",
+      "timeComplexity": "O(2^(m+n))",
+      "spaceComplexity": "O(m + n)"
+    },
+    {
+      "tier": "better",
+      "title": "二维填表，标准 LCS 骨架",
+      "idea": "把递归转成填表。`dp[i][j]` = `text1` 前 i 个字符和 `text2` 前 j 个字符的 LCS 长度。\n\n转移（注意是「前 i 个」，所以比较的是 `text1[i-1]` 和 `text2[j-1]`）：\n- 相等：`dp[i][j] = dp[i-1][j-1] + 1`\n- 不等：`dp[i][j] = max(dp[i-1][j], dp[i][j-1])`\n\n边界 `dp[0][*] = dp[*][0] = 0`（任一方为空，公共子序列长度就是 0）。Java 默认 0，不用显式初始化。\n\n**这套骨架是字符串 DP 的通用模板，必须练到能默写。** 因为下面这些题都是它的变体：\n- **编辑距离**：不等时不是取 max，而是在「删除/插入/替换」三种操作里取 min 加一；\n- **最长回文子序列**：把 `text2` 换成 `text1` 的反转，就变成 LCS；\n- **不相交的线 / 两个字符串的删除操作**：本质就是 LCS。\n\n**为什么填表顺序是从小到大两层循环？** 因为 `dp[i][j]` 依赖 `dp[i-1][j-1]`、`dp[i-1][j]`、`dp[i][j-1]`，三个都更小，所以任意「i 增、j 增」的顺序都行。**这是二维 DP 里最宽松的情况，不像有些题必须斜着填。**\n\n复杂度 O(m·n)，输出了整张表。\n\n坑：\n1. 比较的是 `a.charAt(i-1)` 和 `b.charAt(j-1)`，别用 i 和 j；\n2. 相等时用 `dp[i-1][j-1] + 1`，不是 `+ dp[i][j]`；\n3. 答案是 `dp[m][n]`。",
+      "pseudocode": "输入：text1（长 m），text2（长 n）\n输出：LCS 长度\n\n1. dp = (m 加 1) 乘 (n 加 1) 的数组\n2. 对 i 从 1 到 m：\n     对 j 从 1 到 n：\n        如果 text1 第 i 减 1 位 等于 text2 第 j 减 1 位：\n           dp[i][j] = dp[i 减 1][j 减 1] 加 1\n        否则：\n           dp[i][j] = max(dp[i 减 1][j], dp[i][j 减 1])\n3. return dp[m][n]\n\n相等时两个指针一起退，不等时取较大的一边\n这套骨架是字符串 DP 的通用模板，必须能默写\n复杂度：时间 O(m 乘 n)；空间 O(m 乘 n)",
+      "codeJava": "class Solution {\n    public int longestCommonSubsequence(String text1, String text2) {\n        int m = text1.length();\n        int n = text2.length();\n        int[][] dp = new int[m + 1][n + 1];\n\n        for (int i = 1; i <= m; i++) {\n            for (int j = 1; j <= n; j++) {\n                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {\n                    dp[i][j] = dp[i - 1][j - 1] + 1;\n                } else {\n                    dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);\n                }\n            }\n        }\n        return dp[m][n];\n    }\n}",
+      "timeComplexity": "O(m · n)",
+      "spaceComplexity": "O(m · n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "一维滚动 + 保存左上角旧值",
+      "idea": "压缩成一维，但**这里有一个必须解决的难题**：`dp[i][j]` 在相等时要依赖 `dp[i-1][j-1]`（左上角）。\n\n一维数组里 `dp[j]` 更新前是 `dp[i-1][j]`（正上方），`dp[j-1]` 是 `dp[i][j-1]`（左方新值）。**但左上角 `dp[i-1][j-1]` 去哪了？它在更新 `dp[j-1]` 时被覆盖掉了。**\n\n解决办法：**用一个变量 `prev` 保存「更新前的 `dp[j]`」，在进入下一列之前把它当成「左上角」的值。** 具体做法是每轮开始前 `prev = 0`（代表 `dp[i-1][0] = 0`），循环里：\n\n```\ntemp = dp[j]           // 记下正上方旧值，它下一列就是左上角\ndp[j] = ...            // 更新\nprev = temp            // 给下一列当左上角\n```\n\n**这个「临时变量保存被覆盖的左上方值」是二维压一维的标准手法**，在编辑距离、最大正方形、不同子序列里都要用。**没掌握它，就只能写二维。**\n\n**空间从 O(m·n) 降到 O(min(m,n))。** 进一步优化：**让较短的串做列**（数组长度取 min(m,n)），这样数组更小。这是一个很实在的常数优化，尤其当两个串长度差很大时。\n\n坑：\n1. `prev` 必须在每行开始重置为 0；\n2. `temp` 要在赋值 `dp[j]` 之前取；\n3. 交换两个串时要注意方法的参数顺序。",
+      "pseudocode": "输入：text1，text2\n输出：LCS 长度\n\n1. 如果 text2 更长：交换 text1 和 text2        // 让短的当列\n2. m = text1 长度，n = text2 长度\n3. dp = 长度 n 加 1 的数组，全 0\n4. 对 i 从 1 到 m：\n     prev = 0                              // 左上角初值 dp[i 减 1][0]\n     对 j 从 1 到 n：\n        temp = dp[j]                       // 先存正上方旧值\n        如果 text1 第 i 减 1 位 等于 text2 第 j 减 1 位：\n           dp[j] = prev 加 1\n        否则：\n           dp[j] = max(dp[j], dp[j 减 1])\n        prev = temp                        // 给下一列当左上角\n5. return dp[n]\n\n用临时变量保存被覆盖的左上角值，是二维压一维的标准手法\n让较短的串做列，数组更小\n复杂度：时间 O(m 乘 n)；空间 O(min(m, n))",
+      "codeJava": "class Solution {\n    public int longestCommonSubsequence(String text1, String text2) {\n        if (text2.length() > text1.length()) {\n            String t = text1;\n            text1 = text2;\n            text2 = t;\n        }\n        int m = text1.length();\n        int n = text2.length();\n        int[] dp = new int[n + 1];\n\n        for (int i = 1; i <= m; i++) {\n            int prev = 0;\n            for (int j = 1; j <= n; j++) {\n                int temp = dp[j];\n                if (text1.charAt(i - 1) == text2.charAt(j - 1)) {\n                    dp[j] = prev + 1;\n                } else {\n                    dp[j] = Math.max(dp[j], dp[j - 1]);\n                }\n                prev = temp;\n            }\n        }\n        return dp[n];\n    }\n}",
+      "timeComplexity": "O(m · n)",
+      "spaceComplexity": "O(min(m, n))"
+    }
+  ]
+}

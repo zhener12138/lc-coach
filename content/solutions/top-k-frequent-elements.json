@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "HashMap 计数后整体排序",
+      "idea": "求出现频率最高的 k 个元素。分两步：**先统计频次，再按频次排序取前 k。**\n\n第一步必须用 `HashMap`，因为元素值范围未知（可能是 `-10^4` 到 `10^4`，也可能更大），不能用数组下标直接当 key。\n\n第二步把 `entrySet` 转成列表，按 value 降序排序，取前 k 个 key。\n\n**为什么这是暴力？** 因为对最多 n 个不同元素做了完整排序，O(n log n)。而这个问题的目标是「前 k 个」，**和第 215 题（第 K 大）本质是同一类问题：不需要全序，只需要部分序。**\n\n**这题的设计很值得注意：它把「计数」和「TopK」两个经典问题串起来了。**\n- 计数 → 哈希表；\n- TopK → 堆 或 桶排序。\n\n**所以正解就在这两个方向的组合里。** 而暴力版的价值是先把「计数」这一半写对，**让你看清瓶颈只在排序这一段。**\n\n**注意返回值要求：** 题目要的是元素值数组 `int[]`，不是频次。从 `entrySet` 里提取时不要拿错。\n\n坑：\n1. `HashMap<Integer, Integer>` 的 key 是元素值，value 是频次；\n2. 降序排序要写 `(a, b) -> b.getValue() - a.getValue()`，**不要写 `a.getValue() - b.getValue()`（那是升序）**；\n3. 频次差不会溢出 int（最多 n 次），用减法比较安全。",
+      "pseudocode": "输入：数组 nums，整数 k\n输出：前 k 高频的元素值数组\n\n1. map = 空 HashMap\n2. 对 nums 里每个 x：map 里 x 的计数加 1\n3. list = map 的所有条目转成列表\n4. 对 list 按 value 降序排序\n5. res = 长度 k 的数组\n6. 对 i 从 0 到 k 减 1：res[i] = list 第 i 项的 key\n7. return res\n\n先用哈希表计数，再整体排序取前 k\n排序是对全部不同元素做的，O(n log n)，是瓶颈\n复杂度：时间 O(n 加 d log d)；空间 O(d)，d 是不同元素个数",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int[] topKFrequent(int[] nums, int k) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int x : nums) map.merge(x, 1, Integer::sum);\n\n        List<Map.Entry<Integer, Integer>> list = new ArrayList<>(map.entrySet());\n        list.sort((a, b) -> b.getValue() - a.getValue());\n\n        int[] res = new int[k];\n        for (int i = 0; i < k; i++) {\n            res[i] = list.get(i).getKey();\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n + d log d)",
+      "spaceComplexity": "O(d)"
+    },
+    {
+      "tier": "better",
+      "title": "小顶堆维护前 k 高频，O(d log k)",
+      "idea": "把 215 题的思路搬过来：**维护大小为 k 的小顶堆，堆顶是「当前 k 个里频次最小的」。** 新元素频次比堆顶大就挤进去。\n\n**为什么用小顶堆？** 和 215 题完全一致：**堆顶永远是想淘汰的那一端。** 你要保留频次最高的 k 个，所以堆顶应该是频次最小的那个，方便判断「新来的能不能挤掉它」。\n\n**堆里存什么？** 存 `int[]{元素值, 频次}`，比较器按频次升序（小顶堆）。\n\n```\nPriorityQueue<int[]> heap = new PriorityQueue<>((a, b) -> a[1] - b[1]);\n```\n\n**复杂度 O(n + d log k)**，比暴力版的 O(d log d) 好，**当 k 远小于 d 时优势明显**（比如 10 万不同元素里只要前 10）。\n\n**为什么还只是「较好」？** 因为本题有一个更强的性质可以利用：**频次的范围是有限的 `[1, n]`。** 有限范围的整数排序可以做到 O(n)——**用桶排序（计数排序）**。堆的 log k 还能再消掉。\n\n**这是「看到值域有限就该想到桶」的典型场景。** 面试时能主动指出这一点，是从「会做」到「会优化」的分水岭。\n\n坑：\n1. 比较器按频次（`[1]`）升序，不要按元素值；\n2. 堆要放满 k 个后再开始淘汰；\n3. 最后要把堆里的元素值取出来。",
+      "pseudocode": "输入：nums，k\n输出：前 k 高频元素值\n\n1. map = 计数器\n2. heap = 小顶堆，元素是 (值, 频次)，按频次升序比较\n3. 对 map 每个条目 (v, c)：\n     heap 压入 (v, c)\n     如果 heap 大小大于 k：heap 弹出堆顶        // 弹掉频次最小的\n4. res = 长度 k 的数组；i = 0\n5. 只要 heap 非空：res[i] = heap 弹出后取元素值；i 加 1\n6. return res\n\n堆顶是当前 k 个里频次最小的，方便判断能否挤进\n复杂度：时间 O(n 加 d log k)；空间 O(d 加 k)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int[] topKFrequent(int[] nums, int k) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int x : nums) map.merge(x, 1, Integer::sum);\n\n        PriorityQueue<int[]> heap = new PriorityQueue<>((a, b) -> a[1] - b[1]);\n        for (Map.Entry<Integer, Integer> e : map.entrySet()) {\n            heap.offer(new int[]{e.getKey(), e.getValue()});\n            if (heap.size() > k) heap.poll();\n        }\n\n        int[] res = new int[k];\n        int i = 0;\n        while (!heap.isEmpty()) {\n            res[i++] = heap.poll()[0];\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n + d log k)",
+      "spaceComplexity": "O(d + k)"
+    },
+    {
+      "tier": "optimal",
+      "title": "桶排序：频次当桶下标，O(n)",
+      "idea": "关键洞察：**频次的取值范围是 `[1, n]`（最多出现 n 次），是有限的小整数。** 有限小整数排序不需要比较排序，用**桶**就能 O(n)。\n\n做法：\n1. 哈希表统计频次；\n2. 建 `n+1` 个桶，`buckets[c]` 存「频次为 c 的所有元素」；\n3. **从大到小遍历桶**（`c = n` 到 `1`），把元素装进结果，凑够 k 个就停。\n\n**为什么桶数用 `n+1`？** 因为有 n 个元素时，某个元素最多出现 n 次。**桶下标直接就是频次，不需要任何比较。**\n\n**从大到小遍历是关键：** 我们要高频的，所以从最大的桶开始拿。**如果从小到大遍历，就得先收集完再反转，白做一遍。**\n\n**为什么这是最优？**\n- 时间 O(n)：统计 O(n) + 建桶 O(d) + 遍历桶 O(n) = O(n)；\n- **这是下界**，因为你至少要把 n 个元素读一遍。\n\n**对比三个版本，收益非常清楚：**\n\n| 版本 | 时间 | 关键手段 |\n|---|---|---|\n| 暴力 | O(d log d) | 比较排序 |\n| 堆 | O(d log k) | 只维护 k 个 |\n| 桶 | O(n) | 利用频次值域有限 |\n\n**这三步递进是「优化思路」的教科书案例：先做对 → 减小规模 → 利用数据特性。** 面试时把这条升级路径讲出来，比只写出最优解更有说服力。\n\n坑：\n1. 桶数组长度是 `n+1`，下标从 1 用到 n（下标 0 空着）；\n2. 从 `n` 递减到 1 遍历；\n3. 每加一个元素要检查是否已凑够 k；\n4. `buckets` 的元素类型是 `List<Integer>`，要先 `new ArrayList<>()` 再 add。",
+      "pseudocode": "输入：nums，k\n输出：前 k 高频元素值\n\n1. map = 计数器；n = nums 长度\n2. buckets = 长度 n 加 1 的列表数组（每个位置先建空列表）\n3. 对 map 每个条目 (v, c)：buckets[c] 加入 v\n4. res = 长度 k 的数组；idx = 0\n5. 对 c 从 n 递减到 1：                     // 从高频到低频\n     对 buckets[c] 里每个 v：\n        res[idx] = v；idx 加 1\n        如果 idx 等于 k：return res\n6. return res\n\n频次值域是 1 到 n 的有限小整数，桶下标直接用频次\n从大到小遍历，凑够 k 就停\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int[] topKFrequent(int[] nums, int k) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int x : nums) map.merge(x, 1, Integer::sum);\n\n        int n = nums.length;\n        List<Integer>[] buckets = new List[n + 1];\n        for (int i = 0; i <= n; i++) buckets[i] = new ArrayList<>();\n        for (Map.Entry<Integer, Integer> e : map.entrySet()) {\n            buckets[e.getValue()].add(e.getKey());\n        }\n\n        int[] res = new int[k];\n        int idx = 0;\n        for (int c = n; c >= 1; c--) {\n            for (int v : buckets[c]) {\n                res[idx++] = v;\n                if (idx == k) return res;\n            }\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    }
+  ]
+}

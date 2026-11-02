@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "递归枚举，用 Set 去重",
+      "idea": "这题和 322 题（零钱兑换）问的东西完全不同：**322 问「最少几枚」，518 问「有多少种组合方式」。** 从最优化变成计数，DP 的聚合方式也就从 min 变成了加法。\n\n最直接的想法：递归枚举「用哪些硬币」，凑出 amount 就计数。但直接枚举会把不同**顺序**算成不同方案：`1+2` 和 `2+1` 会被算两次，而题目认为它们是同一种组合。\n\n暴力版用 `Set<List<Integer>>` 存每种方案再取 size 去重。**这样能出正确答案，但内存和时间都炸**——方案数可能是指数级的。\n\n**为什么必须写这一版？** 因为它把「组合 vs 排列」这个区别**逼到你面前**。你必须亲手看到 `1+2` 和 `2+1` 被重复计数，才会真正理解为什么正解必须用 `start` 下标。**这个认知是 518 和 377（组合总和 IV）的分水岭。**\n\n坑：\n1. 用 `List<Integer>` 当 Set 元素可以，但必须保证加入顺序一致（比如每次排序）才等价；\n2. 递归要有终止（rest==0 或 rest<0 或硬币用完）；\n3. 硬币可以重复使用，所以递归时下标不前进（`i` 而不是 `i+1`）。",
+      "pseudocode": "输入：金额 amount，硬币面值 coins\n输出：组合方式总数\n\n1. set = 空 Set（元素是升序的硬币列表）\n2. dfs(0, amount, 空列表)\n3. return set 的大小\n\ndfs(start, rest, path)：\n4. 如果 rest 等于 0：把 path 排序后加入 set；return\n5. 如果 rest 小于 0：return\n6. 对 i 从 start 到 coins 长度减 1：\n     path 追加 coins[i]\n     dfs(i, rest 减 coins[i], path)          // 传 i 可以重复用\n     path 删末尾\n\n1 加 2 和 2 加 1 是同一组合，但递归会算两次，必须去重\n复杂度：时间 指数级；空间 指数级",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int change(int amount, int[] coins) {\n        Set<List<Integer>> set = new HashSet<>();\n        dfs(coins, 0, amount, new ArrayList<>(), set);\n        return set.size();\n    }\n\n    private void dfs(int[] coins, int start, int rest, List<Integer> path, Set<List<Integer>> set) {\n        if (rest == 0) {\n            List<Integer> copy = new ArrayList<>(path);\n            Collections.sort(copy);\n            set.add(copy);\n            return;\n        }\n        if (rest < 0) return;\n        for (int i = start; i < coins.length; i++) {\n            path.add(coins[i]);\n            dfs(coins, i, rest - coins[i], path, set);\n            path.remove(path.size() - 1);\n        }\n    }\n}",
+      "timeComplexity": "指数级",
+      "spaceComplexity": "指数级"
+    },
+    {
+      "tier": "better",
+      "title": "回溯 + start 下标天然去重",
+      "idea": "上一版用 Set 去重是补救，**真正的解法是在搜索时就避免产生重复**。\n\n关键技巧：**递归时加一个 `start` 下标，只允许选择 `start` 及之后的硬币。** 这样选出的方案天然按硬币下标非递减，`1+2` 之后就不可能再出现 `2+1`（因为选了 2 之后 start 变成 2 的位置，不能回头选 1）。\n\n这是回溯去重的**通用范式**：\n- **排列**（46 题）：用 `used` 数组，允许任意顺序 → 需要标记已用；\n- **组合**（78、39、518 题）：用 `start` 下标，强制非递减 → 天然去重。\n\n**记住这个对应关系，比记住任何一道题的代码都值钱。**\n\n**还可以加排序剪枝：** 先把 `coins` 排序，循环里 `if (coins[i] > rest) break;` 直接跳出（因为后面的更大，都不可能用）。这把搜索空间砍掉一大块。\n\n**为什么这版还只是「较好」？** 因为它仍然是回溯，最坏情况下方案数本身是巨大的（比如 amount=5000，coins=[1]，方案数 1，但如果 coins 有多种小额面值，方案数会爆炸）。**计数类问题应该用 DP 直接算出数量，而不是枚举每一个方案。**\n\n坑：\n1. 递归传 `i` 不是 `i+1`（硬币可重复用）；\n2. 排序后才有 `break` 剪枝的资格；\n3. `rest == 0` 时计数并返回，不要继续往下搜。",
+      "pseudocode": "输入：amount，coins\n输出：组合数\n\n1. 对 coins 排序；count = 0\n2. dfs(0, amount)\n3. return count\n\ndfs(start, rest)：\n4. 如果 rest 等于 0：count 加 1；return\n5. 对 i 从 start 到 coins 长度减 1：\n     如果 coins[i] 大于 rest：跳出          // 排序后才能这么剪\n     dfs(i, rest 减 coins[i])               // 传 i 表示可重复用\n\nstart 下标强制非递减，天然去重，不需要 Set\n排列用 used，组合用 start，这个对应关系要背下来\n复杂度：时间 指数级（等于方案数）；空间 O(amount)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private int count = 0;\n\n    public int change(int amount, int[] coins) {\n        Arrays.sort(coins);\n        dfs(coins, 0, amount);\n        return count;\n    }\n\n    private void dfs(int[] coins, int start, int rest) {\n        if (rest == 0) {\n            count++;\n            return;\n        }\n        for (int i = start; i < coins.length; i++) {\n            if (coins[i] > rest) break;\n            dfs(coins, i, rest - coins[i]);\n        }\n    }\n}",
+      "timeComplexity": "指数级（等于方案数）",
+      "spaceComplexity": "O(amount)"
+    },
+    {
+      "tier": "optimal",
+      "title": "完全背包 DP，外层硬币内层金额",
+      "idea": "计数类问题必须用 DP，不能枚举方案。**但这里有一个决定性的顺序问题，是本题唯一的核心考点：**\n\n**外层循环必须是硬币，内层才是金额。**\n\n为什么？因为：\n- **外层硬币 + 内层金额**：每次只考虑「新加入这一种硬币」，`dp[j] += dp[j-c]` 表示「在已有方案基础上多用一枚 c」。**顺序固定下来，所以组合不重复。**\n- **外层金额 + 内层硬币**：对每个金额，枚举「最后一枚是哪一种」，`1+2` 和 `2+1` 会在不同的 `dp[j]` 更新路径里各算一次。**这就变成了排列。**\n\n**一句话总结：外层硬币是组合，外层金额是排列。** 这正是 518（组合数）和 377（排列数）唯一的代码差别。**背下这句话，两道题一起拿下。**\n\n**内层方向：正序。** 因为是完全背包（硬币可以重复用），`dp[j-c]` 需要包含「本轮刚更新的值」，所以 j 从小到大。**这正好和 416 题（0/1 背包）倒序相反，是两个必须对照记住的点。**\n\n**边界 `dp[0] = 1`**：凑出 0 元有 1 种方式（什么都不选）。**这个 1 不是「凑不出来」而是「空组合算一种」**，如果不写，整张表全是 0。\n\n**复杂度 O(amount · coins)。** amount 最大 5000，coins 最多 300，150 万次加法，很快。\n\n坑：\n1. 外层必须是硬币；\n2. 内层正序；\n3. `dp[0] = 1` 不能漏；\n4. 结果可能很大但力扣保证在 int 范围内（否则要用 long）。",
+      "pseudocode": "输入：amount，coins\n输出：组合数\n\n1. dp = 长度 amount 加 1 的数组；dp[0] = 1\n2. 对 coins 里每个 c：                       // 外层必须是硬币\n     对 j 从 c 到 amount：                    // 内层正序，完全背包\n        dp[j] = dp[j] 加 dp[j 减 c]\n3. return dp[amount]\n\n外层硬币是组合，外层金额是排列，这是 518 和 377 的唯一差别\n内层正序是完全背包，倒序就变成 0/1 背包\n复杂度：时间 O(amount 乘 coins 长度)；空间 O(amount)",
+      "codeJava": "class Solution {\n    public int change(int amount, int[] coins) {\n        int[] dp = new int[amount + 1];\n        dp[0] = 1;\n\n        for (int c : coins) {\n            for (int j = c; j <= amount; j++) {\n                dp[j] += dp[j - c];\n            }\n        }\n        return dp[amount];\n    }\n}",
+      "timeComplexity": "O(amount · coins)",
+      "spaceComplexity": "O(amount)"
+    }
+  ]
+}

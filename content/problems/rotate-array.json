@@ -1,0 +1,49 @@
+{
+  "slug": "rotate-array",
+  "frontendId": "189",
+  "titleEn": "Rotate Array",
+  "titleCn": "轮转数组",
+  "difficulty": "Medium",
+  "tags": "数组,数学,双指针",
+  "contentHtml": "<p>Given an integer array <code>nums</code>, rotate the array to the right by <code>k</code> steps, where <code>k</code> is non-negative.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [1,2,3,4,5,6,7], k = 3\n<strong>Output:</strong> [5,6,7,1,2,3,4]\n<strong>Explanation:</strong>\nrotate 1 steps to the right: [7,1,2,3,4,5,6]\nrotate 2 steps to the right: [6,7,1,2,3,4,5]\nrotate 3 steps to the right: [5,6,7,1,2,3,4]\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [-1,-100,3,99], k = 2\n<strong>Output:</strong> [3,99,-1,-100]\n<strong>Explanation:</strong> \nrotate 1 steps to the right: [99,-1,-100,3]\nrotate 2 steps to the right: [3,99,-1,-100]\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>-2<sup>31</sup> &lt;= nums[i] &lt;= 2<sup>31</sup> - 1</code></li>\n\t<li><code>0 &lt;= k &lt;= 10<sup>5</sup></code></li>\n</ul>\n\n<p>&nbsp;</p>\n<p><strong>Follow up:</strong></p>\n\n<ul>\n\t<li>Try to come up with as many solutions as you can. There are at least <strong>three</strong> different ways to solve this problem.</li>\n\t<li>Could you do it in-place with <code>O(1)</code> extra space?</li>\n</ul>",
+  "contentCnHtml": "<p>给定一个整数数组 <code>nums</code>，将数组中的元素向右轮转 <code>k</code><em>&nbsp;</em>个位置，其中&nbsp;<code>k</code><em>&nbsp;</em>是非负数。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1:</strong></p>\n\n<pre>\n<strong>输入:</strong> nums = [1,2,3,4,5,6,7], k = 3\n<strong>输出:</strong> <code>[5,6,7,1,2,3,4]</code>\n<strong>解释:</strong>\n向右轮转 1 步: <code>[7,1,2,3,4,5,6]</code>\n向右轮转 2 步: <code>[6,7,1,2,3,4,5]\n</code>向右轮转 3 步: <code>[5,6,7,1,2,3,4]</code>\n</pre>\n\n<p><strong>示例&nbsp;2:</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [-1,-100,3,99], k = 2\n<strong>输出：</strong>[3,99,-1,-100]\n<strong>解释:</strong> \n向右轮转 1 步: [99,-1,-100,3]\n向右轮转 2 步: [3,99,-1,-100]</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>-2<sup>31</sup> &lt;= nums[i] &lt;= 2<sup>31</sup> - 1</code></li>\n\t<li><code>0 &lt;= k &lt;= 10<sup>5</sup></code></li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>进阶：</strong></p>\n\n<ul>\n\t<li>尽可能想出更多的解决方案，至少有 <strong>三种</strong> 不同的方法可以解决这个问题。</li>\n\t<li>你可以使用空间复杂度为&nbsp;<code>O(1)</code> 的&nbsp;<strong>原地&nbsp;</strong>算法解决这个问题吗？</li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public void rotate(int[] nums, int k) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "rotate-array",
+      "tier": "brute",
+      "title": "逐次右移一格 · 重复 k 次",
+      "idea": "按题目的字面意思做：右移一格就是把最后一个元素搬到最前面，其余元素整体后移；要右移 k 格就重复 k 次。\n\n为什么这版会超时？每次右移一格需要 O(n) 的搬运，重复 k 次就是 O(n·k)。而 k 可能远大于 n（题目允许 k >= 0 且可能很大，虽然常见数据里 k < n，但即便 k 取到 n=10⁵，也要 10¹⁰ 次操作）。\n\n有一点必须注意：k 应该先对 n 取模。因为右移 n 格等于没动，右移 n+1 格等价于右移 1 格。所以开头写 `k %= n`，这一行能把 k 从任意大的数压到 [0, n)。很多人忘了写，直接用 k 当循环次数，超时就在这儿。\n\n这版的价值在于：它把「右移一格」这个原子操作写得最清楚，后面几个优化版都是在「一次做多格」上做文章。\n\n复杂度 O(n·k)，取模后 O(n²)。",
+      "pseudocode": "输入：整数数组 nums，右移步数 k\n输出：无（原地修改 nums）\n\n1. n = nums 长度\n2. 如果 n 小于等于 1：直接返回（不用动）\n3. k = k 对 n 取模                 // 右移 n 格等于没动\n4. 重复 k 次：\n     a. last = nums[n-1]           // 先存下最后一个，否则会被覆盖\n     b. i 从 n-1 递减到 1：\n          nums[i] = nums[i-1]      // 整体右移一格\n     c. nums[0] = last              // 原来的最后一个放到最前\n\n复杂度：时间 O(n·k)；空间 O(1)",
+      "codeJava": "class Solution {\n    public void rotate(int[] nums, int k) {\n        int n = nums.length;\n        if (n <= 1) return;\n        k = k % n;                    // 关键：先取模，否则 k 可能远大于 n\n\n        for (int t = 0; t < k; t++) {\n            int last = nums[n - 1];   // 先保存最后一个，否则会被覆盖\n            for (int i = n - 1; i >= 1; i--) {\n                nums[i] = nums[i - 1];\n            }\n            nums[0] = last;\n        }\n    }\n}",
+      "timeComplexity": "O(n·k)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "rotate-array",
+      "tier": "better",
+      "title": "辅助数组 · 一次搬到正确位置",
+      "idea": "换个思路：不模拟「一格一格挪」，而是直接算出每个元素「最终该待在哪」，一次性搬过去。\n\n推导：右移 k 格后，原来下标 i 的元素会跑到 (i + k) % n。反过来，新数组下标 j 的位置，应该放原来下标 (j - k + n) % n 的元素。\n\n于是开一个长度 n 的临时数组 tmp，一趟填充：tmp[(i + k) % n] = nums[i]。最后再把 tmp 整体拷回 nums。\n\n相比逐次右移改了什么？把 k 次 O(n) 的搬运压成 2 次 O(n) 遍历，和 k 的大小彻底无关。时间从 O(n·k) 降到 O(n)。\n\n为什么它还不是最优？因为它开了 O(n) 的额外数组。题目进阶要求 O(1) 额外空间，那就得用「三次反转」——这是本题最漂亮的技巧。\n\n注意坑：最后必须用 System.arraycopy 或循环把 tmp 写回 nums，因为题目要求原地修改入参（返回 void）。只返回 tmp 是不算通过的。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：整数数组 nums，右移步数 k\n输出：无（原地修改 nums）\n\n1. n = nums 长度，k = k 对 n 取模\n2. 如果 k 等于 0：直接返回\n3. 建长度 n 的临时数组 tmp\n4. i 从 0 循环到 n-1：\n     tmp[(i + k) % n] = nums[i]        // 原 i 位置的元素最终落在 (i+k)%n\n5. i 从 0 循环到 n-1：\n     nums[i] = tmp[i]                  // 拷回去，因为要原地修改\n\n复杂度：时间 O(n) 两趟；空间 O(n) 临时数组",
+      "codeJava": "class Solution {\n    public void rotate(int[] nums, int k) {\n        int n = nums.length;\n        k = k % n;\n        if (k == 0) return;\n\n        int[] tmp = new int[n];\n        for (int i = 0; i < n; i++) {\n            // 原来第 i 个元素，右移 k 格后落在 (i + k) % n\n            tmp[(i + k) % n] = nums[i];\n        }\n        // 题目要求原地修改入参，必须把 tmp 抄回去\n        System.arraycopy(tmp, 0, nums, 0, n);\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "rotate-array",
+      "tier": "optimal",
+      "title": "三次反转 · 原地 O(1) 空间",
+      "idea": "这是本题的经典技巧，也是「反转」类原地操作的母题。\n\n先看一个例子：nums = [1,2,3,4,5,6,7]，k = 3，期望 [5,6,7,1,2,3,4]。\n\n第一步：整个数组反转 → [7,6,5,4,3,2,1]。\n第二步：前 k 个（3 个）反转 → [5,6,7,4,3,2,1]。\n第三步：剩下 n-k 个（4 个）反转 → [5,6,7,1,2,3,4]。成了。\n\n为什么这一定对？可以这样理解：整体反转把「后半段」搬到了前面、「前半段」搬到了后面，但两段内部顺序都倒过来了；再分别对这两段各反转一次，就各自把顺序正回来。三次反转 = 一次整体倒 + 两次分段倒 = 一次循环移位。\n\n为什么它比辅助数组好？完全没有额外内存，只用两个下标变量，满足题目进阶要求 O(1) 额外空间。而且没有取模运算，常数很小。\n\n实现要点：写一个 reverse(nums, l, r) 辅助方法，闭区间、双指针向中间夹，swap 三次赋值。三次调用别写错边界——第二段是 [0, k-1]，第三段是 [k, n-1]。\n\n复杂度 O(n) 时间，O(1) 额外空间。",
+      "pseudocode": "输入：整数数组 nums，右移步数 k\n输出：无（原地修改 nums）\n\n1. n = nums 长度，k = k 对 n 取模\n2. 如果 k 等于 0：直接返回\n3. reverse(nums, 0, n-1)          // 整体反转\n4. reverse(nums, 0, k-1)          // 前 k 个反转\n5. reverse(nums, k, n-1)          // 后面 n-k 个反转\n\nreverse(nums, l, r) 的定义：\n   当 l 小于 r 循环：\n      交换 nums[l] 和 nums[r]\n      l 加 1，r 减 1\n\n举例：1 2 3 4 5 6 7，k=3\n  整体反转   → 7 6 5 4 3 2 1\n  前 3 个反转 → 5 6 7 4 3 2 1\n  后 4 个反转 → 5 6 7 1 2 3 4\n\n复杂度：时间 O(n) 每段各扫一遍；空间 O(1)",
+      "codeJava": "class Solution {\n    public void rotate(int[] nums, int k) {\n        int n = nums.length;\n        k = k % n;\n        if (k == 0) return;\n\n        reverse(nums, 0, n - 1);   // 整体反转\n        reverse(nums, 0, k - 1);   // 前 k 个反转\n        reverse(nums, k, n - 1);   // 剩下 n-k 个反转\n    }\n\n    // 闭区间 [l, r] 原地反转\n    private void reverse(int[] nums, int l, int r) {\n        while (l < r) {\n            int t = nums[l];\n            nums[l] = nums[r];\n            nums[r] = t;\n            l++;\n            r--;\n        }\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "逐个计数 · 双层循环",
+      "idea": "题目定义很直白：出现次数严格大于 n/2 的元素就是多数元素。那就按定义来——对每个元素，数一遍它在整个数组里出现几次，超过 n/2 就返回它。\n\n为什么这版能过但很慢？n = 5×10⁴ 时最坏要 2.5×10⁹ 次比较，力扣上会超时（本题数据规模约 5×10⁴，Java 勉强擦边，但面试里必须优化）。\n\n为什么它不会返回错答案？因为题目保证多数元素一定存在且唯一。所以哪怕在外层循环里遇到一个非多数元素、数出没超半数，继续往后找一定能在某个位置找到那个多数元素。\n\n这版真正的价值是**定义本身**。后面所有优化（哈希表、排序、摩尔投票）都在回答同一个问题：「怎么用更少的比较次数，找出出现超过一半的那个数」。把定义背牢，比记技巧重要。\n\n复杂度 O(n²) 时间，O(1) 空间。",
+      "pseudocode": "输入：整数数组 nums（保证存在出现次数大于 n/2 的元素）\n输出：那个多数元素\n\n1. n = nums 长度\n2. i 从 0 循环到 n-1：\n     a. count = 0\n     b. j 从 0 循环到 n-1：\n          如果 nums[j] 等于 nums[i]：count 加 1\n     c. 如果 count 大于 n/2：返回 nums[i]\n3. （理论上到不了这里，题目保证有解）返回 -1\n\n复杂度：时间 O(n²)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int majorityElement(int[] nums) {\n        int n = nums.length;\n        for (int i = 0; i < n; i++) {\n            int count = 0;\n            for (int j = 0; j < n; j++) {\n                if (nums[j] == nums[i]) count++;\n            }\n            if (count > n / 2) return nums[i];\n        }\n        return -1;   // 题目保证有解，走不到这里\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "better",
+      "title": "哈希表计数 · 一次遍历",
+      "idea": "暴力版的浪费在于「每个元素都从头数一遍」。改成边扫边累计：用 HashMap 记下每个值出现几次，扫的过程中一旦某个值计数超过 n/2，立刻返回。\n\n为什么能提前返回？因为超过一半的元素只可能有一个，一旦它达到了 n/2+1 次就不会再被别人超过，此时答案已经确定。\n\n相比暴力版改了什么？把 O(n²) 的重复扫描压成一次 O(n) 遍历，每个元素只处理一次。时间从 O(n²) 降到 O(n)。\n\n为什么它不是最优？因为开了 O(n) 的哈希表。而这个问题有一个惊人的性质——可以用 O(1) 空间解决（摩尔投票），所以哈希表只能算「较好」。\n\n实现细节：用 `map.getOrDefault(x, 0) + 1` 一行搞定累加；用 `map.merge` 也行但没必要。判断放在累加之后，别放在之前。\n\n另一个思路（同样 O(n)）：排序后取中间元素 nums[n/2]，因为多数元素超过一半，排序后必然占据中间位置。这版代码只有一行，但时间 O(n log n)，比哈希表略慢，可以作为面试时的一句话补充。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：整数数组 nums\n输出：多数元素\n\n1. n = nums 长度\n2. 建一个空的 HashMap，key 是元素值，value 是出现次数\n3. 对 nums 里的每个 x：\n     a. cnt = map 里 x 的次数（没有就是 0）加 1\n     b. 把 x → cnt 写回 map\n     c. 如果 cnt 大于 n/2：返回 x        // 提前结束\n4. 返回 -1（走不到）\n\n补充一行解法：排序后返回 nums[n/2]，时间 O(n log n)\n\n复杂度：时间 O(n)；空间 O(n) 哈希表",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int majorityElement(int[] nums) {\n        int n = nums.length;\n        Map<Integer, Integer> count = new HashMap<>();\n\n        for (int x : nums) {\n            int cnt = count.getOrDefault(x, 0) + 1;\n            count.put(x, cnt);\n            // 超过一半就是答案，可以立刻返回\n            if (cnt > n / 2) return x;\n        }\n        return -1;   // 题目保证有解，走不到这里\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "摩尔投票 · 抵消法 O(1) 空间",
+      "idea": "这是本题的标准答案，也是「多数元素」类问题的核心技巧。\n\n核心洞察：如果多数元素出现超过一半，那么**把它和任意一个不同的数两两配对抵消**，抵消完之后剩下的那个数一定还是它。为什么？因为它占了超过一半，就算其它所有数都来跟它抵，也抵不完它，它必然有剩余。\n\n算法只有两个变量：candidate（当前候选人）和 count（票数）。遍历数组：\n- 若 count == 0，说明之前的候选人都被抵光了，换当前元素当候选人，count = 1；\n- 若当前元素等于 candidate，count++；\n- 否则 count--（一票抵消）。\n\n走完之后 candidate 就是答案。这是一个极其漂亮的 O(n) 时间、O(1) 空间算法。\n\n相比哈希表版改了什么？把「记录每个数的次数」换成「只维护一个可能出现超过一半的候选」。空间从 O(n) 降到 O(1)。\n\n**必须提醒的一点**：摩尔投票只在「保证存在多数元素」时才能直接返回 candidate。如果题目不保证存在（比如面试官改口问「找出所有出现超过 n/3 的元素」），最后必须再扫一遍验证 candidate 的真实票数。「抵消」只是筛出可能的人，不负责证明。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：整数数组 nums（保证存在多数元素）\n输出：多数元素\n\n1. candidate = 0，count = 0\n2. 对 nums 里的每个 x：\n     a. 如果 count 等于 0：\n          candidate = x，count = 1      // 换候选人\n     b. 否则如果 x 等于 candidate：\n          count 加 1                    // 同党，票数增加\n     c. 否则：\n          count 减 1                    // 异党，两两抵消\n3. 返回 candidate\n\n为什么不验证也对？题目保证多数元素存在，抵消到最后只能是它。\n如果不保证存在，必须再扫一遍数 candidate 的真实次数并校验。\n\n复杂度：时间 O(n) 一次遍历；空间 O(1)",
+      "codeJava": "class Solution {\n    public int majorityElement(int[] nums) {\n        int candidate = 0;\n        int count = 0;\n\n        for (int x : nums) {\n            if (count == 0) {\n                // 之前的候选人都被抵消完了，换当前元素\n                candidate = x;\n                count = 1;\n            } else if (x == candidate) {\n                count++;   // 同党，票数 +1\n            } else {\n                count--;   // 异党，一票抵消\n            }\n        }\n        // 题目保证多数元素存在，candidate 即为答案；\n        // 若不保证，这里需要再扫一遍校验真实次数\n        return candidate;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

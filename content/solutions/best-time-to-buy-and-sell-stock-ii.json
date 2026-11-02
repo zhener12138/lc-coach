@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "回溯枚举所有买和卖的时机",
+      "idea": "可以买卖多次，但**同一时间只能持有一股**（必须先卖再买）。最直接的想法：回溯枚举每一天「买」「卖」「不动」三种选择。\n\n这个模型很完整，而且能推广到所有股票题（含冷冻期、含手续费、限交易次数）。**但它是指数级的**：n 天就是 3 的 n 次方。力扣本题 n 最大 3 万，完全不可能。\n\n**为什么还是要写？** 因为**这是股票系列的统一模型**。你把「每天三种选择」这个搜索树画出来，就理解了为什么状态只需要「是否持股」这一个维度——因为「买了多少」「卖了几次」这些信息，题目要么不限（本题），要么用额外维度记录（188 题限 k 次）。\n\n**这题的规则细节最容易被忽略：**\n- 必须先买后卖，不能卖空；\n- 同一时刻只能持有一股，所以买之前必须已经卖掉；\n- 不能在同一天既买又卖（力扣的判定下这是无意义的，因为价格相同，赚 0）。\n\n坑：\n1. 用 `hold` 标记当前是否持股；\n2. 卖出时把利润加入；\n3. 持仓状态在递归返回后要恢复。",
+      "pseudocode": "输入：每天价格 prices\n输出：最大利润\n\n1. best = 0；dfs(0, false, 0)\n2. return best\n\ndfs(day, hold, profit)：\n3. 如果 day 等于 n：best = max(best, profit)；return\n4. 选择一：不动 → dfs(day 加 1, hold, profit)\n5. 如果 hold 为 false：\n     选择二：买入 → dfs(day 加 1, true, profit 减 prices[day])\n6. 如果 hold 为 true：\n     选择三：卖出 → dfs(day 加 1, false, profit 加 prices[day])\n\n每天三种选择，这是股票系列的统一模型\n指数级，只用来理解状态维度\n复杂度：时间 O(3 的 n 次方)；空间 O(n)",
+      "codeJava": "class Solution {\n    private int best = 0;\n\n    public int maxProfit(int[] prices) {\n        dfs(prices, 0, false, 0);\n        return best;\n    }\n\n    private void dfs(int[] prices, int day, boolean hold, int profit) {\n        if (day == prices.length) {\n            best = Math.max(best, profit);\n            return;\n        }\n        dfs(prices, day + 1, hold, profit);\n        if (!hold) dfs(prices, day + 1, true, profit - prices[day]);\n        else dfs(prices, day + 1, false, profit + prices[day]);\n    }\n}",
+      "timeComplexity": "O(3ⁿ)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "贪心：把所有上涨段都吃掉",
+      "idea": "这题有一个极漂亮的观察：**既然可以无限次交易，那所有「上涨」都可以赚到。**\n\n具体说：如果 `prices[i] > prices[i-1]`，就在 i-1 买、i 卖，赚 `prices[i] - prices[i-1]`。把所有这样的差值加起来，就是最大利润。\n\n**为什么这是对的？** 用「拆解」的思路：一段从 a 涨到 b 再涨到 c 的行情，`(c-a) = (b-a) + (c-b)`。所以「a 买 c 卖」和「a 买 b 卖、b 买 c 卖」收益完全相同。**因此任何一段上涨都可以拆成相邻的小段，逐段吃收益。**\n\n反过来，如果行情下跌了，`prices[i] < prices[i-1]`，那就别持股穿越这段，什么都不做。\n\n**这个论证的价值在于：它把「持有/不持有」的 DP 转化成了「只看相邻差」的贪心**，代码从十几行变成一个循环。**但注意它只适用于「无限次交易」这个前提。** 一旦加上「限 k 次」或「含手续费」，拆解就不成立了，必须回到 DP。\n\n**这算「较好」而不是「最优」是因为：** 贪心版和 DP 版时间复杂度都是 O(n)，但 DP 版是通用骨架，可以扩展到 309（冷冻期）、714（手续费）、123/188（限次数）。**面试建议先讲贪心（体现洞察），再讲 DP（体现通用性）。**\n\n坑：\n1. 从 i=1 开始循环；\n2. 只累加正差值，负的跳过；\n3. 空数组或长度 1 返回 0。",
+      "pseudocode": "输入：prices\n输出：最大利润\n\n1. profit = 0\n2. 对 i 从 1 到 n 减 1：\n     如果 prices[i] 大于 prices[i 减 1]：\n        profit 加 prices[i] 减 prices[i 减 1]\n3. return profit\n\n上涨段可以任意拆分，收益不变，所以逐段吃\n只在「无限次交易」时成立，加了限制就得回 DP\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int maxProfit(int[] prices) {\n        int profit = 0;\n        for (int i = 1; i < prices.length; i++) {\n            if (prices[i] > prices[i - 1]) {\n                profit += prices[i] - prices[i - 1];\n            }\n        }\n        return profit;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "optimal",
+      "title": "持股/不持股双状态 DP，可扩展到所有变体",
+      "idea": "把上一版的贪心换成**状态机 DP**，这才是股票系列的通用骨架。\n\n两个状态：\n- `hold` = **今天结束时持股**的最大收益；\n- `free` = **今天结束时不持股**的最大收益。\n\n转移（对每天的价格 p）：\n```\nnewHold = max(hold, free - p)   // 继续持股，或今天买入\nnewFree = max(free, hold + p)   // 继续空仓，或今天卖出\n```\n\n**关键点：新状态必须基于旧状态计算，不能用本轮已更新的值。** 所以我用 `newHold` / `newFree` 两个临时变量，算完再统一赋值。**这和 152 题（乘积最大子数组）的坑一模一样——就地更新会让两个状态互相污染。**\n\n**初值：** `hold = -prices[0]`（第一天买入），`free = 0`（第一天什么都不做）。如果直接设 `hold = 0`，就等于「白捡一股」，答案会多算。\n\n**为什么这一版是最优的（在有意义的意义上）？**\n- 时间 O(n)，空间 O(1)，和贪心版持平；\n- **但它可以一行不改地扩展到所有变体**：加冷冻期就多一个 `cooldown` 状态，加手续费就在卖出时减 fee，限 k 次就加一维 k。\n\n**面试正确的打法：** 先写这一版（因为它是通用骨架，白板上一气呵成），讲清状态定义和转移；然后补一句「本题因为可以无限次交易，还有个更短的贪心解法」，再写三行贪心。**两版都给出，展示的是「我知道通用解，也知道特例简化」，这是加分项。**\n\n坑：\n1. 必须用临时变量，不能就地改 `hold` 和 `free`；\n2. `hold` 初值是 `-prices[0]`，不是 0；\n3. 答案是 `free`（最后必须清仓才能算利润）。",
+      "pseudocode": "输入：prices\n输出：最大利润\n\n1. 如果 prices 为空：return 0\n2. hold = 负的 prices[0]                  // 第一天买入\n3. free = 0                              // 第一天不操作\n4. 对 i 从 1 到 n 减 1：\n     p = prices[i]\n     newHold = max(hold, free 减 p)       // 继续持股 或 今天买入\n     newFree = max(free, hold 加 p)       // 继续空仓 或 今天卖出\n     hold = newHold；free = newFree\n5. return free\n\n必须用临时变量，就地改会让两个状态互相污染\n这个骨架能直接扩展到冷冻期、手续费、限次数\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int maxProfit(int[] prices) {\n        if (prices.length == 0) return 0;\n        int hold = -prices[0];\n        int free = 0;\n\n        for (int i = 1; i < prices.length; i++) {\n            int p = prices[i];\n            int newHold = Math.max(hold, free - p);\n            int newFree = Math.max(free, hold + p);\n            hold = newHold;\n            free = newFree;\n        }\n        return free;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

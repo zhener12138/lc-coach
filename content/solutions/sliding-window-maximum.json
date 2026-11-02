@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "每个窗口扫一遍找最大",
+      "idea": "最直白：窗口长度固定为 k，从下标 0 滑到 n-k，每个窗口内部扫一遍找最大值，存进结果数组。\n\n复杂度多少？共 n-k+1 个窗口，每个扫 k 个元素，O(n·k)。n = 10⁵、k = 5×10⁴ 时是 5×10⁹ 次，必然超时。\n\n这版的价值在于把「固定长度窗口」的边界写清楚：第 i 个窗口覆盖 [i, i+k-1]，共 n-k+1 个窗口。后面所有优化版都沿用这个边界，只是换掉「找最大」的方法。\n\n一个常错点：结果数组长度是 n-k+1，不是 n。开小了会越界，开大了末尾会多出 0。\n\n思考方向：暴力慢在「每次重新找最大」。而相邻两个窗口只差「进一个、出一个」两个元素，如果能复用上一次的结果、只处理这两个变化，就能变快。这就通向单调队列。\n\n复杂度 O(n·k) 时间，O(1) 额外空间（不算返回值）。",
+      "pseudocode": "输入：整数数组 nums，窗口大小 k\n输出：每个窗口内的最大值组成的数组\n\n1. n = nums 长度\n2. 如果 n 等于 0 或 k 等于 0：返回空数组\n3. 结果数组 res 长度 = n-k+1\n4. i 从 0 循环到 n-k：\n     a. mx = nums[i]\n     b. j 从 i+1 循环到 i+k-1：\n          mx = max(mx, nums[j])\n     c. res[i] = mx\n5. 返回 res\n\n复杂度：时间 O(n·k)；空间 O(1) 额外",
+      "codeJava": "class Solution {\n    public int[] maxSlidingWindow(int[] nums, int k) {\n        int n = nums.length;\n        if (n == 0 || k == 0) return new int[0];\n\n        int[] res = new int[n - k + 1];   // 窗口个数是 n-k+1，别开错\n        for (int i = 0; i <= n - k; i++) {\n            int mx = nums[i];\n            for (int j = i + 1; j < i + k; j++) {\n                if (nums[j] > mx) mx = nums[j];\n            }\n            res[i] = mx;\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n·k)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "better",
+      "title": "大顶堆 · 懒删除过期元素",
+      "idea": "维护一个装 (值, 下标) 的大顶堆，堆顶就是当前窗口最大值。每次窗口右移，把新元素入堆，然后检查堆顶下标是否已经滑出窗口——如果过期就弹出，直到堆顶有效。\n\n为什么用「懒删除」而不是精确删除？因为 Java 的 PriorityQueue 不支持按元素删除（O(n)），但堆可以随时弹出堆顶。过期元素留在堆里不影响正确性，只会在它浮到堆顶时被清掉。\n\n时间复杂度：每个元素入堆一次 O(log n)，出堆一次 O(log n)，总共 O(n log n)。\n\n相比暴力版改了什么？不再对每个窗口重扫 k 个元素，而是用堆复用「历史候选」。O(n·k) 降到 O(n log n)。\n\n为什么它不是最优？堆里可能堆积大量过期元素，且每次都要 log n。而实际上「一个更小的元素如果排在更大元素后面，它永远不可能是答案」——这个观察让我们能直接淘汰它，从而得到 O(n) 的单调队列。\n\n实现细节：堆里存 int[]{值, 下标}，比较器按值降序；也可以用 Integer 下标配合 nums 比较。\n\n复杂度 O(n log n) 时间，O(n) 空间。",
+      "pseudocode": "输入：整数数组 nums，窗口大小 k\n输出：每个窗口最大值数组\n\n1. n = nums 长度，res 长度 n-k+1\n2. 建大顶堆 pq，元素是 (值, 下标)，按值降序\n3. i 从 0 循环到 n-1：\n     a. 把 (nums[i], i) 入堆\n     b. 如果 i 大于等于 k-1（窗口已满）：\n          当堆顶下标 小于等于 i-k 循环：弹出堆顶（过期）\n          res[i-k+1] = 堆顶的值\n4. 返回 res\n\n为什么懒删除可行：过期元素留在堆里不影响正确性，浮到堆顶时才清掉\n复杂度：时间 O(n log n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int[] maxSlidingWindow(int[] nums, int k) {\n        int n = nums.length;\n        if (n == 0 || k == 0) return new int[0];\n\n        int[] res = new int[n - k + 1];\n        // 大顶堆，按值降序；值相同时按下标降序（保持稳定）\n        PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) ->\n                a[0] != b[0] ? b[0] - a[0] : b[1] - a[1]);\n\n        for (int i = 0; i < n; i++) {\n            pq.offer(new int[]{nums[i], i});\n            if (i >= k - 1) {\n                // 懒删除：堆顶下标滑出窗口就弹掉\n                while (pq.peek()[1] <= i - k) pq.poll();\n                res[i - k + 1] = pq.peek()[0];\n            }\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "单调队列 · 存下标维护递减",
+      "idea": "本题标准答案。核心观察：在一个窗口里，如果 i < j 且 nums[i] <= nums[j]，那么**只要 j 还在窗口里，i 就永远不可能成为最大值**——它比 j 小、还比 j 先过期，彻底没用。既然如此，直接把它淘汰掉。\n\n于是维护一个双端队列 deque，里面存下标，对应的值是**严格递减**的（队首最大）。每来一个新元素：\n1. 从队尾往前弹掉所有「值 ≤ 新值」的下标（它们永远不可能成为答案）；\n2. 把新下标入队尾；\n3. 检查队首下标是否滑出窗口（下标 ≤ i-k），过期就弹出；\n4. 此时队首就是当前窗口最大值。\n\n为什么是 O(n)？每个下标最多入队一次、出队一次，总操作 2n 次。**队列里存下标而不是值**是关键——因为要靠下标判断过期。\n\n相比堆版改了什么？堆要对每个元素做 log n 的插入，还要花代价清理过期元素；单调队列直接通过「淘汰不可能更优的候选」把队列长度压住，每步均摊 O(1)。O(n log n) 降到 O(n)。\n\n这是「单调队列」的模板，值得背下来。同类题还有「滑动窗口最小值」「和至少为 K 的最短子数组」。\n\n复杂度 O(n) 时间，O(k) 空间。",
+      "pseudocode": "输入：整数数组 nums，窗口大小 k\n输出：每个窗口最大值数组\n\n1. n = nums 长度，res 长度 n-k+1\n2. 建空的双端队列 deque（存下标），deque 里的值严格递减\n3. i 从 0 循环到 n-1：\n     a. 当 deque 非空 且 nums[deque 队尾] 小于等于 nums[i] 循环：\n          从队尾弹出        // 又小又先过期，永远不可能是答案\n     b. 把 i 加到队尾\n     c. 如果队首下标 小于等于 i-k：从队首弹出（已滑出窗口）\n     d. 如果 i 大于等于 k-1：res[i-k+1] = nums[deque 队首]\n4. 返回 res\n\n为什么存下标不存值：要靠下标判断是否过期\n复杂度：时间 O(n) 每个下标进出各一次；空间 O(k)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int[] maxSlidingWindow(int[] nums, int k) {\n        int n = nums.length;\n        if (n == 0 || k == 0) return new int[0];\n\n        int[] res = new int[n - k + 1];\n        Deque<Integer> dq = new ArrayDeque<>();   // 存下标，值递减\n\n        for (int i = 0; i < n; i++) {\n            // 1. 队尾所有「值 <= 当前值」的下标都没用了，弹掉\n            while (!dq.isEmpty() && nums[dq.peekLast()] <= nums[i]) {\n                dq.pollLast();\n            }\n            // 2. 当前下标入队尾\n            dq.offerLast(i);\n            // 3. 队首过期就弹出（滑出窗口左边）\n            if (dq.peekFirst() <= i - k) {\n                dq.pollFirst();\n            }\n            // 4. 窗口满了就记录队首对应的值\n            if (i >= k - 1) {\n                res[i - k + 1] = nums[dq.peekFirst()];\n            }\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(k)"
+    }
+  ]
+}

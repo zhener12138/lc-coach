@@ -1,0 +1,49 @@
+{
+  "slug": "search-in-rotated-sorted-array",
+  "frontendId": "33",
+  "titleEn": "Search in Rotated Sorted Array",
+  "titleCn": "搜索旋转排序数组",
+  "difficulty": "Medium",
+  "tags": "数组,二分查找",
+  "contentHtml": "<p>There is an integer array <code>nums</code> sorted in ascending order (with <strong>distinct</strong> values).</p>\n\n<p>Prior to being passed to your function, <code>nums</code> is <strong>possibly left rotated</strong> at an unknown index <code>k</code> (<code>1 &lt;= k &lt; nums.length</code>) such that the resulting array is <code>[nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]]</code> (<strong>0-indexed</strong>). For example, <code>[0,1,2,4,5,6,7]</code> might be left rotated by&nbsp;<code>3</code>&nbsp;indices and become <code>[4,5,6,7,0,1,2]</code>.</p>\n\n<p>Given the array <code>nums</code> <strong>after</strong> the possible rotation and an integer <code>target</code>, return <em>the index of </em><code>target</code><em> if it is in </em><code>nums</code><em>, or </em><code>-1</code><em> if it is not in </em><code>nums</code>.</p>\n\n<p>You must write an algorithm with <code>O(log n)</code> runtime complexity.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<pre><strong>Input:</strong> nums = [4,5,6,7,0,1,2], target = 0\n<strong>Output:</strong> 4\n</pre><p><strong>Example 2:</strong></p>\n<pre><strong>Input:</strong> nums = [4,5,6,7,0,1,2], target = 3\n<strong>Output:</strong> -1\n</pre><p><strong>Example 3:</strong></p>\n<pre><strong>Input:</strong> nums = [1], target = 0\n<strong>Output:</strong> -1\n</pre>\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 5000</code></li>\n\t<li><code>-10<sup>4</sup> &lt;= nums[i] &lt;= 10<sup>4</sup></code></li>\n\t<li>All values of <code>nums</code> are <strong>unique</strong>.</li>\n\t<li><code>nums</code> is an ascending array that is possibly rotated.</li>\n\t<li><code>-10<sup>4</sup> &lt;= target &lt;= 10<sup>4</sup></code></li>\n</ul>",
+  "contentCnHtml": "<p>整数数组 <code>nums</code> 按升序排列，数组中的值 <strong>互不相同</strong> 。</p>\n\n<p>在传递给函数之前，<code>nums</code> 在预先未知的某个下标 <code>k</code>（<code>0 &lt;= k &lt; nums.length</code>）上进行了 <strong>向左旋转</strong>，使数组变为 <code>[nums[k], nums[k+1], ..., nums[n-1], nums[0], nums[1], ..., nums[k-1]]</code>（下标 <strong>从 0 开始</strong> 计数）。例如， <code>[0,1,2,4,5,6,7]</code> 下标&nbsp;<code>3</code>&nbsp;上向左旋转后可能变为&nbsp;<code>[4,5,6,7,0,1,2]</code> 。</p>\n\n<p>给你 <strong>旋转后</strong> 的数组 <code>nums</code> 和一个整数 <code>target</code> ，如果 <code>nums</code> 中存在这个目标值 <code>target</code> ，则返回它的下标，否则返回&nbsp;<code>-1</code>&nbsp;。</p>\n\n<p>你必须设计一个时间复杂度为 <code>O(log n)</code> 的算法解决此问题。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [4,5,6,7,0,1,2], target = 0\n<strong>输出：</strong>4\n</pre>\n\n<p><strong>示例&nbsp;2：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [4,5,6,7,0,1,2], target = 3\n<strong>输出：</strong>-1</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [1], target = 0\n<strong>输出：</strong>-1\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 5000</code></li>\n\t<li><code>-10<sup>4</sup> &lt;= nums[i] &lt;= 10<sup>4</sup></code></li>\n\t<li><code>nums</code> 中的每个值都 <strong>独一无二</strong></li>\n\t<li>题目数据保证 <code>nums</code> 在预先未知的某个下标上进行了旋转</li>\n\t<li><code>-10<sup>4</sup> &lt;= target &lt;= 10<sup>4</sup></code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int search(int[] nums, int target) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "search-in-rotated-sorted-array",
+      "tier": "brute",
+      "title": "线性扫描 · 直接找 target",
+      "idea": "题目给的数组是「升序数组在某个位置旋转」的结果，但它仍然是一个长度为 n 的数组，target 要么在里面要么不在。最直接就是从头扫到尾。\n\n为什么这算合法答案？因为题目只要求「找到返回下标，找不到返回 -1」，没有强制 O(log n)。面试里如果一时想不出二分，先说这版再优化，比卡住强。\n\n为什么必须优化？时间复杂度 O(n)，题目给了有序数组这个强条件，不用二分相当于浪费了条件。面试官问「还能更快吗」时你必须有下一步。\n\n为什么值得先写？因为它给出了**两个必须保留的语义**：\n1. 找不到返回 **-1**（不是 -1 的下标，是明确的哨兵值）；\n2. 返回的是**原始数组里的真实下标**，旋转后的位置不能自己换算错。\n\n这两点在二分版里也必须严格遵守，尤其第 2 点——旋转数组的坑就是很容易把「逻辑位置」和「真实下标」搞混。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：旋转过的升序数组 nums，target\n输出：target 的下标，找不到返回 -1\n\n1. i 从 0 循环到 nums 长度减 1：\n     如果 nums[i] 等于 target：return i\n     否则继续往右看下一个元素\n2. 整条扫完都没命中，说明 target 不在数组里\n3. 返回 -1\n\n两个必须保留的语义：找不到返回 -1；返回的是原始真实下标\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int search(int[] nums, int target) {\n        for (int i = 0; i < nums.length; i++) {\n            if (nums[i] == target) return i;\n        }\n        return -1;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "search-in-rotated-sorted-array",
+      "tier": "better",
+      "title": "先二分找旋转点 · 再二分查找",
+      "idea": "把问题拆成两个独立的子问题，各自都是标准二分——这是最容易想到的 O(log n) 方案。\n\n第一步：找最小值的位置（也就是旋转点）。旋转数组的性质是「从旋转点开始才是升序的」。用二分：比较 `nums[mid]` 与 `nums[right]`，若 `nums[mid] > nums[right]` 说明最小值在右半，`left = mid + 1`；否则 `right = mid`。这和 153 题完全一样。\n\n第二步：得到旋转点 k 之后，数组被分成两段，各自升序：`[0, k-1]` 和 `[k, n-1]`。先判断 target 落在哪一段（用两个端点的值比较就知道），然后在那一段里做标准二分。\n\n为什么这一定对？因为旋转后数组必然由两段升序组成，且第一段的任意元素都大于第二段的任意元素（前提元素互不相同，题目保证）。所以 `target >= nums[k] && target <= nums[n-1]` 就说明在第二段，否则在第一段。\n\n相比线性版改了什么？把 O(n) 变成两次 O(log n)，总量级 O(log n)。\n\n为什么还不是最优？因为**需要两次遍历、两次二分**，代码长、边界多（k 可能是 0，也就是没旋转；某一段可能为空）。面试里能一次二分为什么要写两次？下一版就是把这两步合并。但这个「先找旋转点再查」的思路非常重要——153、154、1752 等题都是它的直接应用。\n\n坑：k == 0 时第一段为空，区间会变成 `[0, -1]`，二分必须能安全处理空区间（用 `left <= right` 写法时会自然跳过）。\n\n复杂度 O(log n) 时间，O(1) 空间。",
+      "pseudocode": "输入：旋转数组 nums，target\n输出：下标或 -1\n\n第一步：找旋转点（最小值下标）\n  left = 0，right = n - 1\n  当 left 小于 right：\n     mid = left + (right - left) / 2\n     如果 nums[mid] 大于 nums[right]：left = mid + 1\n     否则：right = mid\n  k = left\n\n第二步：判断 target 在哪一段，在那段里标准二分\n  如果 target 在 nums[k] 到 nums[n-1] 之间：lo = k，hi = n - 1\n  否则：lo = 0，hi = k - 1\n  在 lo 到 hi 上做标准二分，命中返回下标，否则 -1\n\n坑：k 可能为 0，第一段变成空区间，二分要能安全跳过\n复杂度：时间 O(log n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int search(int[] nums, int target) {\n        int n = nums.length;\n\n        // 第一步：二分找旋转点（最小值位置）\n        int left = 0, right = n - 1;\n        while (left < right) {\n            int mid = left + (right - left) / 2;\n            if (nums[mid] > nums[right]) left = mid + 1;\n            else right = mid;\n        }\n        int k = left;\n\n        // 第二步：判断 target 落在哪一段升序区间\n        int lo, hi;\n        if (target >= nums[k] && target <= nums[n - 1]) {\n            lo = k; hi = n - 1;   // 后半段\n        } else {\n            lo = 0; hi = k - 1;   // 前半段（k == 0 时为空区间）\n        }\n\n        while (lo <= hi) {\n            int mid = lo + (hi - lo) / 2;\n            if (nums[mid] == target) return mid;\n            else if (nums[mid] < target) lo = mid + 1;\n            else hi = mid - 1;\n        }\n        return -1;\n    }\n}",
+      "timeComplexity": "O(log n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "search-in-rotated-sorted-array",
+      "tier": "optimal",
+      "title": "单次二分 · 每步判断哪半边有序",
+      "idea": "两次二分可以合成一次。关键洞察是：**在任何一次二分的中点上，左半段和右半段里必有且仅有一段是完全有序的**（因为数组只在某一处断开）。\n\n于是每一步这样做：\n1. 算出 mid，先看 `nums[mid] == target`，命中直接返回；\n2. 判断哪半边有序：如果 `nums[left] <= nums[mid]`，说明**左半段有序**；否则右半段有序；\n3. 在有序的那半段里判断 target 在不在：\n   - 左半有序时：若 `nums[left] <= target && target < nums[mid]`，说明 target 在左半，`right = mid - 1`；否则去右半，`left = mid + 1`；\n   - 右半有序时：若 `nums[mid] < target && target <= nums[right]`，去右半，`left = mid + 1`；否则去左半，`right = mid - 1`。\n\n为什么这个判断一定正确？因为**有序的那半段可以用区间端点直接判断「在不在范围内」**，而不有序的那半段没法这样判断。所以只要判断有序半边，答案就唯一确定了，另一半必然可以整段丢掉。\n\n为什么这是最优？一次遍历，O(log n)，无额外空间，也没有第一次找旋转点的开销。这是本题的标准答案。\n\n**三个最容易写错的点（这题的错误率极高）**：\n1. `nums[left] <= nums[mid]` 里的 `<=` 不能写成 `<`。当 `left == mid`（区间只剩两个元素）时，`<` 会误判成「右半有序」，然后走进错误分支。\n2. 判断 target 在左半时条件是 `target < nums[mid]`（严格小于），因为 `== nums[mid]` 已经在第 1 步返回了。写成 `<=` 虽然也对，但要知道为什么。\n3. 两个分支里的 `right = mid - 1` / `left = mid + 1` 一定同时出现——如果只写一个，会死循环。\n\n复杂度 O(log n) 时间，O(1) 空间。",
+      "pseudocode": "输入：旋转数组 nums，target\n输出：下标或 -1\n\n1. left = 0，right = n - 1\n2. 当 left 小于等于 right 循环：\n     mid = left + (right - left) / 2\n     a. 如果 nums[mid] 等于 target：return mid\n     b. 如果 nums[left] 小于等于 nums[mid]：        // 左半段有序\n         如果 nums[left] 小于等于 target 且 target 小于 nums[mid]：\n            right = mid - 1        // target 在左半\n         否则：left = mid + 1       // 去右半\n     c. 否则：                                     // 右半段有序\n         如果 nums[mid] 小于 target 且 target 小于等于 nums[right]：\n            left = mid + 1         // target 在右半\n         否则：right = mid - 1      // 去左半\n3. 返回 -1\n\n关键：每次只判断「有序的那一半」，有序才能用端点判断范围\n坑一：nums[left] <= nums[mid] 的 <= 不能写成 <\n坑二：两个分支必须同时有 mid 加减 1，否则死循环\n复杂度：时间 O(log n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int search(int[] nums, int target) {\n        int left = 0, right = nums.length - 1;\n\n        while (left <= right) {\n            int mid = left + (right - left) / 2;\n\n            if (nums[mid] == target) return mid;\n\n            if (nums[left] <= nums[mid]) {\n                // 左半段有序\n                if (nums[left] <= target && target < nums[mid]) {\n                    right = mid - 1;    // target 在左半\n                } else {\n                    left = mid + 1;     // 在右半（无序那半）\n                }\n            } else {\n                // 右半段有序\n                if (nums[mid] < target && target <= nums[right]) {\n                    left = mid + 1;     // target 在右半\n                } else {\n                    right = mid - 1;    // 在左半（无序那半）\n                }\n            }\n        }\n        return -1;\n    }\n}",
+      "timeComplexity": "O(log n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

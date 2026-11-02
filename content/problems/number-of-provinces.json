@@ -1,0 +1,49 @@
+{
+  "slug": "number-of-provinces",
+  "frontendId": "547",
+  "titleEn": "Number of Provinces",
+  "titleCn": "省份数量",
+  "difficulty": "Medium",
+  "tags": "深度优先搜索,广度优先搜索,并查集,图",
+  "contentHtml": "<p>There are <code>n</code> cities. Some of them are connected, while some are not. If city <code>a</code> is connected directly with city <code>b</code>, and city <code>b</code> is connected directly with city <code>c</code>, then city <code>a</code> is connected indirectly with city <code>c</code>.</p>\n\n<p>A <strong>province</strong> is a group of directly or indirectly connected cities and no other cities outside of the group.</p>\n\n<p>You are given an <code>n x n</code> matrix <code>isConnected</code> where <code>isConnected[i][j] = 1</code> if the <code>i<sup>th</sup></code> city and the <code>j<sup>th</sup></code> city are directly connected, and <code>isConnected[i][j] = 0</code> otherwise.</p>\n\n<p>Return <em>the total number of <strong>provinces</strong></em>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/12/24/graph1.jpg\" />\n<pre>\n<strong>Input:</strong> isConnected = [[1,1,0],[1,1,0],[0,0,1]]\n<strong>Output:</strong> 2\n</pre>\n\n<p><strong>Example 2:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/12/24/graph2.jpg\" />\n<pre>\n<strong>Input:</strong> isConnected = [[1,0,0],[0,1,0],[0,0,1]]\n<strong>Output:</strong> 3\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= n &lt;= 200</code></li>\n\t<li><code>n == isConnected.length</code></li>\n\t<li><code>n == isConnected[i].length</code></li>\n\t<li><code>isConnected[i][j]</code> is <code>1</code> or <code>0</code>.</li>\n\t<li><code>isConnected[i][i] == 1</code></li>\n\t<li><code>isConnected[i][j] == isConnected[j][i]</code></li>\n</ul>",
+  "contentCnHtml": "<div>\n<div>\n<p>有 <code>n</code> 个城市，其中一些彼此相连，另一些没有相连。如果城市 <code>a</code> 与城市 <code>b</code> 直接相连，且城市 <code>b</code> 与城市 <code>c</code> 直接相连，那么城市 <code>a</code> 与城市 <code>c</code> 间接相连。</p>\n\n<p><strong>省份</strong> 是一组直接或间接相连的城市，组内不含其他没有相连的城市。</p>\n\n<p>给你一个 <code>n x n</code> 的矩阵 <code>isConnected</code> ，其中 <code>isConnected[i][j] = 1</code> 表示第 <code>i</code> 个城市和第 <code>j</code> 个城市直接相连，而 <code>isConnected[i][j] = 0</code> 表示二者不直接相连。</p>\n\n<p>返回矩阵中 <strong>省份</strong> 的数量。</p>\n\n<p><strong>示例 1：</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/12/24/graph1.jpg\" />\n<pre>\n<strong>输入：</strong>isConnected = [[1,1,0],[1,1,0],[0,0,1]]\n<strong>输出：</strong>2\n</pre>\n\n<p><strong>示例 2：</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/12/24/graph2.jpg\" />\n<pre>\n<strong>输入：</strong>isConnected = [[1,0,0],[0,1,0],[0,0,1]]\n<strong>输出：</strong>3\n</pre>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 <= n <= 200</code></li>\n\t<li><code>n == isConnected.length</code></li>\n\t<li><code>n == isConnected[i].length</code></li>\n\t<li><code>isConnected[i][j]</code> 为 <code>1</code> 或 <code>0</code></li>\n\t<li><code>isConnected[i][i] == 1</code></li>\n\t<li><code>isConnected[i][j] == isConnected[j][i]</code></li>\n</ul>\n</div>\n</div>",
+  "javaTemplate": "class Solution {\n    public int findCircleNum(int[][] isConnected) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "number-of-provinces",
+      "tier": "brute",
+      "title": "DFS 泛洪，标记整块",
+      "idea": "省份数量 = 邻接矩阵表示的图的连通块个数。和岛屿数量是同一个问题，只是把「网格四连通」换成了「矩阵里 `isConnected[i][j] == 1` 表示 i 和 j 相邻」。\n\n解法照搬：扫每个城市，遇到没访问过的，省份数加一，然后从它出发把整个连通块标记完。\n\n**为什么这里不能像岛屿那样「直接把 1 改成 0」？** 因为邻接矩阵是对称的，`isConnected[i][j]` 同时承载了「i 到 j」和「j 到 i」两条边的信息。改掉一个会破坏另一个方向的判断。所以这里必须另开一个 `visited` 数组。这是本题和岛屿数量的关键差异，值得记住。\n\n为什么算暴力？递归深度最坏是 n（链状连接），n=200 时完全安全，所以这题其实不存在栈溢出问题。它「暴力」仅体现在没有做任何结构上的优化。\n\n坑：\n1. 必须用额外的 visited 数组，不能改原矩阵；\n2. `isConnected[i][i]` 永远是 1，DFS 里判断 `j != i` 可以略过自己，但写了也不错（会被 visited 挡住）；\n3. 空输入返回 0。",
+      "pseudocode": "输入：n 乘 n 的邻接矩阵 isConnected\n输出：连通块个数\n\n1. n = 矩阵阶数；visited = 长度 n 的 false 数组\n2. count = 0\n3. 对 i 从 0 到 n-1：\n     如果 visited[i] 为 false：\n        count 加 1\n        dfs(i)\n4. return count\n\ndfs(i)：\n5. visited[i] = true\n6. 对 j 从 0 到 n-1：\n     如果 isConnected[i][j] 等于 1 且 visited[j] 为 false：dfs(j)\n\n必须用额外的 visited，不能改原矩阵（矩阵对称，改一边会破坏另一边）\n复杂度：时间 O(n 的平方)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private int[][] isConnected;\n    private boolean[] visited;\n    private int n;\n\n    public int findCircleNum(int[][] isConnected) {\n        if (isConnected == null || isConnected.length == 0) return 0;\n        this.isConnected = isConnected;\n        this.n = isConnected.length;\n        this.visited = new boolean[n];\n\n        int count = 0;\n        for (int i = 0; i < n; i++) {\n            if (!visited[i]) {\n                count++;\n                dfs(i);\n            }\n        }\n        return count;\n    }\n\n    private void dfs(int i) {\n        visited[i] = true;\n        for (int j = 0; j < n; j++) {\n            if (isConnected[i][j] == 1 && !visited[j]) dfs(j);\n        }\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "number-of-provinces",
+      "tier": "better",
+      "title": "BFS 队列泛洪",
+      "idea": "把 DFS 换成显式队列。这题 n 只有 200，递归其实也不会溢出，所以 BFS 带来的不是安全性收益，而是**思路对齐**的收益——岛屿、省份、被围绕的区域，网格图和矩阵图用的是同一套 BFS 骨架，写熟了之后遇到任何连通块问题都能直接套。\n\nBFS 的另一个好处是**它天然是「按距离分层」的**。虽然本题不需要距离，但如果题目加一句「问某个城市到同省最远城市的距离」，BFS 直接就能算，DFS 得另外处理。\n\n**入队即标记**这个要点在矩阵图上同样成立。如果出队才标记，每个城市会被它的所有邻居入队一次，队列大小会退化成 O(n²)。\n\n**复杂度**：BFS 和 DFS 一样，外层 n 个城市各看一次，内层每行扫 n 列，总 O(n²)——这是邻接矩阵的固有代价。如果想做到 O(n + e)，就得先把矩阵转成邻接表，只有边上才有遍历，矩阵本身太稀疏时这是值得的优化（但本题给的就是矩阵，转换的成本也是 O(n²)，白忙）。\n\n坑：\n1. 入队即标记；\n2. 空输入要返回 0；\n3. `isConnected` 是方形矩阵，`n = isConnected.length` 就够了。",
+      "pseudocode": "输入：n 乘 n 的邻接矩阵\n输出：连通块个数\n\n1. n = 阶数；visited = 长度 n 的 false 数组\n2. count = 0；queue = 空队列\n3. 对 i 从 0 到 n-1：\n     如果 visited[i] 为 true：跳过\n     count 加 1\n     visited[i] = true；queue 加入 i\n     当 queue 非空：\n        u = queue 取出\n        对 j 从 0 到 n-1：\n           如果 isConnected[u][j] 等于 1 且 visited[j] 为 false：\n              visited[j] = true\n              queue 加入 j\n4. return count\n\n入队即标记，否则队列会退化到 O(n 的平方)\n复杂度：时间 O(n 的平方)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int findCircleNum(int[][] isConnected) {\n        if (isConnected == null || isConnected.length == 0) return 0;\n        int n = isConnected.length;\n        boolean[] visited = new boolean[n];\n        Deque<Integer> queue = new ArrayDeque<>();\n        int count = 0;\n\n        for (int i = 0; i < n; i++) {\n            if (visited[i]) continue;\n            count++;\n            visited[i] = true;\n            queue.add(i);\n\n            while (!queue.isEmpty()) {\n                int u = queue.poll();\n                for (int j = 0; j < n; j++) {\n                    if (isConnected[u][j] == 1 && !visited[j]) {\n                        visited[j] = true;\n                        queue.add(j);\n                    }\n                }\n            }\n        }\n        return count;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "number-of-provinces",
+      "tier": "optimal",
+      "title": "并查集，一次遍历所有边",
+      "idea": "省份数量是并查集最经典的应用场景。初始 n 个城市各自一个集合（n 个省份），遍历邻接矩阵的上三角，每遇到一条边就 union，能合成就省份数减一。\n\n**为什么只遍历上三角？** 矩阵是对称的，`(i,j)` 和 `(j,i)` 是同一条边。只取 `j > i` 的部分，每条边恰好处理一次。这不是可选的优化，而是避免重复工作的正确做法。\n\n**为什么这算最优？** 时间是 O(n²·α)，和邻接矩阵的读取成本同阶——**已经到理论下界**了（给定 n×n 矩阵，你至少得读一遍才能知道有哪些边）。空间是 O(n) 的 parent 数组，比 BFS 的 visited + queue 还省。\n\n**并查集的真正价值在于可增量性。** 这题虽然是一次性查询，但实际工程里「好友关系」「网络连接」「账号合并」这类问题都是动态的——新关系随时加入，需要随时回答「现在有几个连通块」。BFS 每次都 O(n²) 重跑，并查集每次 union 只要 α(n)。这就是为什么这题值得用并查集写一遍。\n\n**路径压缩 + 按秩合并**可以让 α(n) 接近常数。这里只写路径压缩（递归版）就够，因为力扣数据量下路径压缩已经足够快。\n\n坑：\n1. 只遍历 `j > i`，否则每条边做两次 union（结果虽然对，但白花时间）；\n2. `count` 初值是 n，每次成功 union 减一，不能写成从 0 开始累加；\n3. union 里要先 find 拿到根再比，直接比 parent 值会错。",
+      "pseudocode": "输入：n 乘 n 的邻接矩阵\n输出：连通块个数\n\n1. n = 阶数；parent = 长度 n 的数组，parent[i] = i\n2. count = n\n3. 对 i 从 0 到 n-1：\n     对 j 从 i 加 1 到 n-1：\n        如果 isConnected[i][j] 等于 1：\n           ra = find(i)；rb = find(j)\n           如果 ra 不等于 rb：parent[ra] = rb；count 减 1\n4. return count\n\nfind(x)：路径压缩，若 parent[x] 不等于 x 则递归压缩\n\n只取上三角，每条边恰好处理一次；count 初值是 n\n复杂度：时间 O(n 的平方 · α)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private int[] parent;\n\n    public int findCircleNum(int[][] isConnected) {\n        if (isConnected == null || isConnected.length == 0) return 0;\n        int n = isConnected.length;\n        parent = new int[n];\n        for (int i = 0; i < n; i++) parent[i] = i;\n\n        int count = n;\n        for (int i = 0; i < n; i++) {\n            for (int j = i + 1; j < n; j++) {\n                if (isConnected[i][j] == 1) {\n                    int ra = find(i);\n                    int rb = find(j);\n                    if (ra != rb) {\n                        parent[ra] = rb;\n                        count--;\n                    }\n                }\n            }\n        }\n        return count;\n    }\n\n    private int find(int x) {\n        if (parent[x] != x) parent[x] = find(parent[x]);\n        return parent[x];\n    }\n}",
+      "timeComplexity": "O(n² · α(n))，达到读取矩阵的理论下界",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 3
+    }
+  ]
+}

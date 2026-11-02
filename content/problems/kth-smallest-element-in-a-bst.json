@@ -1,0 +1,49 @@
+{
+  "slug": "kth-smallest-element-in-a-bst",
+  "frontendId": "230",
+  "titleEn": "Kth Smallest Element in a BST",
+  "titleCn": "二叉搜索树中第 K 小的元素",
+  "difficulty": "Medium",
+  "tags": "树,深度优先搜索,二叉搜索树,二叉树",
+  "contentHtml": "<p>Given the <code>root</code> of a binary search tree, and an integer <code>k</code>, return <em>the</em> <code>k<sup>th</sup></code> <em>smallest value (<strong>1-indexed</strong>) of all the values of the nodes in the tree</em>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2021/01/28/kthtree1.jpg\" />\n<pre>\n<strong>Input:</strong> root = [3,1,4,null,2], k = 1\n<strong>Output:</strong> 1\n</pre>\n\n<p><strong>Example 2:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2021/01/28/kthtree2.jpg\" />\n<pre>\n<strong>Input:</strong> root = [5,3,6,2,4,null,null,1], k = 3\n<strong>Output:</strong> 3\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li>The number of nodes in the tree is <code>n</code>.</li>\n\t<li><code>1 &lt;= k &lt;= n &lt;= 10<sup>4</sup></code></li>\n\t<li><code>0 &lt;= Node.val &lt;= 10<sup>4</sup></code></li>\n</ul>\n\n<p>&nbsp;</p>\n<p><strong>Follow up:</strong> If the BST is modified often (i.e., we can do insert and delete operations) and you need to find the kth smallest frequently, how would you optimize?</p>",
+  "contentCnHtml": "<p>给定一个二叉搜索树的根节点 <code>root</code> ，和一个整数 <code>k</code> ，请你设计一个算法查找其中第&nbsp;<code>k</code><strong>&nbsp;</strong>小的元素（<code>k</code> 从 1 开始计数）。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2021/01/28/kthtree1.jpg\" />\n<pre>\n<strong>输入：</strong>root = [3,1,4,null,2], k = 1\n<strong>输出：</strong>1\n</pre>\n\n<p><strong>示例 2：</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2021/01/28/kthtree2.jpg\" />\n<pre>\n<strong>输入：</strong>root = [5,3,6,2,4,null,null,1], k = 3\n<strong>输出：</strong>3\n</pre>\n\n<p>&nbsp;</p>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li>树中的节点数为 <code>n</code> 。</li>\n\t<li><code>1 &lt;= k &lt;= n &lt;= 10<sup>4</sup></code></li>\n\t<li><code>0 &lt;= Node.val &lt;= 10<sup>4</sup></code></li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>进阶：</strong>如果二叉搜索树经常被修改（插入/删除操作）并且你需要频繁地查找第 <code>k</code> 小的值，你将如何优化算法？</p>",
+  "javaTemplate": "/**\n * Definition for a binary tree node.\n * public class TreeNode {\n *     int val;\n *     TreeNode left;\n *     TreeNode right;\n *     TreeNode() {}\n *     TreeNode(int val) { this.val = val; }\n *     TreeNode(int val, TreeNode left, TreeNode right) {\n *         this.val = val;\n *         this.left = left;\n *         this.right = right;\n *     }\n * }\n */\nclass Solution {\n    public int kthSmallest(TreeNode root, int k) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "kth-smallest-element-in-a-bst",
+      "tier": "brute",
+      "title": "中序遍历收集全部再取第 k 个",
+      "idea": "由 BST 的定义可知，中序遍历结果就是升序序列。所以最直接的做法：完整中序遍历，把所有值装进列表，返回第 k 个（下标 k-1）。\n\n为什么这一定对？中序 = 升序，升序序列的第 k 个就是第 k 小的值。逻辑无懈可击。\n\n为什么不够好？它没有必要地遍历了**整棵树**。如果 k = 1（找最小值），答案其实在树的最左端，一步就能到，但这里仍要遍历完 n 个节点。时间 O(n)、空间 O(n)（要存整个列表）。\n\n为什么值得先写？因为它把核心等式钉死了：**第 k 小 = 中序遍历的第 k 个**。后面两个优化都是在「不必遍历全部」上做文章，但如果没有这个等式，什么都做不了。\n\n另外它有个实用价值：如果题目要「返回第 k 小到第 m 小的所有值」或者「求中位数」，这个完整收集的版本是唯一选择。\n\n坑：返回的是 `list.get(k-1)`，不是 `get(k)`。这是 1-indexed 和 0-indexed 的经典错位。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：BST 根节点，整数 k\n输出：第 k 小的值\n\n1. list = 空列表\n2. inorder(node)：\n     如果 node 为空：return\n     inorder(node.left)\n     list 追加 node.val\n     inorder(node.right)\n3. inorder(root)\n4. return list.get(k - 1)      // 下标从 0 开始\n\n中序 = 升序，所以第 k 小就是中序第 k 个\n坑：get(k-1) 不是 get(k)\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int kthSmallest(TreeNode root, int k) {\n        List<Integer> list = new ArrayList<>();\n        inorder(root, list);\n        return list.get(k - 1);   // 注意是 k-1\n    }\n\n    private void inorder(TreeNode node, List<Integer> list) {\n        if (node == null) return;\n        inorder(node.left, list);\n        list.add(node.val);\n        inorder(node.right, list);\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "kth-smallest-element-in-a-bst",
+      "tier": "better",
+      "title": "中序递归 + 计数器提前返回",
+      "idea": "既然只要第 k 个，就没必要走完整棵树。做法：中序遍历，用一个计数器记录「已经访问了几个」，当计数到 k 时，**立刻把答案存下来并停止后续遍历**。\n\n为什么能提前停？因为中序遍历是严格按升序访问的，第 k 个被访问的节点就是答案，之后的节点都更大，没有意义。\n\n**这才是本题的标准解法思路**。时间复杂度不是 \"O(n)\" 而是 **O(h + k)**：\n- 要先下到最左端，O(h)；\n- 然后中序走 k 步，O(k)。\n\nk 很小时（比如 k=1）就是 O(h) = O(log n)，比完整遍历快得多。这个复杂度分析是本题的加分点，**面试时一定要说出来**。\n\n相比完整遍历版改了什么？从「必须遍历全部 n 个」变成「走够 k 个就停」，空间从 O(n) 降到 O(h)（不用存列表）。\n\n实现要点：\n- 用两个成员变量：`count` 和 `ans`，也可以用 `int[] res` 避免成员变量；\n- 递归中一旦拿到答案，就通过返回值或标志位让整条调用链快速返回，**不要继续递归**。\n- 简洁写法是让 `inorder` 返回 boolean（是否已找到），配合短路：`if (inorder(node.left)) return true;`\n\n坑：忘记短路会导致虽然答案对了，但仍遍历完 n 个节点，复杂度退化，白优化。\n\n复杂度 O(h + k) 时间，O(h) 空间。",
+      "pseudocode": "输入：root，k\n输出：第 k 小的值\n\n成员变量 count = 0，ans = 0\n\ninorder(node)：返回是否已找到答案\n  如果 node 为空：return false\n  如果 inorder(node.left) 为 true：return true     // 左子树已找到，短路\n  count = count + 1\n  如果 count 等于 k：ans = node.val，return true    // 找到了\n  return inorder(node.right)\n\n主流程：inorder(root)，return ans\n\n复杂度是 O(h + k) 不是 O(n)：下到最左 O(h)，再走 k 步\n必须短路，否则虽然答案对但仍遍历全部节点\n复杂度：时间 O(h + k)；空间 O(h)",
+      "codeJava": "class Solution {\n    private int count = 0;\n    private int ans = 0;\n\n    public int kthSmallest(TreeNode root, int k) {\n        inorder(root, k);\n        return ans;\n    }\n\n    // 返回 true 表示已找到，让整条调用链立刻返回\n    private boolean inorder(TreeNode node, int k) {\n        if (node == null) return false;\n\n        if (inorder(node.left, k)) return true;   // 左子树已找到，短路\n\n        count++;\n        if (count == k) {\n            ans = node.val;\n            return true;\n        }\n\n        return inorder(node.right, k);\n    }\n}",
+      "timeComplexity": "O(h + k)",
+      "spaceComplexity": "O(h)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "kth-smallest-element-in-a-bst",
+      "tier": "optimal",
+      "title": "显式栈迭代中序 · 走 k 步即返回",
+      "idea": "递归版有两个隐患：一是栈溢出（虽然思路已经优化到 O(h + k)），二是「短路」要靠返回值一层层往上传递，写起来绕。\n\n迭代版把中序的「一路向左压栈」显式写出来，然后**只弹 k 次栈**：\n1. 从根出发一路向左压栈；\n2. 弹栈一次，计数加 1；如果计数等于 k，立刻返回这个节点的值；\n3. 转向该节点的右子树，重复第 1 步。\n\n为什么这版最优？\n- **复杂度同样 O(h + k)**，但常数更小（无函数调用开销）；\n- **`return` 直接跳出循环**，不需要靠布尔返回值层层传递——这是代码清晰度的实质提升；\n- **零栈溢出风险**（堆内存远大于线程栈）；\n- 只有 12 行，是最短的 O(h+k) 实现。\n\n**进阶加分的回答**：如果 BST 会被**频繁查询且会动态插入/删除**，那么 O(h+k) 仍不理想（k 大时退化为 O(n)）。这时正确做法是**给每个节点维护「左子树节点数」**（即 order statistic tree），查询第 k 小就是 O(h) 的二分下降：比较 k 和左子树大小，小就往左，大就往右并减去左子树大小+1。这个扩展思想是本题真正的天花板，面试时提到能显著加分。\n\n坑：\n1. 外层循环条件必须是 `cur != null || !stack.isEmpty()`；\n2. 计数是**弹出时**加 1（不是入栈时），因为弹栈顺序才是中序顺序；\n3. `k` 从 1 开始，所以判断是 `count == k` 之后返回。\n\n复杂度 O(h + k) 时间，O(h) 空间。",
+      "pseudocode": "输入：root，k\n输出：第 k 小的值\n\n1. stack = 空栈，cur = root，count = 0\n2. 当 cur 不为空 或 stack 不为空 循环：\n     当 cur 不为空：\n        stack 压入 cur\n        cur = cur.left              // 一路向左\n     cur = stack 弹出\n     count = count + 1\n     如果 count 等于 k：return cur.val     // 直接跳出，不需要层层返回\n     cur = cur.right\n3. （不会走到这里）\n\n复杂度 O(h + k)，常数更小，且 return 直接跳出\n进阶：若频繁查询且会更新，用「左子树节点数」做 O(h) 的二分下降\n复杂度：时间 O(h + k)；空间 O(h)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int kthSmallest(TreeNode root, int k) {\n        Deque<TreeNode> stack = new ArrayDeque<>();\n        TreeNode cur = root;\n        int count = 0;\n\n        while (cur != null || !stack.isEmpty()) {\n            while (cur != null) {\n                stack.push(cur);\n                cur = cur.left;          // 一路向左\n            }\n            cur = stack.pop();           // 弹出时才是中序顺序\n            count++;\n            if (count == k) return cur.val;   // 直接返回，无需层层传递\n            cur = cur.right;\n        }\n        return -1;   // 题目保证 k 合法，不会到这里\n    }\n}",
+      "timeComplexity": "O(h + k)",
+      "spaceComplexity": "O(h)",
+      "sortOrder": 3
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>刷题教练 · LC Coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=20261102c">
+</head>
+<body>
+
+<div class="grain"></div>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-mark">LC</div>
+    <div class="brand-text">
+      <span class="brand-title">刷题教练</span>
+      <span class="brand-sub">Java · 春招冲刺</span>
+    </div>
+  </div>
+
+  <nav class="nav" id="nav">
+    <button class="nav-item active" data-view="today">
+      <span class="nav-ico">◆</span><span>今日任务</span>
+    </button>
+    <button class="nav-item" data-view="library">
+      <span class="nav-ico">▤</span><span>题库</span>
+    </button>
+    <button class="nav-item" data-view="mistakes">
+      <span class="nav-ico">✕</span><span>错题本</span>
+      <span class="nav-badge" id="badge-mistakes"></span>
+    </button>
+    <button class="nav-item" data-view="snippets">
+      <span class="nav-ico">▦</span><span>模板库</span>
+    </button>
+    <button class="nav-item" data-view="plan">
+      <span class="nav-ico">▧</span><span>16 周计划</span>
+    </button>
+    <button class="nav-item" data-view="account">
+      <span class="nav-ico">◎</span><span>力扣账号</span>
+    </button>
+    <button class="nav-item" data-view="notify">
+      <span class="nav-ico">◔</span><span>提醒</span>
+      <span class="nav-badge" id="badge-notify"></span>
+    </button>
+    <button class="nav-item" data-view="aihot">
+      <span class="nav-ico">◈</span><span>AI 资讯</span>
+    </button>
+  </nav>
+
+  <div class="side-foot">
+    <div class="streak-box">
+      <div class="streak-num" id="streak-num">0</div>
+      <div class="streak-label">连续打卡 / 天</div>
+    </div>
+    <div class="side-meta" id="side-meta">加载中…</div>
+    <div class="side-meta" id="build-stamp" style="opacity:.55;font-size:10px;letter-spacing:.06em"></div>
+  </div>
+</aside>
+
+<main class="main" id="main">
+  <div class="loading">正在加载…</div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="lock.js?v=20261102c"></script>
+<script src="roast.js?v=20261102c"></script>
+<script src="mistake-fill.js?v=20261102c"></script>
+<script src="app.js?v=20261102c"></script>
+</body>
+</html>

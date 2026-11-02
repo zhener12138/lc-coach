@@ -1,0 +1,229 @@
+{
+  "startDate": "2026-11-02",
+  "weeks": [
+    {
+      "week": 1,
+      "phase": "一 · 数组与哈希",
+      "tag": "数组 / 哈希",
+      "days": [
+        { "day": 1, "slugs": ["two-sum", "group-anagrams"] },
+        { "day": 2, "slugs": ["longest-consecutive-sequence", "move-zeroes"] },
+        { "day": 3, "slugs": ["maximum-subarray", "product-of-array-except-self"] },
+        { "day": 4, "slugs": ["merge-intervals", "rotate-array"] },
+        { "day": 5, "slugs": ["set-matrix-zeroes", "spiral-matrix"] },
+        { "day": 6, "slugs": ["rotate-image", "majority-element"] },
+        { "day": 7, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 2,
+      "phase": "一 · 双指针与滑动窗口",
+      "tag": "双指针 / 滑动窗口",
+      "days": [
+        { "day": 8, "slugs": ["container-with-most-water", "3sum"] },
+        { "day": 9, "slugs": ["trapping-rain-water", "longest-substring-without-repeating-characters"] },
+        { "day": 10, "slugs": ["find-all-anagrams-in-a-string", "minimum-size-subarray-sum"] },
+        { "day": 11, "slugs": ["minimum-window-substring", "subarray-sum-equals-k"] },
+        { "day": 12, "slugs": ["sliding-window-maximum", "reverse-string"] },
+        { "day": 13, "slugs": ["longest-palindromic-substring", "reverse-words-in-a-string"] },
+        { "day": 14, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 3,
+      "phase": "一 · 链表",
+      "tag": "链表",
+      "days": [
+        { "day": 15, "slugs": ["reverse-linked-list", "reverse-linked-list-ii"] },
+        { "day": 16, "slugs": ["merge-two-sorted-lists", "merge-k-sorted-lists"] },
+        { "day": 17, "slugs": ["linked-list-cycle", "linked-list-cycle-ii"] },
+        { "day": 18, "slugs": ["intersection-of-two-linked-lists", "remove-nth-node-from-end-of-list"] },
+        { "day": 19, "slugs": ["swap-nodes-in-pairs", "reverse-nodes-in-k-group"] },
+        { "day": 20, "slugs": ["lru-cache", "sort-list"] },
+        { "day": 21, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 4,
+      "phase": "一 · 栈队列与二分",
+      "tag": "栈 / 队列 / 二分",
+      "days": [
+        { "day": 22, "slugs": ["valid-parentheses", "min-stack"] },
+        { "day": 23, "slugs": ["decode-string", "daily-temperatures"] },
+        { "day": 24, "slugs": ["largest-rectangle-in-histogram", "implement-queue-using-stacks"] },
+        { "day": 25, "slugs": ["search-insert-position", "search-in-rotated-sorted-array"] },
+        { "day": 26, "slugs": ["find-first-and-last-position-of-element-in-sorted-array", "find-minimum-in-rotated-sorted-array"] },
+        { "day": 27, "slugs": ["median-of-two-sorted-arrays", "sqrtx"] },
+        { "day": 28, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 5,
+      "phase": "二 · 二叉树基础",
+      "tag": "二叉树",
+      "days": [
+        { "day": 29, "slugs": ["binary-tree-inorder-traversal", "maximum-depth-of-binary-tree"] },
+        { "day": 30, "slugs": ["invert-binary-tree", "symmetric-tree"] },
+        { "day": 31, "slugs": ["diameter-of-binary-tree", "binary-tree-level-order-traversal"] },
+        { "day": 32, "slugs": ["convert-sorted-array-to-binary-search-tree", "validate-binary-search-tree"] },
+        { "day": 33, "slugs": ["kth-smallest-element-in-a-bst", "binary-tree-right-side-view"] },
+        { "day": 34, "slugs": ["flatten-binary-tree-to-linked-list", "construct-binary-tree-from-preorder-and-inorder-traversal"] },
+        { "day": 35, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 6,
+      "phase": "二 · 二叉树进阶与回溯",
+      "tag": "二叉树 / 回溯",
+      "days": [
+        { "day": 36, "slugs": ["lowest-common-ancestor-of-a-binary-tree", "binary-tree-maximum-path-sum"] },
+        { "day": 37, "slugs": ["path-sum-iii", "permutations"] },
+        { "day": 38, "slugs": ["subsets", "letter-combinations-of-a-phone-number"] },
+        { "day": 39, "slugs": ["combination-sum", "generate-parentheses"] },
+        { "day": 40, "slugs": ["word-search", "palindrome-partitioning"] },
+        { "day": 41, "slugs": ["n-queens", "number-of-islands"] },
+        { "day": 42, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 7,
+      "phase": "二 · DFS / BFS / 图",
+      "tag": "DFS / BFS / 图",
+      "days": [
+        { "day": 43, "slugs": ["rotting-oranges", "course-schedule"] },
+        { "day": 44, "slugs": ["implement-trie-prefix-tree", "surrounded-regions"] },
+        { "day": 45, "slugs": ["course-schedule-ii", "number-of-provinces"] },
+        { "day": 46, "slugs": ["clone-graph", "pacific-atlantic-water-flow"] },
+        { "day": 47, "slugs": ["word-ladder", "open-the-lock"] },
+        { "day": 48, "slugs": ["network-delay-time", "redundant-connection"] },
+        { "day": 49, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 8,
+      "phase": "二 · 整段回炉",
+      "tag": "错题重做",
+      "days": [
+        { "day": 50, "slugs": [], "review": true, "note": "重做 W1-W7 全部错题，每天 4 道" },
+        { "day": 51, "slugs": [], "review": true },
+        { "day": 52, "slugs": [], "review": true },
+        { "day": 53, "slugs": [], "review": true },
+        { "day": 54, "slugs": [], "review": true },
+        { "day": 55, "slugs": [], "review": true },
+        { "day": 56, "slugs": [], "review": true, "note": "统计各 tag 错误率，记进错题本" }
+      ]
+    },
+    {
+      "week": 9,
+      "phase": "三 · 动态规划（上）",
+      "tag": "动态规划",
+      "days": [
+        { "day": 57, "slugs": ["climbing-stairs", "pascals-triangle"] },
+        { "day": 58, "slugs": ["house-robber", "perfect-squares"] },
+        { "day": 59, "slugs": ["coin-change", "word-break"] },
+        { "day": 60, "slugs": ["longest-increasing-subsequence", "maximum-product-subarray"] },
+        { "day": 61, "slugs": ["unique-paths", "minimum-path-sum"] },
+        { "day": 62, "slugs": ["partition-equal-subset-sum", "longest-valid-parentheses"] },
+        { "day": 63, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 10,
+      "phase": "三 · 动态规划（下）",
+      "tag": "动态规划",
+      "days": [
+        { "day": 64, "slugs": ["longest-common-subsequence", "edit-distance"] },
+        { "day": 65, "slugs": ["palindromic-substrings", "house-robber-iii"] },
+        { "day": 66, "slugs": ["maximal-square", "coin-change-ii"] },
+        { "day": 67, "slugs": ["best-time-to-buy-and-sell-stock", "best-time-to-buy-and-sell-stock-ii"] },
+        { "day": 68, "slugs": ["best-time-to-buy-and-sell-stock-iii", "target-sum"] },
+        { "day": 69, "slugs": ["interleaving-string", "distinct-subsequences"] },
+        { "day": 70, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 11,
+      "phase": "三 · 堆 / 位运算 / 数学",
+      "tag": "堆 / 位运算 / 数学",
+      "days": [
+        { "day": 71, "slugs": ["kth-largest-element-in-an-array", "top-k-frequent-elements"] },
+        { "day": 72, "slugs": ["find-median-from-data-stream", "last-stone-weight"] },
+        { "day": 73, "slugs": ["single-number", "single-number-ii"] },
+        { "day": 74, "slugs": ["counting-bits", "hamming-distance"] },
+        { "day": 75, "slugs": ["powx-n", "reverse-integer"] },
+        { "day": 76, "slugs": ["palindrome-number", "count-primes"] },
+        { "day": 77, "slugs": [], "review": true, "note": "春招提前批已开，投递优先于刷题" }
+      ]
+    },
+    {
+      "week": 12,
+      "phase": "四 · 二刷与高频",
+      "tag": "二刷 / 高频",
+      "days": [
+        { "day": 78, "slugs": [], "review": true, "note": "每天 1 道错题 + 1 道新题" },
+        { "day": 79, "slugs": [], "review": true },
+        { "day": 80, "slugs": [], "review": true },
+        { "day": 81, "slugs": [], "review": true },
+        { "day": 82, "slugs": [], "review": true },
+        { "day": 83, "slugs": [], "review": true },
+        { "day": 84, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 13,
+      "phase": "四 · 二刷与高频",
+      "tag": "二刷 / 高频",
+      "days": [
+        { "day": 85, "slugs": [], "review": true },
+        { "day": 86, "slugs": [], "review": true },
+        { "day": 87, "slugs": [], "review": true },
+        { "day": 88, "slugs": [], "review": true },
+        { "day": 89, "slugs": [], "review": true },
+        { "day": 90, "slugs": [], "review": true },
+        { "day": 91, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 14,
+      "phase": "四 · 模拟面试",
+      "tag": "模拟面试",
+      "days": [
+        { "day": 92, "slugs": [], "review": true },
+        { "day": 93, "slugs": [], "review": true },
+        { "day": 94, "slugs": [], "review": true },
+        { "day": 95, "slugs": [], "review": true },
+        { "day": 96, "slugs": [], "review": true },
+        { "day": 97, "slugs": [], "review": true },
+        { "day": 98, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 15,
+      "phase": "四 · 模拟面试",
+      "tag": "模拟面试",
+      "days": [
+        { "day": 99, "slugs": [], "review": true },
+        { "day": 100, "slugs": [], "review": true },
+        { "day": 101, "slugs": [], "review": true },
+        { "day": 102, "slugs": [], "review": true },
+        { "day": 103, "slugs": [], "review": true },
+        { "day": 104, "slugs": [], "review": true },
+        { "day": 105, "slugs": [], "review": true }
+      ]
+    },
+    {
+      "week": 16,
+      "phase": "四 · 冲刺",
+      "tag": "冲刺",
+      "days": [
+        { "day": 106, "slugs": [], "review": true },
+        { "day": 107, "slugs": [], "review": true },
+        { "day": 108, "slugs": [], "review": true },
+        { "day": 109, "slugs": [], "review": true },
+        { "day": 110, "slugs": [], "review": true },
+        { "day": 111, "slugs": [], "review": true },
+        { "day": 112, "slugs": [], "review": true }
+      ]
+    }
+  ]
+}

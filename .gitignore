@@ -1,0 +1,20 @@
+# ---- 构建产物 ----
+target/
+
+# ---- 运行数据（含力扣 session cookie，绝不能入库）----
+data/
+*.log
+
+# ---- 模板编译校验的中间产物（1442 个 .class，可重新生成）----
+.verify-out/
+.schedtest/
+
+# ---- 编辑器 / 系统 ----
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ---- 依赖 ----
+node_modules/

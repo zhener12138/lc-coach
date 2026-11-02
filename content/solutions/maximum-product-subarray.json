@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "枚举所有子数组求积",
+      "idea": "题目要「乘积最大的连续子数组」。最直接的做法：枚举起点 i 和终点 j，边扩边累乘，记录最大值。O(n²)。\n\n**为什么这题容易被想成「最大子数组和」的翻版，然后写错？** 因为加法里「负数只会让结果变小」，所以最大子数组和的 DP 只需要维护最大值。但**乘法里负数乘负数会变大**——一个当前很小的负数，乘上下一个负数就变成了很大的正数。所以只看最大值会漏掉最优解。\n\n这一版虽然慢，但它让你**用暴力把所有情况都摸一遍**，从而亲眼看到「负数翻转」这个现象。比如数组 `[-2, 3, -4]`：子数组 `[-2]` 积 -2，`[3]` 积 3，`[-2,3,-4]` 积 24。如果只看前缀最大值，你会在 3 处停手，得不到 24。\n\n坑：\n1. 单个元素也是子数组，所以初值要用 `nums[0]` 或负无穷；\n2. 乘积可能溢出 int，力扣数据里有这种情况，要用 long 中间变量再转回 int（或用 long 全程）；\n3. 含 0 的情况会自动归零，不用特殊处理。",
+      "pseudocode": "输入：数组 nums\n输出：最大子数组乘积\n\n1. n = nums 长度；best = nums[0]\n2. 对 i 从 0 到 n 减 1：\n     prod = 1\n     对 j 从 i 到 n 减 1：\n        prod = prod 乘 nums[j]\n        best = max(best, prod)\n3. return best\n\n负数乘负数会变大，这是本题和最大子数组和的根本区别\n复杂度：时间 O(n 的平方)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int maxProduct(int[] nums) {\n        int n = nums.length;\n        long best = nums[0];\n        for (int i = 0; i < n; i++) {\n            long prod = 1;\n            for (int j = i; j < n; j++) {\n                prod *= nums[j];\n                if (prod > best) best = prod;\n            }\n        }\n        return (int) best;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "better",
+      "title": "前缀积 + 正反两遍扫描",
+      "idea": "这是一版很巧的 O(n) 解法，思路来自一个观察：**最优子数组要么紧贴左端某处、要么紧贴右端某处，被 0 分割成若干段。**\n\n具体做法是先按 0 把数组切成若干段（0 本身单独处理，因为含 0 的子数组积为 0），然后在每一段里做两件事：\n- 从左往右累乘，记录最大；\n- **从右往左累乘，记录最大。**\n\n**为什么正反各扫一遍就能覆盖所有情况？** 因为一段里的负数个数是确定的。如果负数个数是偶数，整段乘积就是最大（从左往右扫到末尾就拿到了）；如果是奇数，你必须砍掉一个负数，**要么砍最左边那个（等价于从右往左扫到最右），要么砍最右边那个（等价于从左往右扫到最左）**。所以两个方向的前缀积取最大，恰好覆盖这两种砍法。\n\n**这个论证很值得记。** 它把「滑动窗口」这种复杂的思路换成两次简单扫描，代码短、常数小、无状态。缺点是不如 DP 通用（比如「最多删一个元素」的变种就不适用）。\n\n坑：\n1. 累乘时遇到 0 要重置为 1；\n2. `best` 初值要考虑全 0 数组，用 `nums[0]` 或负无穷；\n3. 用 long 累乘防溢出。",
+      "pseudocode": "输入：nums\n输出：最大子数组乘积\n\n1. best = 负无穷；prod = 1\n2. 从左往右扫：\n     对每个 x：\n        prod = prod 乘 x\n        best = max(best, prod)\n        如果 x 等于 0：prod = 1\n3. prod = 1\n4. 从右往左扫，同样逻辑\n5. return best\n\n负数个数为奇数时必须砍掉一个负数，正反两遍恰好覆盖两种砍法\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int maxProduct(int[] nums) {\n        long best = Long.MIN_VALUE;\n        long prod = 1;\n        for (int x : nums) {\n            prod *= x;\n            if (prod > best) best = prod;\n            if (x == 0) prod = 1;\n        }\n        prod = 1;\n        for (int i = nums.length - 1; i >= 0; i--) {\n            prod *= nums[i];\n            if (prod > best) best = prod;\n            if (nums[i] == 0) prod = 1;\n        }\n        return (int) best;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "optimal",
+      "title": "同时维护最大最小，状态压缩滚动",
+      "idea": "标准解法：**同时维护「以当前位置结尾的最大乘积」和「最小乘积」两个状态。**\n\n为什么两个都要？因为当前值 x 可能是负数，那么：\n- 新的最大值可能来自 `之前的最大值 × x`（两个正数）；\n- 也可能来自 `之前的最小值 × x`（两个负数相乘变正）；\n- 也可能就是 x 自己（前面的都不要，从这开始）。\n\n所以转移是：\n`maxEnd = max(x, maxPrev*x, minPrev*x)`\n`minEnd = min(x, maxPrev*x, minPrev*x)`\n\n**关键陷阱：必须先算出新的 max 和 min，再赋值给 prev。** 如果写成先更新 `maxPrev` 再算 `minEnd`，那 `minPrev*x` 里的 maxPrev 已经变了，结果错误。**解决办法是先把三个候选值算进临时变量。** 这个 bug 我见过太多次，是本题第一个必踩的坑。\n\n**为什么这是最优？** 时间 O(n) 已经是下界（必须读一遍数组），空间 O(1)（滚动两个变量）。没有更快的可能。\n\n**它比上一版好在哪？** 上一版是「巧妙但不通用」的，这一版是**通用 DP 骨架**。给它加约束（最多删一个元素、最多交换一次）都能直接扩展；上一版就不行。**面试时优先写这一版，因为它体现的是方法论。**\n\n坑：\n1. 必须用临时变量存三个候选，不能就地更新；\n2. 用 long 防溢出；\n3. 答案是 `max(maxEnd)`，要在循环里持续取最大，不是最后取一次。",
+      "pseudocode": "输入：nums\n输出：最大子数组乘积\n\n1. maxPrev = nums[0]；minPrev = nums[0]；best = nums[0]\n2. 对 i 从 1 到 n 减 1：\n     x = nums[i]\n     a = maxPrev 乘 x\n     b = minPrev 乘 x\n     c = x\n     maxEnd = max(c, max(a, b))\n     minEnd = min(c, min(a, b))\n     best = max(best, maxEnd)\n     maxPrev = maxEnd；minPrev = minEnd\n3. return best\n\n必须先把三个候选算进临时变量再更新，就地改会互相污染\n维护最小值是因为负数乘负数会变成更大的正数\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int maxProduct(int[] nums) {\n        long maxPrev = nums[0];\n        long minPrev = nums[0];\n        long best = nums[0];\n\n        for (int i = 1; i < nums.length; i++) {\n            long x = nums[i];\n            long a = maxPrev * x;\n            long b = minPrev * x;\n            long maxEnd = Math.max(x, Math.max(a, b));\n            long minEnd = Math.min(x, Math.min(a, b));\n            best = Math.max(best, maxEnd);\n            maxPrev = maxEnd;\n            minPrev = minEnd;\n        }\n        return (int) best;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

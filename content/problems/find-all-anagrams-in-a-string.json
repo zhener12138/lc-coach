@@ -1,0 +1,49 @@
+{
+  "slug": "find-all-anagrams-in-a-string",
+  "frontendId": "438",
+  "titleEn": "Find All Anagrams in a String",
+  "titleCn": "找到字符串中所有字母异位词",
+  "difficulty": "Medium",
+  "tags": "哈希表,字符串,滑动窗口",
+  "contentHtml": "<p>Given two strings <code>s</code> and <code>p</code>, return an array of all the start indices of <code>p</code>&#39;s <span>anagrams</span> in <code>s</code>. You may return the answer in <strong>any order</strong>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> s = &quot;cbaebabacd&quot;, p = &quot;abc&quot;\n<strong>Output:</strong> [0,6]\n<strong>Explanation:</strong>\nThe substring with start index = 0 is &quot;cba&quot;, which is an anagram of &quot;abc&quot;.\nThe substring with start index = 6 is &quot;bac&quot;, which is an anagram of &quot;abc&quot;.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> s = &quot;abab&quot;, p = &quot;ab&quot;\n<strong>Output:</strong> [0,1,2]\n<strong>Explanation:</strong>\nThe substring with start index = 0 is &quot;ab&quot;, which is an anagram of &quot;ab&quot;.\nThe substring with start index = 1 is &quot;ba&quot;, which is an anagram of &quot;ab&quot;.\nThe substring with start index = 2 is &quot;ab&quot;, which is an anagram of &quot;ab&quot;.\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= s.length, p.length &lt;= 3 * 10<sup>4</sup></code></li>\n\t<li><code>s</code> and <code>p</code> consist of lowercase English letters.</li>\n</ul>",
+  "contentCnHtml": "<p>给定两个字符串&nbsp;<code>s</code>&nbsp;和 <code>p</code>，找到&nbsp;<code>s</code><strong>&nbsp;</strong>中所有&nbsp;<code>p</code><strong>&nbsp;</strong>的&nbsp;<strong><span>异位词</span>&nbsp;</strong>的子串，返回这些子串的起始索引。不考虑答案输出的顺序。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例&nbsp;1:</strong></p>\n\n<pre>\n<strong>输入: </strong>s = \"cbaebabacd\", p = \"abc\"\n<strong>输出: </strong>[0,6]\n<strong>解释:</strong>\n起始索引等于 0 的子串是 \"cba\", 它是 \"abc\" 的异位词。\n起始索引等于 6 的子串是 \"bac\", 它是 \"abc\" 的异位词。\n</pre>\n\n<p><strong>&nbsp;示例 2:</strong></p>\n\n<pre>\n<strong>输入: </strong>s = \"abab\", p = \"ab\"\n<strong>输出: </strong>[0,1,2]\n<strong>解释:</strong>\n起始索引等于 0 的子串是 \"ab\", 它是 \"ab\" 的异位词。\n起始索引等于 1 的子串是 \"ba\", 它是 \"ab\" 的异位词。\n起始索引等于 2 的子串是 \"ab\", 它是 \"ab\" 的异位词。\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= s.length, p.length &lt;= 3 * 10<sup>4</sup></code></li>\n\t<li><code>s</code>&nbsp;和&nbsp;<code>p</code>&nbsp;仅包含小写字母</li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public List<Integer> findAnagrams(String s, String p) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "find-all-anagrams-in-a-string",
+      "tier": "brute",
+      "title": "逐个截取子串 · 排序后比对",
+      "idea": "异位词（字母异位词）的定义是「字母相同、顺序不同」，也就是说两个字符串排序后完全一样。\n\n那就用这个定义做：枚举 s 里所有长度等于 p 的子串，各自排序，和排好序的 p 比较，相等就记下起始下标。\n\n为什么这版会超时？枚举有 O(n) 个子串，每个子串排序 O(k log k)（k 是 p 的长度），总复杂度 O(n·k log k)。力扣这道题 n 最大约 2×10⁴、k 也可能上万，规模一大必然超时。\n\n但它的价值在于：**它把「异位词判定」转化成了「多重集相等」**，这个转化是后面所有优化版的核心。你现在用的「排序后比较」，本质就是在比较字符计数的多重集。\n\n另一个注意点：p 比 s 长时直接返回空列表，否则 substring 会越界。这一行虽然简单，很多人漏写。\n\n复杂度 O(n·k log k) 时间，O(k) 空间。",
+      "pseudocode": "输入：字符串 s，模式串 p\n输出：s 中所有 p 的异位词子串的起始下标\n\n1. n = s 长度，k = p 长度\n2. 如果 k 大于 n：返回空列表\n3. 把 p 转成字符数组并排序，得到 target\n4. ans = 空列表\n5. i 从 0 循环到 n-k：\n     a. sub = s 从 i 开始、长度 k 的子串\n     b. 把 sub 转成字符数组并排序\n     c. 如果 sub 排序后和 target 相同：把 i 加入 ans\n6. 返回 ans\n\n复杂度：时间 O(n·k log k)；空间 O(k)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<Integer> findAnagrams(String s, String p) {\n        List<Integer> ans = new ArrayList<>();\n        int n = s.length(), k = p.length();\n        if (k > n) return ans;                 // 别忘了这行，否则 substring 越界\n\n        char[] target = p.toCharArray();\n        Arrays.sort(target);\n\n        for (int i = 0; i <= n - k; i++) {\n            char[] sub = s.substring(i, i + k).toCharArray();\n            Arrays.sort(sub);\n            // 排序后完全相同 = 字母构成相同 = 互为异位词\n            if (Arrays.equals(sub, target)) ans.add(i);\n        }\n        return ans;\n    }\n}",
+      "timeComplexity": "O(n·k log k)",
+      "spaceComplexity": "O(k)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "find-all-anagrams-in-a-string",
+      "tier": "better",
+      "title": "定长滑动窗口 + 字符计数数组",
+      "idea": "异位词的本质是「字符计数完全相同」。那就不需要排序了——直接比较两个长度 26 的计数数组就行，比较一次 O(26)，是常数。\n\n具体做法：先用 p 建一个计数数组 need[26]。然后让窗口长度固定为 k，在 s 上滑动：每移动一步，就「进一个字符、出一个字符」来增量维护窗口计数，再把窗口计数和 need 整体比一次。\n\n相比排序版改了什么？把每个窗口 O(k log k) 的排序换成 O(1) 的计数增量更新 + O(26) 的比较，整体从 O(n·k log k) 降到 O(26n)。这是本题的主流解法。\n\n关键细节：\n- 窗口右边界到 k-1 之前，窗口还没满，不需要比较；从 right >= k-1 开始才比较。\n- 每步的「出窗口」字符是 s.charAt(right - k)，别写成 right - k + 1。\n\n为什么它不是最优？因为每滑一步都要把 26 个格子全比一遍，虽然有 26 是常数，但可以再优化成「维护一个已匹配的字符种类数」，让比较变成 O(1)——这就是第三版。\n\n复杂度 O(26·n) 时间，O(1) 空间。",
+      "pseudocode": "输入：字符串 s，模式串 p\n输出：所有异位词子串的起始下标\n\n1. n = s 长度，k = p 长度\n2. 如果 k 大于 n：返回空列表\n3. need[26] = p 的字符计数\n4. window[26] = 全 0\n5. ans = 空列表\n6. right 从 0 循环到 n-1：\n     a. window[s.charAt(right) - a] 加 1         // 进窗口\n     b. 如果 right 大于等于 k：\n          window[s.charAt(right-k) - a] 减 1     // 出窗口\n     c. 如果 right 大于等于 k-1：\n          如果 window 和 need 完全相同：把 (right-k+1) 加入 ans\n7. 返回 ans\n\n复杂度：时间 O(26·n)；空间 O(1)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<Integer> findAnagrams(String s, String p) {\n        List<Integer> ans = new ArrayList<>();\n        int n = s.length(), k = p.length();\n        if (k > n) return ans;\n\n        int[] need = new int[26];\n        for (char c : p.toCharArray()) need[c - 'a']++;\n\n        int[] window = new int[26];\n        for (int right = 0; right < n; right++) {\n            window[s.charAt(right) - 'a']++;              // 进窗口\n            if (right >= k) {\n                window[s.charAt(right - k) - 'a']--;      // 出窗口，注意是 right-k\n            }\n            // 窗口满了才开始比较\n            if (right >= k - 1 && Arrays.equals(window, need)) {\n                ans.add(right - k + 1);\n            }\n        }\n        return ans;\n    }\n}",
+      "timeComplexity": "O(26·n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "find-all-anagrams-in-a-string",
+      "tier": "optimal",
+      "title": "差异计数器 · 比较降到 O(1)",
+      "idea": "上一版每滑一步都要做 26 次比较。能不能做到 O(1)？可以，用「差异计数器」。\n\n定义 diff：need 和 window 中「计数不同的字符种类数」。当 diff == 0，说明两个数组完全相同，当前窗口就是一个异位词。\n\n关键是怎么在窗口滑动时增量维护 diff：\n- 某字符计数变化前，如果 window[x] 和 need[x] 相等，diff++（马上要不等了）；\n- 变化后，如果又相等了，diff--（重新相等）。\n\n每次进/出各字符时做一次这样的调整，diff 就始终准确，判断只需 `diff == 0` 一次比较。整体复杂度 O(n)。\n\n相比 26 数组版改了什么？把「每步 26 次比较」换成「每步常数次加减」，理论复杂度从 O(26n) 变成真正的 O(n)，实际跑起来也更快。这是本题的最优写法。\n\n**写这个技巧最容易翻车的地方**：调整 diff 的顺序必须严格是「先看变化前是否相等、再改计数、最后看变化后是否相等」。写成三步独立的辅助方法 add/remove 最不容易错，代码也更可读。\n\n另一个常见做法是 `valid` 变量：记录「有多少种字符的计数已经满足 need」。当 valid == 需要的种类数时窗口合法。思路完全一样，只是写法不同。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：字符串 s，模式串 p\n输出：所有异位词子串的起始下标\n\n1. n = s 长度，k = p 长度\n2. 如果 k 大于 n：返回空列表\n3. need[26] = p 的字符计数\n4. window[26] = 全 0，diff = need 中非零字符的种类数\n   （等价：diff 表示 need 与 window 计数不同的字符种类数，初始时所有非零字符都不同）\n5. ans = 空列表\n6. right 从 0 循环到 n-1：\n     a. 把 s.charAt(right) 加入 window：\n          加之前如果 window[x] 等于 need[x]：diff 加 1\n          window[x] 加 1\n          加之后如果 window[x] 等于 need[x]：diff 减 1\n     b. 如果 right 大于等于 k，把 s.charAt(right-k) 移出 window：\n          移之前如果 window[x] 等于 need[x]：diff 加 1\n          window[x] 减 1\n          移之后如果 window[x] 等于 need[x]：diff 减 1\n     c. 如果 right 大于等于 k-1 且 diff 等于 0：把 (right-k+1) 加入 ans\n7. 返回 ans\n\n复杂度：时间 O(n) diff 判断是 O(1)；空间 O(1)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<Integer> findAnagrams(String s, String p) {\n        List<Integer> ans = new ArrayList<>();\n        int n = s.length(), k = p.length();\n        if (k > n) return ans;\n\n        int[] need = new int[26];\n        for (char c : p.toCharArray()) need[c - 'a']++;\n\n        int[] window = new int[26];\n        int diff = 0;\n        for (int i = 0; i < 26; i++) if (need[i] != 0) diff++;   // 初始差异种类数\n\n        for (int right = 0; right < n; right++) {\n            int in = s.charAt(right) - 'a';\n            if (window[in] == need[in]) diff++;   // 马上要不等了\n            window[in]++;\n            if (window[in] == need[in]) diff--;   // 又相等了\n\n            if (right >= k) {\n                int out = s.charAt(right - k) - 'a';\n                if (window[out] == need[out]) diff++;\n                window[out]--;\n                if (window[out] == need[out]) diff--;\n            }\n\n            if (right >= k - 1 && diff == 0) ans.add(right - k + 1);\n        }\n        return ans;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

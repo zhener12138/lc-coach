@@ -1,0 +1,49 @@
+{
+  "slug": "longest-valid-parentheses",
+  "frontendId": "32",
+  "titleEn": "Longest Valid Parentheses",
+  "titleCn": "最长有效括号",
+  "difficulty": "Hard",
+  "tags": "栈,字符串,动态规划,括号序列",
+  "contentHtml": "<p>Given a string containing just the characters <code>&#39;(&#39;</code> and <code>&#39;)&#39;</code>, return <em>the length of the longest valid (well-formed) parentheses </em><span><em>substring</em></span>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> s = &quot;(()&quot;\n<strong>Output:</strong> 2\n<strong>Explanation:</strong> The longest valid parentheses substring is &quot;()&quot;.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> s = &quot;)()())&quot;\n<strong>Output:</strong> 4\n<strong>Explanation:</strong> The longest valid parentheses substring is &quot;()()&quot;.\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> s = &quot;&quot;\n<strong>Output:</strong> 0\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= s.length &lt;= 3 * 10<sup>4</sup></code></li>\n\t<li><code>s[i]</code> is <code>&#39;(&#39;</code>, or <code>&#39;)&#39;</code>.</li>\n</ul>",
+  "contentCnHtml": "<p>给你一个只包含 <code>'('</code> 和 <code>')'</code> 的字符串，找出最长有效（格式正确且连续）括号 <span>子串</span> 的长度。</p>\n\n<p>左右括号匹配，即每个左括号都有对应的右括号将其闭合的字符串是格式正确的，比如&nbsp;<code>\"(()())\"</code>。</p>\n\n<p>&nbsp;</p>\n\n<div>\n<div>\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>s = \"(()\"\n<strong>输出：</strong>2\n<strong>解释：</strong>最长有效括号子串是 \"()\"\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>s = \")()())\"\n<strong>输出：</strong>4\n<strong>解释：</strong>最长有效括号子串是 \"()()\"\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>s = \"\"\n<strong>输出：</strong>0\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= s.length &lt;= 3 * 10<sup>4</sup></code></li>\n\t<li><code>s[i]</code> 为 <code>'('</code> 或 <code>')'</code></li>\n</ul>\n</div>\n</div>",
+  "javaTemplate": "class Solution {\n    public int longestValidParentheses(String s) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "longest-valid-parentheses",
+      "tier": "brute",
+      "title": "枚举每一对起止位置，逐个判合法",
+      "idea": "最长有效括号，最直接的想法：**把所有偶数长度的子串都试一遍，从长到短，第一个合法的就是答案。**\n\n判合法用一个计数器：遇到左括号加一，遇到右括号减一；中途变负说明右括号多了，直接非法；结束时必须是 0。\n\n**为什么要从长到短？** 因为一旦找到最长的就可以立刻返回，省掉大量无用计算。这是暴力优化里最便宜的一招。\n\n**这题的坑非常多，我们逐个说：**\n\n1. **计数器变负必须立刻跳出**，不是继续扫。`「())」` 扫到第二个右括号时计数变 -1，后面再遇到什么都救不回来。\n2. **长度必须偶数**，奇数长度不可能是合法括号串，直接跳过能省一半枚举。\n3. **`「(()」` 这种计数始终非负但结尾不为 0 的，也是非法。** 所以两个条件缺一不可。\n\n**这一版的意义在于把「合法性判据」写死。** 后面所有优化（栈、DP、双向计数）都是在这一个判据上做文章。判据写错了，优化全是白费。\n\n坑：长度是 `end - start + 1`，别写成 `end - start`。",
+      "pseudocode": "输入：括号串 s\n输出：最长有效括号长度\n\n1. n = s 长度\n2. 对 len 从 n 递减到 2，每次减 2：        // 只试偶数长度\n     对 start 从 0 到 n 减 len：\n        end = start 加 len 减 1\n        如果 isValid(s, start, end)：return len\n3. return 0\n\nisValid(s, start, end)：\n4. balance = 0\n5. 对 i 从 start 到 end：\n     左括号则 balance 加 1，右括号则 balance 减 1\n     如果 balance 小于 0：return false          // 立刻跳出\n6. return balance 等于 0\n\n变负立刻非法、结尾必须为 0，两个条件缺一不可\n复杂度：时间 O(n 的立方)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int longestValidParentheses(String s) {\n        int n = s.length();\n        for (int len = n - (n % 2); len >= 2; len -= 2) {\n            for (int start = 0; start + len <= n; start++) {\n                if (isValid(s, start, start + len - 1)) return len;\n            }\n        }\n        return 0;\n    }\n\n    private boolean isValid(String s, int start, int end) {\n        int balance = 0;\n        for (int i = start; i <= end; i++) {\n            if (s.charAt(i) == 40) balance++;\n            else balance--;\n            if (balance < 0) return false;\n        }\n        return balance == 0;\n    }\n}",
+      "timeComplexity": "O(n³)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "longest-valid-parentheses",
+      "tier": "better",
+      "title": "栈存下标，一次扫描",
+      "idea": "栈的经典应用。**栈里存的是下标，不是括号字符。** 这个选择是本题的关键——因为你要算长度，需要知道「有效段的起点下标」。\n\n流程：\n- 栈先压入 **-1**，代表「上一个无效位置的边界」；\n- 遇到 `(` 压入它的下标；\n- 遇到 `)` 先弹出一个；如果栈空了，说明这个右括号没人匹配，**把它自己的下标压进去当新的边界**；如果栈非空，当前有效长度是 `i - stack.peek()`。\n\n**为什么压 -1 这个技巧有效？** 因为它把「从头开始的合法串」和「中间某段合法串」用同一个公式统一了。没有 -1 的话，`＂()＂` 会在弹出 0 之后栈空，算不出长度 2。**用一个哑元素消除边界特判，是栈题里的通用套路。**\n\n**同样重要的是「栈空时压入自己」。** 这一步把无效的右括号变成新的分界点——之后所有长度都从它之后算起。这比维护额外的 start 变量更干净。\n\n**复杂度 O(n)，已经是最优级别。** 但它还能被改善（见下一版的空间优化）。\n\n坑：\n1. 栈里存下标（`int`），不存字符；\n2. 初始压 -1；\n3. 弹出后栈空时压的是当前下标 i，不是 -1。",
+      "pseudocode": "输入：括号串 s\n输出：最长有效长度\n\n1. stack = 空栈；stack 压入 -1；best = 0\n2. 对 i 从 0 到 n 减 1：\n     如果 s 的第 i 位是左括号：stack 压入 i\n     否则：\n        stack 弹出一个\n        如果 stack 为空：stack 压入 i        // 当前右括号成为新边界\n        否则：best = max(best, i 减 stack 栈顶)\n3. return best\n\n先压 -1 让「从头开始的合法串」和「中间段」用同一公式\n栈空时压入自己，把无效右括号变成新分界点\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int longestValidParentheses(String s) {\n        Deque<Integer> stack = new ArrayDeque<>();\n        stack.push(-1);\n        int best = 0;\n\n        for (int i = 0; i < s.length(); i++) {\n            if (s.charAt(i) == 40) {\n                stack.push(i);\n            } else {\n                stack.pop();\n                if (stack.isEmpty()) stack.push(i);\n                else best = Math.max(best, i - stack.peek());\n            }\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "longest-valid-parentheses",
+      "tier": "optimal",
+      "title": "双向计数，空间 O(1)",
+      "idea": "不用栈，只用两个计数器 `left` 和 `right`，**从左往右扫一遍，再从右往左扫一遍。**\n\n**正向扫（左到右）：** 遇到 `(` 就 left++，遇到 `)` 就 right++。\n- 当 `left == right` 时，长度 `2*right` 是一个候选答案；\n- **当 `right > left` 时，说明右括号多了，前面这段彻底作废，两个计数清零。**\n\n**为什么正向扫不够？** 反例 `「(()」`：正向扫时 left 到 2、right 到 1，始终没有相等，答案算成 0。但真实答案是 2（前两个字符）。**原因是正向扫无法发现「左括号多了」的情况**——它只会处理「右括号多了」。\n\n**反向扫解决这个问题：** 从右往左，遇到 `)` 就 right++，遇到 `(` 就 left++；当 `left > right` 时清零。这样就能捕获 `「(()」` 这种左括号过多的情况。\n\n**为什么两遍就够了？** 因为任何有效子串的失败原因只有两种：要么是右括号过多（正向扫能捕获其左边界），要么是左括号过多（反向扫能捕获其右边界）。两个方向各覆盖一种，合起来就完备。**这个论证是本题最精彩的地方，值得逐字想透。**\n\n**这是真正的最优解**：时间 O(n)，空间 O(1)。栈版虽然也是 O(n) 时间，但空间 O(n)。**面试里写出这一版，说明你不只是会套数据结构，而是理解了问题的结构。**\n\n坑：\n1. 两遍的「清零条件」是镜像的：正向是 `right > left` 清，反向是 `left > right` 清；\n2. 相等时才更新答案，不是大于等于；\n3. 两遍都要跑，不能只跑一遍。",
+      "pseudocode": "输入：括号串 s\n输出：最长有效长度\n\n1. best = 0；left = 0；right = 0\n2. 从左往右扫：\n     左括号则 left 加 1，右括号则 right 加 1\n     如果 left 等于 right：best = max(best, 2 乘 right)\n     如果 right 大于 left：left = 0；right = 0\n3. left = 0；right = 0\n4. 从右往左扫：                                  // 镜像清零条件\n     左括号则 left 加 1，右括号则 right 加 1\n     如果 left 等于 right：best = max(best, 2 乘 left)\n     如果 left 大于 right：left = 0；right = 0\n5. return best\n\n正向只能发现右括号过多，反向才能发现左括号过多\n两遍覆盖两种失败原因，合起来完备\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int longestValidParentheses(String s) {\n        int best = 0;\n        int left = 0;\n        int right = 0;\n\n        for (int i = 0; i < s.length(); i++) {\n            if (s.charAt(i) == 40) left++;\n            else right++;\n            if (left == right) best = Math.max(best, 2 * right);\n            else if (right > left) {\n                left = 0;\n                right = 0;\n            }\n        }\n\n        left = 0;\n        right = 0;\n        for (int i = s.length() - 1; i >= 0; i--) {\n            if (s.charAt(i) == 40) left++;\n            else right++;\n            if (left == right) best = Math.max(best, 2 * left);\n            else if (left > right) {\n                left = 0;\n                right = 0;\n            }\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

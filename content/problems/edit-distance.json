@@ -1,0 +1,49 @@
+{
+  "slug": "edit-distance",
+  "frontendId": "72",
+  "titleEn": "Edit Distance",
+  "titleCn": "编辑距离",
+  "difficulty": "Medium",
+  "tags": "字符串,动态规划",
+  "contentHtml": "<p>Given two strings <code>word1</code> and <code>word2</code>, return <em>the minimum number of operations required to convert <code>word1</code> to <code>word2</code></em>.</p>\n\n<p>You have the following three operations permitted on a word:</p>\n\n<ul>\n\t<li>Insert a character</li>\n\t<li>Delete a character</li>\n\t<li>Replace a character</li>\n</ul>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> word1 = &quot;horse&quot;, word2 = &quot;ros&quot;\n<strong>Output:</strong> 3\n<strong>Explanation:</strong> \nhorse -&gt; rorse (replace &#39;h&#39; with &#39;r&#39;)\nrorse -&gt; rose (remove &#39;r&#39;)\nrose -&gt; ros (remove &#39;e&#39;)\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> word1 = &quot;intention&quot;, word2 = &quot;execution&quot;\n<strong>Output:</strong> 5\n<strong>Explanation:</strong> \nintention -&gt; inention (remove &#39;t&#39;)\ninention -&gt; enention (replace &#39;i&#39; with &#39;e&#39;)\nenention -&gt; exention (replace &#39;n&#39; with &#39;x&#39;)\nexention -&gt; exection (replace &#39;n&#39; with &#39;c&#39;)\nexection -&gt; execution (insert &#39;u&#39;)\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= word1.length, word2.length &lt;= 500</code></li>\n\t<li><code>word1</code> and <code>word2</code> consist of lowercase English letters.</li>\n</ul>",
+  "contentCnHtml": "<p>给你两个单词&nbsp;<code>word1</code> 和&nbsp;<code>word2</code>， <em>请返回将&nbsp;<code>word1</code>&nbsp;转换成&nbsp;<code>word2</code> 所使用的最少操作数</em> &nbsp;。</p>\n\n<p>你可以对一个单词进行如下三种操作：</p>\n\n<ul>\n\t<li>插入一个字符</li>\n\t<li>删除一个字符</li>\n\t<li>替换一个字符</li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>示例&nbsp;1：</strong></p>\n\n<pre>\n<strong>输入：</strong>word1 = \"horse\", word2 = \"ros\"\n<strong>输出：</strong>3\n<strong>解释：</strong>\nhorse -&gt; rorse (将 'h' 替换为 'r')\nrorse -&gt; rose (删除 'r')\nrose -&gt; ros (删除 'e')\n</pre>\n\n<p><strong>示例&nbsp;2：</strong></p>\n\n<pre>\n<strong>输入：</strong>word1 = \"intention\", word2 = \"execution\"\n<strong>输出：</strong>5\n<strong>解释：</strong>\nintention -&gt; inention (删除 't')\ninention -&gt; enention (将 'i' 替换为 'e')\nenention -&gt; exention (将 'n' 替换为 'x')\nexention -&gt; exection (将 'n' 替换为 'c')\nexection -&gt; execution (插入 'u')\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= word1.length, word2.length &lt;= 500</code></li>\n\t<li><code>word1</code> 和 <code>word2</code> 由小写英文字母组成</li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int minDistance(String word1, String word2) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "edit-distance",
+      "tier": "brute",
+      "title": "递归：三种操作逐个试",
+      "idea": "编辑距离是 LCS 的兄弟题，但**不等时的分支从「取 max」变成了「三种操作取 min 再加一」**。\n\n从末尾往前看（这样边界更好处理）：比较 `word1[i-1]` 和 `word2[j-1]`：\n- 相等：不用操作，`f(i-1, j-1)`；\n- 不等：三种选择\n  - **插入**：在 word1 里插入一个等于 `word2[j-1]` 的字符，于是 `word2` 少一位 → `f(i, j-1)`\n  - **删除**：把 `word1[i-1]` 删掉 → `f(i-1, j)`\n  - **替换**：把 `word1[i-1]` 改成 `word2[j-1]`，两边都少一位 → `f(i-1, j-1)`\n  三者取 min 再加 1。\n\n**这三种操作的映射是这题唯一需要理解的东西，也是最容易记反的地方。** 记法：**谁的下标减一，就代表「谁被消耗了一位」。** 插入消耗的是 word2（因为插进来的字符等于 word2 的那一位，匹配掉了），删除消耗的是 word1。\n\n**边界非常关键：**\n- `f(0, j) = j`：word1 空了，只能插入 j 个字符；\n- `f(i, 0) = i`：word2 空了，只能删除 i 个字符。\n\n**这两个边界不能写成 0**，这是和 LCS 最大的不同。LCS 里空串的公共长度是 0，而编辑距离里空串要补齐就得花代价。\n\n坑：\n1. 边界返回 i 或 j，不是 0；\n2. 三种操作的下标对应关系别搞反；\n3. 相等时不用加 1。",
+      "pseudocode": "输入：word1，word2\n输出：最少操作次数\n\n1. return f(word1 长度, word2 长度)\n\nf(i, j)：word1 前 i 个变成 word2 前 j 个的最少次数\n2. 如果 i 等于 0：return j                    // 只能插入\n3. 如果 j 等于 0：return i                    // 只能删除\n4. 如果 word1 第 i 减 1 位 等于 word2 第 j 减 1 位：return f(i 减 1, j 减 1)\n5. insert = f(i, j 减 1)\n6. delete = f(i 减 1, j)\n7. replace = f(i 减 1, j 减 1)\n8. return 1 加 min(insert, delete, replace)\n\n谁的下标减一，就代表谁被消耗了一位\n边界是 i 或 j 本身，不是 0，这是和 LCS 最大的不同\n复杂度：时间 O(3 的 m 加 n 次方)；空间 O(m 加 n)",
+      "codeJava": "class Solution {\n    public int minDistance(String word1, String word2) {\n        return f(word1, word2, word1.length(), word2.length());\n    }\n\n    private int f(String a, String b, int i, int j) {\n        if (i == 0) return j;\n        if (j == 0) return i;\n        if (a.charAt(i - 1) == b.charAt(j - 1)) return f(a, b, i - 1, j - 1);\n        int insert = f(a, b, i, j - 1);\n        int delete = f(a, b, i - 1, j);\n        int replace = f(a, b, i - 1, j - 1);\n        return 1 + Math.min(insert, Math.min(delete, replace));\n    }\n}",
+      "timeComplexity": "O(3^(m+n))",
+      "spaceComplexity": "O(m + n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "edit-distance",
+      "tier": "better",
+      "title": "二维填表，第一行第一列是 i 和 j",
+      "idea": "二维版。`dp[i][j]` = word1 前 i 个字符转成 word2 前 j 个字符的最少操作数。\n\n**初始化是这题最容易被扣分的地方：**\n- `dp[0][j] = j`（word1 空，插入 j 次）\n- `dp[i][0] = i`（word2 空，删除 i 次）\n\n**Java 数组默认是 0，所以这两行必须显式填！** 忘了填就等于认为「把空串变成 abc 需要 0 步」，全表作废。\n\n转移：\n```\nif (a[i-1] == b[j-1]) dp[i][j] = dp[i-1][j-1];\nelse dp[i][j] = 1 + min(dp[i][j-1], dp[i-1][j], dp[i-1][j-1]);\n```\n\n**怎么记三个下标对应的操作？** 看 `dp[i][j]` 是从哪个格子来的：\n- 从 `dp[i][j-1]`（左边）来 = 插入，因为 j 少了一个 = word2 多消耗一位；\n- 从 `dp[i-1][j]`（上边）来 = 删除，因为 i 少了一个 = word1 多消耗一位；\n- 从 `dp[i-1][j-1]`（左上）来 = 替换，两边各消耗一位。\n\n**画个格子图就永远不会记反了。** 这是二维 DP 学习里最值得动手画的一张图。\n\n复杂度 O(m·n)，力扣数据 m,n ≤ 500，25 万格，很快。\n\n坑：\n1. 第一行第一列必须显式填 i 和 j；\n2. 相等时是直接赋值，不是加 0（虽然等价，但写法上别带 +0 迷惑自己）；\n3. 答案是 `dp[m][n]`。",
+      "pseudocode": "输入：word1（长 m），word2（长 n）\n输出：最少操作次数\n\n1. dp = (m 加 1) 乘 (n 加 1) 的数组\n2. 对 i 从 0 到 m：dp[i][0] = i           // 必须显式填\n3. 对 j 从 0 到 n：dp[0][j] = j           // 必须显式填\n4. 对 i 从 1 到 m：\n     对 j 从 1 到 n：\n        如果 word1 第 i 减 1 位 等于 word2 第 j 减 1 位：\n           dp[i][j] = dp[i 减 1][j 减 1]\n        否则：\n           dp[i][j] = 1 加 min(dp[i][j 减 1], dp[i 减 1][j], dp[i 减 1][j 减 1])\n5. return dp[m][n]\n\n左边来是插入、上边来是删除、左上来是替换\n画一次格子图就永远不会记反\n复杂度：时间 O(m 乘 n)；空间 O(m 乘 n)",
+      "codeJava": "class Solution {\n    public int minDistance(String word1, String word2) {\n        int m = word1.length();\n        int n = word2.length();\n        int[][] dp = new int[m + 1][n + 1];\n\n        for (int i = 0; i <= m; i++) dp[i][0] = i;\n        for (int j = 0; j <= n; j++) dp[0][j] = j;\n\n        for (int i = 1; i <= m; i++) {\n            for (int j = 1; j <= n; j++) {\n                if (word1.charAt(i - 1) == word2.charAt(j - 1)) {\n                    dp[i][j] = dp[i - 1][j - 1];\n                } else {\n                    int best = Math.min(dp[i][j - 1], dp[i - 1][j]);\n                    best = Math.min(best, dp[i - 1][j - 1]);\n                    dp[i][j] = 1 + best;\n                }\n            }\n        }\n        return dp[m][n];\n    }\n}",
+      "timeComplexity": "O(m · n)",
+      "spaceComplexity": "O(m · n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "edit-distance",
+      "tier": "optimal",
+      "title": "一维滚动，只留上一行",
+      "idea": "压缩成一维，和 LCS 用同一个技巧：**用 `prev` 保存被覆盖的左上角值。**\n\n一维数组 `dp[j]` 的含义随行变化：\n- 更新前：`dp[i-1][j]`（上一行）\n- 更新后：`dp[i][j]`（本行）\n\n所以 `dp[j]`（旧）是上边，`dp[j-1]`（新）是左边，左上角需要额外保存。做法：每行开始 `prev = dp[0]` 之前的值……注意这里**和 LCS 有个细微差别**：编辑距离的 `dp[0]` 每行都要变成 i（第一列是 i），所以 `prev` 的初值应该是**上一行的 `dp[0]`**，而不是 0。\n\n更清晰的写法是：每行开始前 `int prev = i - 1;`（因为 `dp[i-1][0] = i-1`），然后 `dp[0] = i;`，再进入内层循环。\n\n**这个初始化细节是本题一维版的唯一难点。** 如果错写成 `prev = 0`，第一列的删除代价会全部算错。\n\n完整的每轮流程：\n1. `int prev = i - 1;`（左上角 = 上一行第 0 列）\n2. `dp[0] = i;`（本行第 0 列 = i）\n3. 内层 j 从 1 到 n：`temp = dp[j]; ... ; prev = temp;`\n\n**空间 O(n)。** 同样的「短串当列」优化也适用。\n\n坑：\n1. `prev` 初值是 `i-1`，不是 0；\n2. `dp[0] = i` 每行都要更新；\n3. `temp` 要在覆盖前取。",
+      "pseudocode": "输入：word1，word2\n输出：最少操作次数\n\n1. 如果 word2 更长：交换两者（让短的当列）\n2. m = word1 长度，n = word2 长度\n3. dp = 长度 n 加 1 的数组\n4. 对 j 从 0 到 n：dp[j] = j\n5. 对 i 从 1 到 m：\n     prev = i 减 1                          // 左上角 = 上一行第 0 列\n     dp[0] = i                              // 本行第 0 列\n     对 j 从 1 到 n：\n        temp = dp[j]                        // 先存上边旧值\n        如果 word1 第 i 减 1 位 等于 word2 第 j 减 1 位：\n           dp[j] = prev\n        否则：\n           dp[j] = 1 加 min(dp[j 减 1], temp, prev)\n        prev = temp\n6. return dp[n]\n\nprev 初值是 i 减 1 而不是 0，这是一维版唯一的难点\n复杂度：时间 O(m 乘 n)；空间 O(min(m, n))",
+      "codeJava": "class Solution {\n    public int minDistance(String word1, String word2) {\n        if (word2.length() > word1.length()) {\n            String t = word1;\n            word1 = word2;\n            word2 = t;\n        }\n        int m = word1.length();\n        int n = word2.length();\n        int[] dp = new int[n + 1];\n        for (int j = 0; j <= n; j++) dp[j] = j;\n\n        for (int i = 1; i <= m; i++) {\n            int prev = i - 1;\n            dp[0] = i;\n            for (int j = 1; j <= n; j++) {\n                int temp = dp[j];\n                if (word1.charAt(i - 1) == word2.charAt(j - 1)) {\n                    dp[j] = prev;\n                } else {\n                    int best = Math.min(dp[j - 1], temp);\n                    best = Math.min(best, prev);\n                    dp[j] = 1 + best;\n                }\n                prev = temp;\n            }\n        }\n        return dp[n];\n    }\n}",
+      "timeComplexity": "O(m · n)",
+      "spaceComplexity": "O(min(m, n))",
+      "sortOrder": 3
+    }
+  ]
+}

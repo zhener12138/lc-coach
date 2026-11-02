@@ -1,0 +1,49 @@
+{
+  "slug": "daily-temperatures",
+  "frontendId": "739",
+  "titleEn": "Daily Temperatures",
+  "titleCn": "每日温度",
+  "difficulty": "Medium",
+  "tags": "栈,数组,单调栈",
+  "contentHtml": "<p>Given an array of integers <code>temperatures</code> represents the daily temperatures, return <em>an array</em> <code>answer</code> <em>such that</em> <code>answer[i]</code> <em>is the number of days you have to wait after the</em> <code>i<sup>th</sup></code> <em>day to get a warmer temperature</em>. If there is no future day for which this is possible, keep <code>answer[i] == 0</code> instead.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<pre><strong>Input:</strong> temperatures = [73,74,75,71,69,72,76,73]\n<strong>Output:</strong> [1,1,4,2,1,1,0,0]\n</pre><p><strong>Example 2:</strong></p>\n<pre><strong>Input:</strong> temperatures = [30,40,50,60]\n<strong>Output:</strong> [1,1,1,0]\n</pre><p><strong>Example 3:</strong></p>\n<pre><strong>Input:</strong> temperatures = [30,60,90]\n<strong>Output:</strong> [1,1,0]\n</pre>\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;=&nbsp;temperatures.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>30 &lt;=&nbsp;temperatures[i] &lt;= 100</code></li>\n</ul>",
+  "contentCnHtml": "<p>给定一个整数数组&nbsp;<code>temperatures</code>&nbsp;，表示每天的温度，返回一个数组&nbsp;<code>answer</code>&nbsp;，其中&nbsp;<code>answer[i]</code>&nbsp;是指对于第 <code>i</code> 天，下一个更高温度出现在几天后。如果气温在这之后都不会升高，请在该位置用&nbsp;<code>0</code> 来代替。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1:</strong></p>\n\n<pre>\n<strong>输入:</strong> temperatures = [73,74,75,71,69,72,76,73]\n<strong>输出:</strong>&nbsp;[1,1,4,2,1,1,0,0]\n</pre>\n\n<p><strong>示例 2:</strong></p>\n\n<pre>\n<strong>输入:</strong> temperatures = [30,40,50,60]\n<strong>输出:</strong>&nbsp;[1,1,1,0]\n</pre>\n\n<p><strong>示例 3:</strong></p>\n\n<pre>\n<strong>输入:</strong> temperatures = [30,60,90]\n<strong>输出: </strong>[1,1,0]</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;=&nbsp;temperatures.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>30 &lt;=&nbsp;temperatures[i]&nbsp;&lt;= 100</code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "daily-temperatures",
+      "tier": "brute",
+      "title": "对每天向右扫 · 找第一个更高温",
+      "idea": "最直白：对第 i 天，从 i+1 开始往后找，第一个比 temperatures[i] 严格大的日子就是答案，距离是下标差。找不到就填 0。\n\n为什么是「严格大」而不是「大于等于」？题目要求「更高的温度」。等于不算更高。这是本题第一个坑，写成 `>=` 会提前返回错误答案。\n\n为什么必超时？最坏是递减序列（如 100, 99, 98...），每天都要扫到末尾，O(n²)。n = 10⁵ 时是 5×10⁹，必挂。\n\n为什么还值得写？因为它把「答案的定义」写死了：答案是「右侧第一个严格更大元素的下标差」。后面两个优化都只是换更快的找法。\n\n另一个隐含的边界：最后一天永远填 0（右边没有日子了）。默认初始化为 0 就天然处理了这一点，不用特判。\n\n复杂度 O(n²) 时间，O(1) 额外空间。",
+      "pseudocode": "输入：整数数组 temperatures\n输出：每天要等几天才会升温，等不到填 0\n\n1. n = 数组长度\n2. res = new int[n]（默认全 0）\n3. i 从 0 循环到 n-1：\n     j 从 i+1 循环到 n-1：\n        如果 temperatures[j] 大于 temperatures[i]：\n           res[i] = j - i\n           跳出内层\n4. 返回 res\n\n必须是「严格大于」，等于不算更高温\n最后一天右边没有日子，默认 0 正好正确\n复杂度：时间 O(n²)；空间 O(1) 额外",
+      "codeJava": "class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        int n = temperatures.length;\n        int[] res = new int[n];\n\n        for (int i = 0; i < n; i++) {\n            for (int j = i + 1; j < n; j++) {\n                if (temperatures[j] > temperatures[i]) {   // 严格大于\n                    res[i] = j - i;\n                    break;\n                }\n            }\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "daily-temperatures",
+      "tier": "better",
+      "title": "从右往左 + 跳跃复用已算答案",
+      "idea": "这个优化很巧妙，而且思路可以迁移到很多「找右侧第一个更大元素」的题。\n\n做法：**从右往左算**。算第 i 天时，右侧所有天的答案都已经知道了。于是可以这样跳：\n1. 先看 i+1 天，如果它比第 i 天热，答案就是 1；\n2. 否则看 i+1 的答案 t——它告诉我们「从 i+1 往右数 t 天」会到一个比 i+1 更热的位置 j = i+1+t；\n3. 直接跳到 j 继续比较，而不是一天一天挪。\n\n为什么这样安全？因为如果 temperatures[i+1] <= temperatures[i]，那么从 i+1 到 j-1 之间的所有日子都不会比 temperatures[i+1] 更热（否则 i+1 的答案会小于 t），自然也不会比 temperatures[i] 更热。所以整段可以直接跳过。\n\n最坏复杂度还是 O(n²)（比如递减序列每次都只跳 1 步），但实际数据（尤其有波动时）会快非常多。\n\n相比暴力版改了什么？把「一天一天挪」换成「按已知答案跳」，用已算出的信息剪枝。这是典型的 DP 式跳跃优化。\n\n为什么它还不是最优？因为最坏情况没改善。要保证 O(n)，必须换数据结构——单调栈。\n\n坑：跳转用 `while` 而不是 `if`，因为可能要连续跳好几次；终止条件是 `temperatures[j] <= temperatures[i]` 且 `res[j] != 0`（说明还能继续跳）。\n\n复杂度 O(n²) 最坏，实际接近 O(n)。空间 O(1)。",
+      "pseudocode": "输入：temperatures\n输出：res 数组\n\n1. n = 数组长度，res = new int[n]\n2. i 从 n-2 递减到 0：                    // 从右往左\n     j = i + 1\n     当 temperatures[j] 小于等于 temperatures[i] 且 res[j] 不为 0 循环：\n        j = j + res[j]                   // 按已算答案跳跃\n     如果 temperatures[j] 大于 temperatures[i]：\n        res[i] = j - i\n     （否则 res[i] 保持 0，说明右边没有更热的）\n3. 返回 res\n\n为什么能跳：中间那段都不比 temperatures[i+1] 热，自然也不比 temperatures[i] 热\n复杂度：最坏 O(n²)，实际接近 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        int n = temperatures.length;\n        int[] res = new int[n];\n\n        // 从右往左，右侧答案已经算好，可以按答案跳跃\n        for (int i = n - 2; i >= 0; i--) {\n            int j = i + 1;\n            // 只要还不比今天热且还能继续跳，就按已算答案往前跳\n            while (temperatures[j] <= temperatures[i] && res[j] != 0) {\n                j += res[j];\n            }\n            if (temperatures[j] > temperatures[i]) {\n                res[i] = j - i;\n            }\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n²) 最坏",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "daily-temperatures",
+      "tier": "optimal",
+      "title": "单调栈 · 存下标维护递减",
+      "idea": "本题标准答案，也是「单调栈」这个技巧最入门的题。\n\n核心观察：我们想找每个位置右侧第一个更大的元素。用**从栈底到栈顶严格递减的温度下标**来维护「还没找到答案的日子」：\n- 遍历到第 i 天时，看栈顶那天是不是比今天冷。如果是，那栈顶那天的答案就是 i - 栈顶下标（今天就是它右侧第一个更热的日子），弹出它，继续比新的栈顶；\n- 一直弹到栈顶比今天热（或栈空）为止，然后把 i 入栈。\n\n为什么一次遍历就够？因为每个下标最多入栈一次、出栈一次，总操作 2n 次，O(n)。而且**元素一旦被弹出，答案就永久确定了**——这保证了不会漏。\n\n为什么栈里存**下标**而不是温度值？因为答案需要「距离」，必须知道下标差。这是本题最容易搞错的一点：存温度就丢了位置信息，还得额外维护。\n\n为什么栈里的温度是递减的？因为如果后来者更热，前面的就会被弹掉；能留在栈里的必然是从栈底到栈顶逐个变冷。这个「递减栈」性质是理解单调栈的关键。\n\n相比跳跃版改了什么？用显式的栈替代「按答案隐式跳转」，把最坏复杂度从 O(n²) 压到 O(n)，且代码更短、更好讲。\n\n**这个模板的复用价值**：接雨水（第 42 题的单调栈解法）、柱状图中最大的矩形（第 84 题）、滑动窗口最大值（第 239 题）都靠它变形。用「存下标 + 递减栈 + while 弹栈」这三件套，能解决一整个家族。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：temperatures\n输出：res 数组\n\n1. n = 数组长度，res = new int[n]\n2. 建空栈 stack（存下标，对应温度从栈底到栈顶递减）\n3. i 从 0 循环到 n-1：\n     当 stack 不为空 且 temperatures[stack 栈顶] 小于 temperatures[i] 循环：\n        idx = stack 弹出\n        res[idx] = i - idx                // 今天就是它右侧第一个更热的日子\n     stack 压入 i\n4. 返回 res（留在栈里的都是右边没有更热的日子，保持 0）\n\n为什么存下标：答案需要距离，只有温度值算不出下标差\n为什么是递减栈：更热的会弹掉前面的，留下的必然逐个变冷\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int[] dailyTemperatures(int[] temperatures) {\n        int n = temperatures.length;\n        int[] res = new int[n];\n        Deque<Integer> stack = new ArrayDeque<>();   // 存下标\n\n        for (int i = 0; i < n; i++) {\n            // 今天比栈顶那天热：栈顶那天的答案确定\n            while (!stack.isEmpty() && temperatures[stack.peek()] < temperatures[i]) {\n                int idx = stack.pop();\n                res[idx] = i - idx;\n            }\n            stack.push(i);\n        }\n        // 剩下的下标右边没有更热的日子，res 保持 0\n        return res;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 3
+    }
+  ]
+}

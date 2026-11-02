@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "BFS 建表再复制邻居",
+      "idea": "克隆一张图，难点不在遍历，而在**处理环和共享引用**。如果只顺着邻居递归 new 节点，遇到环就会无限递归。\n\n暴力版用两步走避开这个问题：\n- **第一步**，从起点做一次 BFS，把连通的所有原节点都收集到一个 Map 里，key 是原节点，value 是它的克隆节点。这一步只看「有哪些节点」，不碰邻居关系。\n- **第二步**，再遍历一遍收集到的所有节点，把它们的邻居列表按 Map 翻译成克隆节点。\n\n**为什么这样一定正确？** 因为第一步保证了「每个原节点恰好对应一个克隆节点」，第二步只做引用翻译，不会再 new 出新节点。环在这种写法下自然成立——`A→B→A` 对应的是 `A'→B'→A'`，因为第二次遇到 A 时 Map 里已经有 `A'` 了。\n\n为什么算暴力？因为它遍历了图两遍，而且第一步的 BFS 不必要——你完全可以在遍历的同时就建好邻居关系。\n\n坑：\n1. 起点为 null 要直接返回 null；\n2. Map 的 key 必须用原节点对象本身（靠 equals 的身份比较），不能用 val；\n3. 第二步遍历的应该是 Map 的 keySet，不是重新从起点 BFS。",
+      "pseudocode": "输入：图的一个节点 node\n输出：整张图的深拷贝\n\n1. 如果 node 为空：return null\n2. map = 空 Map（原节点 到 克隆节点）\n3. queue = 空队列；map 放入 (node, 新建 Node(node.val))；queue 加入 node\n4. 当 queue 非空：                          // 第一步：收集所有节点\n     cur = queue 取出\n     对 cur.neighbors 里每个 nb：\n        如果 map 不含 nb：\n           map 放入 (nb, 新建 Node(nb.val))\n           queue 加入 nb\n5. 对 map 里每个 (old, copy)：              // 第二步：翻译邻居\n     对 old.neighbors 里每个 nb：copy.neighbors 追加 map 取 nb\n6. return map 取 node\n\n分两步避开环形递归；Map 保证每个原节点只有一个克隆\n复杂度：时间 O(V+E)；空间 O(V)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public Node cloneGraph(Node node) {\n        if (node == null) return null;\n\n        Map<Node, Node> map = new HashMap<>();\n        Deque<Node> queue = new ArrayDeque<>();\n        map.put(node, new Node(node.val));\n        queue.add(node);\n\n        while (!queue.isEmpty()) {\n            Node cur = queue.poll();\n            for (Node nb : cur.neighbors) {\n                if (!map.containsKey(nb)) {\n                    map.put(nb, new Node(nb.val));\n                    queue.add(nb);\n                }\n            }\n        }\n\n        for (Map.Entry<Node, Node> e : map.entrySet()) {\n            for (Node nb : e.getKey().neighbors) {\n                e.getValue().neighbors.add(map.get(nb));\n            }\n        }\n        return map.get(node);\n    }\n}",
+      "timeComplexity": "O(V + E)",
+      "spaceComplexity": "O(V)"
+    },
+    {
+      "tier": "better",
+      "title": "DFS 边遍历边建邻接",
+      "idea": "上一版遍历两遍，其实一遍就够。关键洞察是：**访问一个节点时，先把它的克隆建好放进 Map，再去处理邻居。** 这样当递归走到环上绕回来时，Map 里已经能查到克隆节点了，直接返回即可，不会无限递归。\n\n顺序很重要：\n1. 先查 Map，有就直接返回；\n2. 没有就 new 一个克隆，**立刻放进 Map**；\n3. 然后遍历邻居，递归拿到邻居的克隆，加进自己的列表。\n\n**如果把第 2 步的「放进 Map」挪到第 3 步之后会怎样？** 环上会无限递归直到栈溢出。这就是本题最关键的一个顺序约束。\n\n复杂度 O(V + E)：每个节点被 clone 一次，每条边被看两次（无向图两个端点各看一次）。\n\n为什么还算「较好」而不是最优？因为它是递归的——如果图是一条 10 万节点的链（力扣本题最多 100 个节点，不会触发），栈会溢出。\n\n坑：\n1. 「先入 Map 再处理邻居」的顺序不能反；\n2. 必须 clone 节点时用 `node.val`，不能跳过；\n3. 返回值是起点的克隆，不是 Map。",
+      "pseudocode": "输入：图的一个节点 node\n输出：深拷贝\n\n1. map = 空 Map；return dfs(node)\n\ndfs(node)：\n2. 如果 node 为空：return null\n3. 如果 map 里已有 node：return map 取 node\n4. copy = 新建 Node(node.val)\n5. map 放入 (node, copy)                    // 必须在处理邻居之前\n6. 对 node.neighbors 里每个 nb：\n     copy.neighbors 追加 dfs(nb)\n7. return copy\n\n先把克隆放进 Map，再处理邻居，环才不会无限递归\n复杂度：时间 O(V+E)；空间 O(V)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private final Map<Node, Node> map = new HashMap<>();\n\n    public Node cloneGraph(Node node) {\n        return dfs(node);\n    }\n\n    private Node dfs(Node node) {\n        if (node == null) return null;\n        if (map.containsKey(node)) return map.get(node);\n\n        Node copy = new Node(node.val);\n        map.put(node, copy);\n        for (Node nb : node.neighbors) {\n            copy.neighbors.add(dfs(nb));\n        }\n        return copy;\n    }\n}",
+      "timeComplexity": "O(V + E)",
+      "spaceComplexity": "O(V)"
+    },
+    {
+      "tier": "optimal",
+      "title": "BFS 一趟完成，边出队边建邻接",
+      "idea": "这一版把上一版的「一趟搞定」搬到 BFS 上，既不需要递归（无栈溢出风险），也不需要两遍遍历。\n\n流程是：起点进队前先建克隆入 Map；然后每次出队一个原节点，遍历它的邻居——如果邻居还没克隆就 now 建好并入队，然后把「邻居的克隆」加入「当前节点的克隆」的邻居列表。\n\n**为什么边出队边建邻接是对的？** 因为 `(cur, nb)` 这条边会在「cur 出队」时被处理一次；如果图是无向的，`(nb, cur)` 那条边会在「nb 出队」时被处理一次。两次处理的对象不同（一次往 cur 的克隆里加，一次往 nb 的克隆里加），所以每条无向边恰好被翻译两次，正好对应无向图的双向邻接。\n\n**为什么这是最优？**\n- 时间 O(V+E)，已经是下界；\n- 无递归，不受图深度影响；\n- 只遍历一遍，没有第二遍翻译的开销；\n- 每个原节点只 new 一次，克隆数量精确。\n\n**和 DFS 版怎么选？** 如果图很深（比如链状），BFS 版更安全。如果图是树形且你需要自底向上的信息，DFS 更方便。本题只要复制结构，BFS 版是最稳的。\n\n坑：\n1. 起点建克隆要在进队之前；\n2. 邻居的克隆要在「加入列表」之前保证存在；\n3. `map.get(cur).neighbors.add(map.get(nb))` 里两处 get 都不能少。",
+      "pseudocode": "输入：图的一个节点 node\n输出：深拷贝\n\n1. 如果 node 为空：return null\n2. map = 空 Map；map 放入 (node, 新建 Node(node.val))\n3. queue = 空队列；queue 加入 node\n4. 当 queue 非空：\n     cur = queue 取出\n     对 cur.neighbors 里每个 nb：\n        如果 map 不含 nb：\n           map 放入 (nb, 新建 Node(nb.val))\n           queue 加入 nb\n        map 取 cur 的 neighbors 追加 map 取 nb     // 边出队边建邻接\n5. return map 取 node\n\n无递归，一趟完成，克隆数精确\n复杂度：时间 O(V+E)；空间 O(V)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public Node cloneGraph(Node node) {\n        if (node == null) return null;\n\n        Map<Node, Node> map = new HashMap<>();\n        map.put(node, new Node(node.val));\n        Deque<Node> queue = new ArrayDeque<>();\n        queue.add(node);\n\n        while (!queue.isEmpty()) {\n            Node cur = queue.poll();\n            for (Node nb : cur.neighbors) {\n                if (!map.containsKey(nb)) {\n                    map.put(nb, new Node(nb.val));\n                    queue.add(nb);\n                }\n                map.get(cur).neighbors.add(map.get(nb));\n            }\n        }\n        return map.get(node);\n    }\n}",
+      "timeComplexity": "O(V + E)",
+      "spaceComplexity": "O(V)"
+    }
+  ]
+}

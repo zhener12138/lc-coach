@@ -1,0 +1,48 @@
+{
+  "slug": "longest-consecutive-sequence",
+  "frontendId": "128",
+  "titleEn": "Longest Consecutive Sequence",
+  "titleCn": "最长连续序列",
+  "difficulty": "Medium",
+  "tags": "并查集,数组,哈希表",
+  "contentHtml": "<p>Given an unsorted array of integers <code>nums</code>, return <em>the length of the longest consecutive elements sequence.</em></p>\n\n<p>You must write an algorithm that runs in&nbsp;<code>O(n)</code>&nbsp;time.</p>\n\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [100,4,200,1,3,2]\n<strong>Output:</strong> 4\n<strong>Explanation:</strong> The longest consecutive elements sequence is <code>[1, 2, 3, 4]</code>. Therefore its length is 4.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [0,3,7,2,5,8,4,6,0,1]\n<strong>Output:</strong> 9\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [1,0,1,2]\n<strong>Output:</strong> 3\n</pre>\n\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= nums.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>-10<sup>9</sup> &lt;= nums[i] &lt;= 10<sup>9</sup></code></li>\n</ul>",
+  "contentCnHtml": "<p>给定一个未排序的整数数组 <code>nums</code> ，找出数字连续的最长序列（不要求序列元素在原数组中连续）的长度。</p>\n\n<p>请你设计并实现时间复杂度为&nbsp;<code>O(n)</code><em> </em>的算法解决此问题。</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [100,4,200,1,3,2]\n<strong>输出：</strong>4\n<strong>解释：</strong>最长数字连续序列是 [1, 2, 3, 4]。它的长度为 4。</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [0,3,7,2,5,8,4,6,0,1]\n<strong>输出：</strong>9\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [1,0,1,2]\n<b>输出：</b>3\n</pre>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= nums.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>-10<sup>9</sup> &lt;= nums[i] &lt;= 10<sup>9</sup></code></li>\n</ul>",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "longest-consecutive-sequence",
+      "tier": "brute",
+      "title": "排序后扫一遍",
+      "idea": "要找\"连续序列\"，最自然的想法是先排序，连续的数字就挨在一起了。\n排序后从前往后扫，维护当前连续长度，遇到断开就重置。\n\n注意两个坑：\n  1. **要去重**。排序后可能有 [1,2,2,3]，重复元素不能算长度 +1。\n  2. 空数组要单独处理。\n\n这版复杂度 O(n log n)，题目要求 O(n)，所以不是最终答案。\n但面试时先写它、再说\"排序是 O(n log n)，我们能不能不排序\"，是很自然的过渡。",
+      "pseudocode": "1. 如果数组为空 → 返回 0\n2. 复制一份并排序\n3. best = 1，cur = 1\n4. i 从 1 循环到 n-1：\n     a. 如果 nums[i] == nums[i-1]：跳过（重复不算）\n     b. 如果 nums[i] == nums[i-1] + 1：cur++，best = max(best, cur)\n     c. 否则（断开）：cur = 1\n5. 返回 best\n\n复杂度：时间 O(n log n) 排序主导；空间 O(n) 复制数组",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int longestConsecutive(int[] nums) {\n        if (nums.length == 0) return 0;\n        int[] a = nums.clone();\n        Arrays.sort(a);\n        int best = 1, cur = 1;\n        for (int i = 1; i < a.length; i++) {\n            if (a[i] == a[i - 1]) continue;\n            if (a[i] == a[i - 1] + 1) {\n                cur++;\n                best = Math.max(best, cur);\n            } else {\n                cur = 1;\n            }\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "longest-consecutive-sequence",
+      "tier": "better",
+      "title": "哈希集合 + 只从起点出发",
+      "idea": "题目要求 O(n)，那就不能排序。用 HashSet 把所有数装进去，实现 O(1) 的\"某个数在不在\"查询。\n\n关键洞察在这里：**一段连续序列 [x, x+1, ..., x+k] 只有 x 是\"起点\"**，因为 x-1 不在集合里。所以：\n  只对\"起点\"往下数（x+1, x+2, ... 一直数到断），\n  非起点直接跳过。\n\n为什么这样是 O(n) 而不是 O(n²)？因为**每个数最多被数到一次**——只有它属于的那段序列从起点出发时，才会被访问。总访问次数 ≤ 2n。\n\n这是\"只从起点出发\"这个剪枝的价值。很多人写成了对每个数都往下数，那就是 O(n²) 了。",
+      "pseudocode": "1. 把所有数放进 HashSet（自动去重）\n2. best = 0\n3. 对 set 里每个数 x：\n     a. 如果 set 里有 x-1：跳过（x 不是起点，它前面还有人）\n     b. 否则 x 是起点：\n          cur = x，len = 1\n          当 set 里有 cur+1：cur++，len++\n          best = max(best, len)\n4. 返回 best\n\n为什么是线性的：每个数只会被\"从它所属序列的起点\"访问一次，\n总共 O(n) 次 while 迭代。\n\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int longestConsecutive(int[] nums) {\n        Set<Integer> set = new HashSet<>();\n        for (int x : nums) set.add(x);\n\n        int best = 0;\n        for (int x : set) {\n            if (set.contains(x - 1)) continue;\n            int cur = x, len = 1;\n            while (set.contains(cur + 1)) {\n                cur++;\n                len++;\n            }\n            best = Math.max(best, len);\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "longest-consecutive-sequence",
+      "tier": "optimal",
+      "title": "哈希表记录「以 x 结尾的最长长度」· 一遍扫描",
+      "idea": "上一版虽然也是 O(n)，但要先把所有数装进集合，再遍历一遍，两趟。\n能不能边扫边算，一趟搞定？\n\n用 HashMap 存「**以某个数结尾的连续序列长度**」。扫到 x 时：\n  left  = map.getOrDefault(x-1, 0)   ← x 左边接上多长\n  right = map.getOrDefault(x+1, 0)   ← x 右边接上多长\n  当前这段总长 len = left + 1 + right\n然后把 len 写到这段的**两个端点**上：map[x-left] = len，map[x+1+right] = len。\n\n为什么只写两个端点？因为以后只有端点会被当成\"邻居\"查询——中间的数不会再被查 x-1 / x+1 了（它们已经连起来了）。这样省空间，也保证正确。\n\n这版是 O(n) 一趟，但代码明显比上一版难写、难讲。**面试时更推荐上一版**——清晰度比省一趟遍历重要得多。这里列出来是为了让你知道存在这种写法。",
+      "pseudocode": "1. 建 HashMap，键是数值，值是「以它为端点的连续段长度」\n2. best = 0\n3. 对 nums 里每个 x：\n     a. 如果 map 里已经有 x：跳过（重复元素）\n     b. left = map 里 x-1 的长度（没有就 0）\n     c. right = map 里 x+1 的长度（没有就 0）\n     d. len = left + 1 + right\n     e. map[x] = len\n     f. map[x - left] = len      ← 更新左端点\n     g. map[x + 1 + right] = len ← 更新右端点\n     h. best = max(best, len)\n4. 返回 best\n\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int longestConsecutive(int[] nums) {\n        Map<Integer, Integer> map = new HashMap<>();\n        int best = 0;\n        for (int x : nums) {\n            if (map.containsKey(x)) continue;\n            int left = map.getOrDefault(x - 1, 0);\n            int right = map.getOrDefault(x + 1, 0);\n            int len = left + 1 + right;\n            map.put(x, len);\n            map.put(x - left, len);\n            map.put(x + 1 + right, len);\n            best = Math.max(best, len);\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 3
+    }
+  ]
+}

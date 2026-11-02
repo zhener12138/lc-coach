@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "递归枚举每种硬币，无记忆",
+      "idea": "定义 `f(amount)` 为「凑出 amount 最少需要几枚硬币」。最后一枚硬币若取面值 c，剩下的就是 `amount - c`，所以：\n\n`f(amount) = 1 + min(f(amount - c))`，对所有 c ≤ amount 取最小。\n\n边界：`f(0) = 0`（凑 0 元要 0 枚），`f(负数) = 无解`。\n\n这一版把递归树完整展开，没有任何缓存。**问题在于同一棵子树被反复算**：比如硬币 [1,2,5] 凑 10，`f(8)` 会被 `f(10-2)` 和 `f(9-1)` 和 `f(10-1-1)` 等多条路径重复调用。总调用次数是 coins 长度的 amount 次方级别。\n\n**这一版必须写，因为它是整道题的思想源头。** 你要先确认「最后一步取哪枚硬币」这个分解方式是完备的（每种方案的最后一步必然是某枚硬币），才能放心地去做 DP。\n\n坑：\n1. 无解时返回 -1，所以递归里要用一个特殊值表示「凑不出」，通常用 `Integer.MAX_VALUE` 或 `amount + 1`；\n2. 用 MAX_VALUE 时 `1 + MAX_VALUE` 会溢出成负数，必须先用 `if (sub == MAX) continue` 挡住；\n3. `amount < 0` 要返回无解，`amount == 0` 返回 0，两个边界别混。",
+      "pseudocode": "输入：硬币面值 coins，目标金额 amount\n输出：最少硬币数或 -1\n\n1. r = f(amount)\n2. 如果 r 是无穷大：return -1，否则 return r\n\nf(rest)：凑出 rest 最少需要几枚\n3. 如果 rest 等于 0：return 0\n4. 如果 rest 小于 0：return 无穷大\n5. best = 无穷大\n6. 对 coins 里每个 c：\n     sub = f(rest 减 c)\n     如果 sub 不是无穷大：best = min(best, sub 加 1)\n7. return best\n\n每种方案的最后一步必然是某枚硬币，这个分解是完备的\n但同一子树被反复展开，指数级\n复杂度：时间 O(coins 长度的 amount 次方)；空间 O(amount)",
+      "codeJava": "class Solution {\n    private static final int INF = Integer.MAX_VALUE;\n\n    public int coinChange(int[] coins, int amount) {\n        int r = f(coins, amount);\n        return r == INF ? -1 : r;\n    }\n\n    private int f(int[] coins, int rest) {\n        if (rest == 0) return 0;\n        if (rest < 0) return INF;\n        int best = INF;\n        for (int c : coins) {\n            int sub = f(coins, rest - c);\n            if (sub != INF) best = Math.min(best, sub + 1);\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(coins^amount)",
+      "spaceComplexity": "O(amount)"
+    },
+    {
+      "tier": "better",
+      "title": "记忆化：把 f(rest) 的结果存下来",
+      "idea": "上一版的问题是重复计算 `f(rest)`。而 `f(rest)` 只取决于 `rest` 一个参数，所以完全可以存表。\n\n用一个长度 `amount+1` 的数组，初值设特殊值表示「没算过」（注意要和无解区分开，所以不能用 0 或 -1 当哨兵，最好用 `amount+1` 这种不可能出现的值）。\n\n**为什么它还只是「较好」？** 因为递归深度等于 amount（最坏情况每次减 1）。力扣本题 amount 最大 10^4，Java 默认栈深度约 1 万层左右，**刚好在危险边缘**。而且递归的函数调用开销比循环大很多。\n\n**但它有一个 DP 替代不了的好处：** 记忆化只计算「真正会被访问到」的状态。如果 coins 里有个很大的面值，很多 `rest` 根本走不到，记忆化就省了这些。而自底向上 DP 会把 0 到 amount 全部算一遍。**稀疏状态空间时记忆化更优，稠密时 DP 更优。** 这个权衡值得记住。\n\n坑：\n1. 哨兵值选 `amount+1`（不可能的最小硬币数），不要用 -1 因为会和「无解」混淆；\n2. `f(rest)` 算完后写回数组，写回的是「已经排除无解」的值；\n3. amount 为 0 时直接返回 0。",
+      "pseudocode": "输入：coins，amount\n输出：最少硬币数或 -1\n\n1. memo = 长度 amount 加 1 的数组，全填 amount 加 1（哨兵，表示没算过）\n2. r = f(amount, memo)\n3. 如果 r 大于 amount：return -1，否则 return r\n\nf(rest, memo)：\n4. 如果 rest 等于 0：return 0\n5. 如果 rest 小于 0：return amount 加 1（无解）\n6. 如果 memo[rest] 不等于哨兵：return memo[rest]\n7. best = 哨兵\n8. 对 coins 里每个 c：\n     sub = f(rest 减 c, memo)\n     best = min(best, sub 加 1)\n9. memo[rest] = best；return best\n\n只计算真正会被访问到的状态，稀疏状态空间时比 DP 省\n复杂度：时间 O(amount 乘 coins 长度)；空间 O(amount)",
+      "codeJava": "class Solution {\n    public int coinChange(int[] coins, int amount) {\n        int[] memo = new int[amount + 1];\n        for (int i = 0; i <= amount; i++) memo[i] = amount + 1;\n        int r = f(coins, amount, memo);\n        return r > amount ? -1 : r;\n    }\n\n    private int f(int[] coins, int rest, int[] memo) {\n        if (rest == 0) return 0;\n        if (rest < 0) return memo.length;\n        if (memo[rest] != memo.length) return memo[rest];\n\n        int best = memo.length;\n        for (int c : coins) {\n            best = Math.min(best, f(coins, rest - c, memo) + 1);\n        }\n        memo[rest] = best;\n        return best;\n    }\n}",
+      "timeComplexity": "O(amount · coins)",
+      "spaceComplexity": "O(amount)"
+    },
+    {
+      "tier": "optimal",
+      "title": "自底向上 DP + 剪枝，无递归栈",
+      "idea": "把记忆化的「自顶向下」翻转成「自底向上」：从 `dp[0] = 0` 开始，按金额从小到大填表。填 `dp[i]` 时枚举每枚硬币 c，若 `i >= c` 则用 `dp[i-c] + 1` 更新。\n\n**为什么自底向上更优？** 三个实在的理由：\n- **没有递归栈**，amount=10^4 时不会栈溢出（记忆化版在边界上）；\n- 内层是纯循环，没有函数调用开销，常数小几倍；\n- 内存访问是顺序的，CPU 缓存命中率高。\n\n**加两条剪枝**（这一版真正比上一版多出来的东西）：\n- **跳过比 i 大的硬币**：`if (c > i) continue;`——省掉一次无用的判断和加法；\n- **已是最优则提前退出**：如果 `dp[i]` 已经等于 1（说明 i 本身就是一枚硬币），不用再枚举其他硬币了，直接跳出内层循环。\n\n**还有一个容易被忽略的细节：`dp[i]` 的初值。** 用 `amount + 1` 而不是 `Integer.MAX_VALUE`。原因很实际：`dp[i-c] + 1` 在 `dp[i-c]` 是 MAX 时会溢出成负数，然后被误当成合法答案。**用 amount+1 当无穷大是 DP 里的标准做法**，因为它既大于任何可能答案，又绝对不会溢出。\n\n**为什么这题不用「外层硬币内层金额」的写法？** 那样写是对的（完全背包标准套路），但对「求最小个数」来说，外层金额内层硬币少一层无效遍历——因为 `dp[i]` 只关心「凑到 i 的最优」，不关心「用了几种硬币」。**如果题目变成「凑出 amount 的方案数」（518 题），就必须外层硬币，否则会把不同顺序算成不同方案。** 这个区别是这两道题的分水岭。\n\n坑：\n1. 初值必须是 `amount+1`，不能是 MAX；\n2. `dp[amount] > amount` 时才返回 -1；\n3. amount 为 0 时循环不执行，返回 dp[0]=0，正确。",
+      "pseudocode": "输入：coins，amount\n输出：最少硬币数或 -1\n\n1. dp = 长度 amount 加 1 的数组，全填 amount 加 1\n2. dp[0] = 0\n3. 对 i 从 1 到 amount：\n     对 coins 里每个 c：\n        如果 c 大于 i：跳过                  // 剪枝一\n        如果 dp[i 减 c] 是无穷大：跳过\n        dp[i] = min(dp[i], dp[i 减 c] 加 1)\n        如果 dp[i] 等于 1：跳出内层循环       // 剪枝二\n4. 如果 dp[amount] 大于 amount：return -1\n5. return dp[amount]\n\n初值必须用 amount 加 1，用 MAX 会在加一时溢出成负数\n复杂度：时间 O(amount 乘 coins 长度)；空间 O(amount)",
+      "codeJava": "class Solution {\n    public int coinChange(int[] coins, int amount) {\n        int INF = amount + 1;\n        int[] dp = new int[amount + 1];\n        for (int i = 1; i <= amount; i++) dp[i] = INF;\n\n        for (int i = 1; i <= amount; i++) {\n            for (int c : coins) {\n                if (c > i) continue;\n                if (dp[i - c] == INF) continue;\n                dp[i] = Math.min(dp[i], dp[i - c] + 1);\n                if (dp[i] == 1) break;\n            }\n        }\n        return dp[amount] > amount ? -1 : dp[amount];\n    }\n}",
+      "timeComplexity": "O(amount · coins)",
+      "spaceComplexity": "O(amount)"
+    }
+  ]
+}

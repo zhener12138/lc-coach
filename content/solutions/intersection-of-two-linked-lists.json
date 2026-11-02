@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "双重遍历 · 逐个比对节点地址",
+      "idea": "最直白：对 headA 的每个节点，都去 headB 里走一遍，看有没有「同一个节点」。有就返回，都没有就返回 null。\n\n**关键是要比节点对象本身（地址），不是比 val。** 题目说的是「相交」——从某个节点开始，两条链表共用同一段内存。所以判断依据是 `p == q`（引用相等），而不是 `p.val == q.val`。这是本题第一大坑，很多人写成比值，遇到 `[1,1,1]` 和 `[1,1]` 这种就错了。\n\n为什么必超时？两条链表长度 m、n，双重循环 O(mn)。题目数据范围到 3×10⁴，最坏 9×10⁸，会挂。\n\n为什么还值得写？它把「相交」的定义钉死了：**同一节点对象**。而且它揭示了「相交后长度一定相同」这个几何事实——两条链表一旦相交，剩下的部分完全重合。这个观察是所有 O(m+n) 解法的出发点。\n\n顺带记住：题目保证无环（函数签名和测试数据都如此），所以不用考虑环。\n\n复杂度 O(m·n) 时间，O(1) 空间。",
+      "pseudocode": "输入：两条链表头 headA、headB\n输出：相交的起始节点，无相交返回 null\n\n1. p = headA\n2. 当 p 不为空循环：\n     q = headB\n     当 q 不为空循环：\n        如果 p 和 q 是同一个对象（不是值相等）：返回 p\n        q = q.next\n     p = p.next\n3. 返回 null\n\n必须用 == 比较对象，不能用 .val 比\n复杂度：时间 O(m·n)；空间 O(1)",
+      "codeJava": "public class Solution {\n    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {\n        for (ListNode p = headA; p != null; p = p.next) {\n            for (ListNode q = headB; q != null; q = q.next) {\n                // 比对象地址，不是比值\n                if (p == q) return p;\n            }\n        }\n        return null;\n    }\n}",
+      "timeComplexity": "O(m·n)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "better",
+      "title": "哈希集合 · 先存 A 再查 B",
+      "idea": "双重循环慢在「每次都要重新遍历 B」。用 HashSet 把 A 的所有节点先存起来，再遍历 B，第一个「出现在集合里」的节点就是交点。这样每边只走一遍，O(m+n)。\n\n为什么这样一定能找到第一个交点？因为 A 和 B 相交后共用完全相同的后续节点。从 B 的头走到交点时，该节点的对象一定在 A 的集合里；而交点之前的 B 节点不可能在 A 的集合里（若在，说明从那里就已经相交，那才是真正的交点）。所以第一个命中的就是答案。\n\n相比双重循环改了什么？用空间换时间，把内层 O(n) 的查找换成 O(1) 的哈希查找，总复杂度从 O(mn) 降到 O(m+n)。\n\n和双指针版比，这版差在哪？空间 O(m)，而双指针版是 O(1)。当内存受限时会输。但它的思路最直白、最不容易写错，面试时先讲它再讲双指针，是很自然的递进。\n\n坑：集合里存的必须是 `ListNode` 对象而不是 val。HashSet 对 ListNode 用默认的 identity hash（没重写 hashCode），正好符合「按对象地址判重」的需求。\n\n复杂度 O(m+n) 时间，O(m) 空间。",
+      "pseudocode": "输入：两条链表头 headA、headB\n输出：交点或 null\n\n1. seen = 空 HashSet\n2. p = headA\n   当 p 不为空：把 p 加入 seen；p = p.next\n3. q = headB\n   当 q 不为空：\n     如果 q 在 seen 里：返回 q\n     q = q.next\n4. 返回 null\n\n复杂度：时间 O(m+n)；空间 O(m)",
+      "codeJava": "import java.util.*;\n\npublic class Solution {\n    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {\n        Set<ListNode> seen = new HashSet<>();\n        for (ListNode p = headA; p != null; p = p.next) seen.add(p);\n\n        for (ListNode q = headB; q != null; q = q.next) {\n            // 第一个出现在 A 里的 B 节点就是交点\n            if (seen.contains(q)) return q;\n        }\n        return null;\n    }\n}",
+      "timeComplexity": "O(m+n)",
+      "spaceComplexity": "O(m)"
+    },
+    {
+      "tier": "optimal",
+      "title": "双指针走完换头 · 路程相等必相遇",
+      "idea": "这是本题最漂亮的一招，也是面试官最想看到的答案。\n\n核心思想：让两个指针分别从 headA、headB 出发，各自走完自己的链表后**换到对方的头上继续走**。这样两个指针走过的总路程都是 m + n。\n\n为什么这样能相遇？设 A 独有部分长 a、B 独有部分长 b、公共部分长 c。指针 p 的路程是 a + c + b，指针 q 的路程是 b + c + a——**总长完全相同**。所以它们一定同时到达交点；如果两链表不相交（c = 0），它们会同时变成 null，此时返回 null 也对。\n\n换头的代码怎么写？关键一行：`p = (p == null) ? headB : p.next;`。注意是「p 走到 null 才换头」，而不是「走完就换」——前者能让两个指针都多走一轮，正是这一步保证路程对齐。\n\n相比哈希版改了什么？不存任何节点，空间从 O(m) 降到 O(1)，是本题的理论最优。\n\n坑：\n1. 换成 `p.next` 时要判空，否则 NPE；用三元表达式一次写清最安全。\n2. 循环条件是 `p != q`，两个都变成 null 时也相等，正好自然退出。\n3. 不要试图先算长度差再走——那是另一条正确路径，但代码更长。\n\n复杂度 O(m+n) 时间，O(1) 空间。",
+      "pseudocode": "输入：两条链表头 headA、headB\n输出：交点或 null\n\n1. p = headA，q = headB\n2. 当 p 不等于 q 循环：\n     a. p = (p 为空) ? headB : p.next      // 走完 A 就换到 B 的头\n     b. q = (q 为空) ? headA : q.next      // 走完 B 就换到 A 的头\n3. 返回 p（要么是交点，要么是 null）\n\n为什么必相遇：两边总路程都是 a+b+c\n  不相交时 c=0，两者同时变 null，也相等退出\n\n复杂度：时间 O(m+n)；空间 O(1)",
+      "codeJava": "public class Solution {\n    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {\n        ListNode p = headA, q = headB;\n        // 两个指针总路程都是 m+n，必然同时到达交点（或同时为 null）\n        while (p != q) {\n            p = (p == null) ? headB : p.next;\n            q = (q == null) ? headA : q.next;\n        }\n        return p;\n    }\n}",
+      "timeComplexity": "O(m+n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

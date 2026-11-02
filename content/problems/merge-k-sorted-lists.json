@@ -1,0 +1,49 @@
+{
+  "slug": "merge-k-sorted-lists",
+  "frontendId": "23",
+  "titleEn": "Merge k Sorted Lists",
+  "titleCn": "合并 K 个升序链表",
+  "difficulty": "Hard",
+  "tags": "链表,分治,堆（优先队列）,归并排序,锦标赛排序",
+  "contentHtml": "<p>You are given an array of <code>k</code> linked-lists <code>lists</code>, each linked-list is sorted in ascending order.</p>\n\n<p><em>Merge all the linked-lists into one sorted linked-list and return it.</em></p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> lists = [[1,4,5],[1,3,4],[2,6]]\n<strong>Output:</strong> [1,1,2,3,4,4,5,6]\n<strong>Explanation:</strong> The linked-lists are:\n[\n  1-&gt;4-&gt;5,\n  1-&gt;3-&gt;4,\n  2-&gt;6\n]\nmerging them into one sorted linked list:\n1-&gt;1-&gt;2-&gt;3-&gt;4-&gt;4-&gt;5-&gt;6\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> lists = []\n<strong>Output:</strong> []\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> lists = [[]]\n<strong>Output:</strong> []\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>k == lists.length</code></li>\n\t<li><code>0 &lt;= k &lt;= 10<sup>4</sup></code></li>\n\t<li><code>0 &lt;= lists[i].length &lt;= 500</code></li>\n\t<li><code>-10<sup>4</sup> &lt;= lists[i][j] &lt;= 10<sup>4</sup></code></li>\n\t<li><code>lists[i]</code> is sorted in <strong>ascending order</strong>.</li>\n\t<li>The sum of <code>lists[i].length</code> will not exceed <code>10<sup>4</sup></code>.</li>\n</ul>",
+  "contentCnHtml": "<p>给你一个链表数组，每个链表都已经按升序排列。</p>\n\n<p>请你将所有链表合并到一个升序链表中，返回合并后的链表。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre><strong>输入：</strong>lists = [[1,4,5],[1,3,4],[2,6]]\n<strong>输出：</strong>[1,1,2,3,4,4,5,6]\n<strong>解释：</strong>链表数组如下：\n[\n  1-&gt;4-&gt;5,\n  1-&gt;3-&gt;4,\n  2-&gt;6\n]\n将它们合并到一个有序链表中得到。\n1-&gt;1-&gt;2-&gt;3-&gt;4-&gt;4-&gt;5-&gt;6\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre><strong>输入：</strong>lists = []\n<strong>输出：</strong>[]\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre><strong>输入：</strong>lists = [[]]\n<strong>输出：</strong>[]\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>k == lists.length</code></li>\n\t<li><code>0 &lt;= k &lt;= 10^4</code></li>\n\t<li><code>0 &lt;= lists[i].length &lt;= 500</code></li>\n\t<li><code>-10^4 &lt;= lists[i][j] &lt;= 10^4</code></li>\n\t<li><code>lists[i]</code> 按 <strong>升序</strong> 排列</li>\n\t<li><code>lists[i].length</code> 的总和不超过 <code>10^4</code></li>\n</ul>",
+  "javaTemplate": "/**\n * Definition for singly-linked list.\n * public class ListNode {\n *     int val;\n *     ListNode next;\n *     ListNode() {}\n *     ListNode(int val) { this.val = val; }\n *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }\n * }\n */\nclass Solution {\n    public ListNode mergeKLists(ListNode[] lists) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "merge-k-sorted-lists",
+      "tier": "brute",
+      "title": "两两合并 · 结果不断喂回去",
+      "idea": "已经有第 21 题「合并两个有序链表」了，最直接的想法就是：把 lists[0] 和 lists[1] 合并，结果再和 lists[2] 合并，一直合并到最后一个。\n\n这版为什么慢？假设共有 n 个节点、k 条链表。第一次合并最多涉及 n/k 个节点，但结果会越来越长；第 i 次合并要遍历「已合并的累积长度 + 新链表长度」。总遍历量接近 n/k + 2n/k + ... + n ≈ O(nk)。k 很大而每条链表很短时（比如 k=10⁴，每条 1 个节点），退化到 O(nk) = O(n²)，必然超时。\n\n为什么还值得写？因为它是所有优化版的语义基础——「合并」这个操作本身已经由第 21 题解决，本题的难点纯粹是「怎么组织合并顺序」。先写最笨的顺序，才能意识到顺序才是性能关键。\n\n实现要点：直接复用 mergeTwo 私有方法（dummy + tail 那套）。注意 lists 可能为空数组、也可能含 null 元素，开头要过滤或特判。\n\n复杂度 O(nk) 时间，O(1) 额外空间。",
+      "pseudocode": "输入：k 条有序链表的数组 lists\n输出：合并后的一条有序链表\n\n1. 如果 lists 为空：返回 null\n2. result = null\n3. 对 lists 里每条链表 l：\n     result = mergeTwo(result, l)\n4. 返回 result\n\nmergeTwo(a, b)：\n   dummy = new ListNode(0)，tail = dummy\n   当 a 和 b 都不空：谁小接谁，指针前进\n   剩下的整段直接挂上\n   返回 dummy.next\n\n复杂度：时间 O(n·k)；空间 O(1)",
+      "codeJava": "class Solution {\n    public ListNode mergeKLists(ListNode[] lists) {\n        if (lists == null || lists.length == 0) return null;\n        ListNode result = null;\n        for (ListNode l : lists) {\n            result = mergeTwo(result, l);   // 累积合并，越到后面越慢\n        }\n        return result;\n    }\n\n    private ListNode mergeTwo(ListNode a, ListNode b) {\n        ListNode dummy = new ListNode(0), tail = dummy;\n        while (a != null && b != null) {\n            if (a.val <= b.val) { tail.next = a; a = a.next; }\n            else { tail.next = b; b = b.next; }\n            tail = tail.next;\n        }\n        tail.next = (a != null) ? a : b;\n        return dummy.next;\n    }\n}",
+      "timeComplexity": "O(n·k)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "merge-k-sorted-lists",
+      "tier": "better",
+      "title": "分治归并 · 两两配对合并",
+      "idea": "上一版的问题是「一条长链反复参与合并」。分治改法：先两两配对合并（第 0 和第 1 合、第 2 和第 3 合……），得到 k/2 条；再对这 k/2 条重复配对，直到只剩一条。\n\n为什么快？每条链表参与的合并轮数是 log k，而每轮所有链表一共被遍历 n 个节点。所以总复杂度 O(n log k)。上一版最坏是 O(nk)，k 越大差距越明显。\n\n比较一下两种组织方式的本质差别：**串行合并时，越早参与的元素被重复遍历的次数越多**（第一个链表被扫了 k 次）；**分治时每轮都在同一层内配对，所有元素被遍历的次数一致，都是 log k 次**。这就是归并排序快的原因，本题只是把它搬到链表上。\n\n实现要点：\n- 用 `interval` 表示当前配对跨度，初始 1；每轮 `interval *= 2`；\n- 配对 `lists[i]` 和 `lists[i+interval]`，结果写回 `lists[i]`；\n- 越界时（后半段没有配对对象）直接保留原链表，不合并；\n- 循环条件 `interval < lists.length`。\n\n相比串行版改了什么？只改合并顺序，mergeTwo 一行没动，复杂度从 O(nk) 降到 O(nlogk)。这是「算法结构比代码技巧更重要」的典型例证。\n\n复杂度 O(n log k) 时间，O(1) 额外空间（原地改 lists 数组）。",
+      "pseudocode": "输入：k 条有序链表\n输出：合并后的一条\n\n1. 如果 lists 为空：返回 null\n2. 如果只有一条：返回 lists[0]\n3. interval = 1\n4. 当 interval 小于 lists 长度：\n     i 从 0 开始，每次加 2*interval：\n       如果 i+interval 小于长度：\n          lists[i] = mergeTwo(lists[i], lists[i+interval])\n     interval = interval * 2\n5. 返回 lists[0]\n\n为什么快：每条链表只参与 log k 轮，每轮总共遍历 n 个节点\n复杂度：时间 O(n log k)；空间 O(1)",
+      "codeJava": "class Solution {\n    public ListNode mergeKLists(ListNode[] lists) {\n        if (lists == null || lists.length == 0) return null;\n\n        int interval = 1;\n        int n = lists.length;\n        while (interval < n) {\n            for (int i = 0; i + interval < n; i += 2 * interval) {\n                // 两两配对合并，结果写回前半位置\n                lists[i] = mergeTwo(lists[i], lists[i + interval]);\n            }\n            interval *= 2;\n        }\n        return lists[0];\n    }\n\n    private ListNode mergeTwo(ListNode a, ListNode b) {\n        ListNode dummy = new ListNode(0), tail = dummy;\n        while (a != null && b != null) {\n            if (a.val <= b.val) { tail.next = a; a = a.next; }\n            else { tail.next = b; b = b.next; }\n            tail = tail.next;\n        }\n        tail.next = (a != null) ? a : b;\n        return dummy.next;\n    }\n}",
+      "timeComplexity": "O(n log k)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "merge-k-sorted-lists",
+      "tier": "optimal",
+      "title": "小顶堆 · 每次取全局最小",
+      "idea": "换个视角：合并后的序列，第 1 个元素一定是「所有链表头节点里最小的那个」。取走它之后，它所在链表的新头节点加入候选，再取最小的……每次取走的都是当前 k 个候选里的最小值，这正是小顶堆的用处。\n\n做法：把 k 条链表的头节点全部入堆（按 val 升序），然后循环——弹堆顶接到结果尾部，如果弹出的节点还有 next 就把它入堆，直到堆空。\n\n复杂度分析：每个节点入堆一次、出堆一次，堆操作 O(log k)，n 个节点共 O(n log k)。和分治版同阶，但常数略大（每次都要 log k）。\n\n那为什么把它列为「最优」？因为它**天然支持流式输入**：如果链表是动态到达的（比如 k 个有序数据流），分治必须等全部到齐才能配对，而堆可以边到边合并。这个特性在工程上非常重要，是「多路归并」这个模式的本质形态。\n\n实现细节：\n- 堆里存 ListNode，比较器 `(a, b) -> a.val - b.val`；\n- **入堆前要判空**，null 不能进堆（比较器会 NPE）；\n- 用 dummy + tail 收集结果。\n\n考试视角：分治和堆都是标准答案，写哪个都能过。堆的代码略长但逻辑更线性，不容易在 interval 边界上出错。\n\n复杂度 O(n log k) 时间，O(k) 空间。",
+      "pseudocode": "输入：k 条有序链表\n输出：合并后的一条\n\n1. 建小顶堆 pq，按节点 val 升序\n2. 对 lists 里每条链表：如果头节点不为空就入堆\n3. dummy = new ListNode(0)，tail = dummy\n4. 当堆不为空循环：\n     a. node = 弹出堆顶（当前最小的节点）\n     b. tail.next = node；tail = tail.next\n     c. 如果 node.next 不为空：入堆\n5. tail.next = null（保险）\n6. 返回 dummy.next\n\n优势：支持流式输入，不必等所有链表到齐\n复杂度：时间 O(n log k)；空间 O(k)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public ListNode mergeKLists(ListNode[] lists) {\n        if (lists == null || lists.length == 0) return null;\n\n        PriorityQueue<ListNode> pq = new PriorityQueue<>((a, b) -> a.val - b.val);\n        for (ListNode l : lists) {\n            if (l != null) pq.offer(l);   // null 不能进堆\n        }\n\n        ListNode dummy = new ListNode(0), tail = dummy;\n        while (!pq.isEmpty()) {\n            ListNode node = pq.poll();    // 当前全局最小\n            tail.next = node;\n            tail = tail.next;\n            if (node.next != null) pq.offer(node.next);   // 同链表的下一节点入堆\n        }\n        tail.next = null;\n        return dummy.next;\n    }\n}",
+      "timeComplexity": "O(n log k)",
+      "spaceComplexity": "O(k)",
+      "sortOrder": 3
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "slug": "sort-list",
+  "frontendId": "148",
+  "titleEn": "Sort List",
+  "titleCn": "排序链表",
+  "difficulty": "Medium",
+  "tags": "链表,双指针,分治,排序,归并排序",
+  "contentHtml": "<p>Given the <code>head</code> of a linked list, return <em>the list after sorting it in <strong>ascending order</strong></em>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/09/14/sort_list_1.jpg\" />\n<pre>\n<strong>Input:</strong> head = [4,2,1,3]\n<strong>Output:</strong> [1,2,3,4]\n</pre>\n\n<p><strong>Example 2:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/09/14/sort_list_2.jpg\" />\n<pre>\n<strong>Input:</strong> head = [-1,5,3,4,0]\n<strong>Output:</strong> [-1,0,3,4,5]\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> head = []\n<strong>Output:</strong> []\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li>The number of nodes in the list is in the range <code>[0, 5 * 10<sup>4</sup>]</code>.</li>\n\t<li><code>-10<sup>5</sup> &lt;= Node.val &lt;= 10<sup>5</sup></code></li>\n</ul>\n\n<p>&nbsp;</p>\n<p><strong>Follow up:</strong> Can you sort the linked list in <code>O(n logn)</code> time and <code>O(1)</code> memory (i.e. constant space)?</p>",
+  "contentCnHtml": "<p>给你链表的头结点&nbsp;<code>head</code>&nbsp;，请将其按 <strong>升序</strong> 排列并返回 <strong>排序后的链表</strong> 。</p>\n\n<ul>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/09/14/sort_list_1.jpg\" />\n<pre>\n<b>输入：</b>head = [4,2,1,3]\n<b>输出：</b>[1,2,3,4]\n</pre>\n\n<p><strong>示例 2：</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/09/14/sort_list_2.jpg\" />\n<pre>\n<b>输入：</b>head = [-1,5,3,4,0]\n<b>输出：</b>[-1,0,3,4,5]\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<b>输入：</b>head = []\n<b>输出：</b>[]\n</pre>\n\n<p>&nbsp;</p>\n\n<p><b>提示：</b></p>\n\n<ul>\n\t<li>链表中节点的数目在范围&nbsp;<code>[0, 5 * 10<sup>4</sup>]</code>&nbsp;内</li>\n\t<li><code>-10<sup>5</sup>&nbsp;&lt;= Node.val &lt;= 10<sup>5</sup></code></li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><b>进阶：</b>你可以在&nbsp;<code>O(n&nbsp;log&nbsp;n)</code> 时间复杂度和常数级空间复杂度下，对链表进行排序吗？</p>",
+  "javaTemplate": "/**\n * Definition for singly-linked list.\n * public class ListNode {\n *     int val;\n *     ListNode next;\n *     ListNode() {}\n *     ListNode(int val) { this.val = val; }\n *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }\n * }\n */\nclass Solution {\n    public ListNode sortList(ListNode head) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "sort-list",
+      "tier": "brute",
+      "title": "转数组排序 · 再写回链表",
+      "idea": "题目要求 O(n log n) 时间、常数级空间。最稳的第一步：把链表的值全部读进数组，用 `Arrays.sort`（双轴快排，O(n log n)），再遍历链表把值写回去。\n\n为什么这版值得先写？因为它在 10 分钟内就能保证正确，是面试的「保底分」。而且它清楚地暴露了题目真正的难点——不是排序算法本身，而是**链表上没法随机访问，怎么实现归并**。\n\n为什么它不符合进阶要求？空间是 O(n)（数组本身），而题目进阶明确要求 O(1) 额外空间。面试官问「不许用数组」时必须能切到归并版。\n\n顺带一个容易忽略的点：`Arrays.sort(int[])` 是双轴快排，稳定吗？不稳定。但本题只要求值有序，不要求稳定，所以没问题。如果题目要求「相同值保持相对顺序」，就得用 `Integer[]` + 稳定排序或归并。\n\n坑：链表可能为空，要先判 null 再建数组。\n\n复杂度 O(n log n) 时间，O(n) 空间。",
+      "pseudocode": "输入：链表头 head\n输出：升序排列的链表\n\n1. 如果 head 为空：返回 null\n2. 第一遍：数出长度 n\n3. 建数组 arr[n]，第二遍：把每个节点的 val 填进 arr\n4. Arrays.sort(arr)\n5. 第三遍：遍历链表，依次把 arr 的值写回节点\n6. 返回 head\n\n链表不能随机访问，所以「排序」只能在数组上做\n复杂度：时间 O(n log n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public ListNode sortList(ListNode head) {\n        if (head == null) return null;\n\n        int n = 0;\n        for (ListNode p = head; p != null; p = p.next) n++;\n\n        int[] arr = new int[n];\n        int i = 0;\n        for (ListNode p = head; p != null; p = p.next) arr[i++] = p.val;\n\n        Arrays.sort(arr);\n\n        i = 0;\n        for (ListNode p = head; p != null; p = p.next) p.val = arr[i++];\n        return head;\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "sort-list",
+      "tier": "better",
+      "title": "自底向上归并 · 模拟区间长度",
+      "idea": "链表归并排序有两条路：自顶向下（递归切半）和自底向上（迭代，按长度倍增）。这一版用自底向上，好处是**不用递归栈**，空间严格 O(1)。\n\n思路：先把链表拆成单节点（长度 1 视为有序），然后两两合并成长度 2、再合并成 4、8……直到超过总长。每轮只做「相邻两个长度 len 的有序段合并成 2len」。\n\n实现难点：链表上没法用下标定位，所以每轮都要从头扫，边扫边数。核心循环：\n```\nfor (int len = 1; len < n; len *= 2) {\n    // 扫描整条链，把相邻两段 len 合并\n}\n```\n每轮里的合并需要「精确地切出两段 len」——要数着走，数不满时截断。这就是它代码长、容易错的原因。\n\n相比数组版改了什么？不用数组，空间降到 O(1)，符合进阶要求。但实现复杂，边界（最后一段不足 len、第二段为空）容易出 bug。\n\n实际面试建议：这版能写出来是加分，但**更推荐下一版的自顶向下递归**——思路更清晰、不容易写错，代价只是 O(log n) 递归栈。题目要求 O(1) 时再切这版。\n\n复杂度 O(n log n) 时间，O(1) 空间。",
+      "pseudocode": "输入：head\n输出：排序后的链表\n\n1. 如果 head 为空 或 head.next 为空：返回 head\n2. 数出总长度 n\n3. dummy = new ListNode(0)；dummy.next = head\n4. len = 1\n   当 len 小于 n：\n     prev = dummy，cur = dummy.next\n     当 cur 不为空 循环：\n       a. 切出第一段：first = cur，走 len 步（不足则到 null）\n       b. 切出第二段：second = cur，再走 len 步（不足则到 null）\n       c. 合并 first 和 second 两段，接到 prev 后面\n       d. prev = 合并段的尾部\n     len = len * 2\n5. 返回 dummy.next\n\n自底向上不用递归栈，空间严格 O(1)\n复杂度：时间 O(n log n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public ListNode sortList(ListNode head) {\n        if (head == null || head.next == null) return head;\n\n        int n = 0;\n        for (ListNode p = head; p != null; p = p.next) n++;\n\n        ListNode dummy = new ListNode(0);\n        dummy.next = head;\n\n        for (int len = 1; len < n; len *= 2) {\n            ListNode prev = dummy, cur = dummy.next;\n            while (cur != null) {\n                // 切第一段\n                ListNode first = cur;\n                int cnt = 1;\n                while (cnt < len && cur.next != null) { cur = cur.next; cnt++; }\n\n                // 切第二段\n                ListNode second = cur.next;\n                cur.next = null;         // 断开第一段\n                cur = second;\n                cnt = 1;\n                while (cnt < len && cur != null && cur.next != null) { cur = cur.next; cnt++; }\n\n                ListNode next = null;\n                if (cur != null) { next = cur.next; cur.next = null; }   // 断开第二段\n\n                // 合并两段接到 prev 后\n                ListNode merged = mergeTwo(first, second);\n                prev.next = merged;\n                while (prev.next != null) prev = prev.next;\n\n                cur = next;\n            }\n        }\n        return dummy.next;\n    }\n\n    private ListNode mergeTwo(ListNode a, ListNode b) {\n        ListNode dummy = new ListNode(0), tail = dummy;\n        while (a != null && b != null) {\n            if (a.val <= b.val) { tail.next = a; a = a.next; }\n            else { tail.next = b; b = b.next; }\n            tail = tail.next;\n        }\n        tail.next = (a != null) ? a : b;\n        return dummy.next;\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "sort-list",
+      "tier": "optimal",
+      "title": "自顶向下归并 · 快慢指针切半",
+      "idea": "这是链表排序的教科书答案，也是面试最推荐的写法。三步：切半、递归排两边、合并。\n\n**第一步：快慢指针找中点。** 用 `slow = head, fast = head.next`，`while (fast != null && fast.next != null) { slow = slow.next; fast = fast.next.next; }`，此时 slow 就是前半段的最后一个节点。\n\n为什么 fast 要从 head.next 开始？因为这样切出来前半段长度 ≤ 后半段，且节点数为 2 时前半段只有 1 个——避免切出空段导致无限递归。这是本题最隐蔽的坑。\n\n**第二步：断开并递归。** `ListNode mid = slow.next; slow.next = null;` 然后分别 sortList(head) 和 sortList(mid)。\n\n**第三步：合并。** 复用第 21 题的 dummy + tail 两路合并。\n\n为什么它是「最优」？时间复杂度 O(n log n) 是本题下界；空间 O(log n) 只有递归栈，比数组版 O(n) 好，比自底向上版的 O(1) 稍差但代码短得多、正确性容易保证。**工程上这版是绝对的最优取舍。**\n\n递归深度是 log n，n = 5×10⁴ 时约 16 层，完全不会栈溢出。这一点和「反转链表递归版会 O(n) 栈溢出」形成对照，值得在面试里主动说出。\n\n坑清单：\n1. fast 起点必须是 head.next；\n2. 必须 `slow.next = null` 断开，否则递归不收敛；\n3. 终止条件是 `head == null || head.next == null`。\n\n复杂度 O(n log n) 时间，O(log n) 空间。",
+      "pseudocode": "输入：head\n输出：升序链表\n\n1. 如果 head 为空 或 head.next 为空：返回 head\n2. 快慢指针找中点：\n     slow = head，fast = head.next        // fast 从第二个开始，避免切出空段\n     当 fast 不为空 且 fast.next 不为空：\n        slow = slow.next\n        fast = fast.next.next\n3. mid = slow.next\n   slow.next = null                       // 断开两段\n4. left = sortList(head)\n   right = sortList(mid)\n5. 返回 mergeTwo(left, right)\n\nmergeTwo 就是第 21 题：dummy + tail，剩下整段直接挂\n复杂度：时间 O(n log n)；空间 O(log n) 递归栈",
+      "codeJava": "class Solution {\n    public ListNode sortList(ListNode head) {\n        if (head == null || head.next == null) return head;\n\n        // 快慢指针找前半段的最后一个节点\n        // fast 从 head.next 出发，保证前半段长度 <= 后半段，不会切出空段\n        ListNode slow = head, fast = head.next;\n        while (fast != null && fast.next != null) {\n            slow = slow.next;\n            fast = fast.next.next;\n        }\n\n        ListNode mid = slow.next;\n        slow.next = null;          // 必须断开，否则递归不收敛\n\n        ListNode left = sortList(head);\n        ListNode right = sortList(mid);\n\n        return mergeTwo(left, right);\n    }\n\n    private ListNode mergeTwo(ListNode a, ListNode b) {\n        ListNode dummy = new ListNode(0), tail = dummy;\n        while (a != null && b != null) {\n            if (a.val <= b.val) { tail.next = a; a = a.next; }\n            else { tail.next = b; b = b.next; }\n            tail = tail.next;\n        }\n        tail.next = (a != null) ? a : b;\n        return dummy.next;\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(log n)",
+      "sortOrder": 3
+    }
+  ]
+}

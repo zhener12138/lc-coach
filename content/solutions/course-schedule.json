@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "反复摘掉入度为 0 的点",
+      "idea": "「能不能修完所有课」等价于「这张有向图里有没有环」。因为课与课之间的依赖构成有向边，只要存在环，环上的课互相等待，谁都学不了。\n\n最直观的判环方式是**不断摘叶子**：找出所有入度为 0 的点（没有任何前置课的课），把它们「修掉」——从图里删掉这个点，以及它出发的所有边，于是它的后继入度减一。如果一轮下来没有任何点的入度变成 0，但图里还有点没修完，说明剩下的每个点都在等别人，这就是环。\n\n**为什么这个判定是对的？** 一个有向无环图一定存在至少一个入度为 0 的点（否则沿着入边一直往回走必然绕成环）。所以摘叶子的过程只要图无环，就一定能一路摘完。反之如果有环，环上的点入度永远降不到 0。\n\n为什么算暴力？因为它用「反复扫全表找入度 0」的方式实现，每轮 O(n + e)，最多 n 轮，总 O(n·(n+e))。而实际上用一个队列就能把「谁刚变成 0」这件事记下来，不需要重扫。\n\n坑：\n1. 每轮必须记录本轮是否真的摘掉了东西，否则会死循环；\n2. 不要在遍历时修改 `indegree` 数组，要等扫完再统一改；\n3. 计数用的是「摘掉的点数」，最后和 numCourses 比。",
+      "pseudocode": "输入：课程数 n，依赖对 prerequisites（[a, b] 表示学 a 前要先学 b）\n输出：能否修完\n\n1. adj = n 个空列表；indegree = 长度 n 的 0 数组\n2. 对每个 [a, b]：adj[b] 追加 a；indegree[a] 加 1\n3. removed = 0\n4. 无限循环：\n     batch = 空列表\n     对 i 从 0 到 n-1：\n        如果 indegree[i] 等于 0 且 i 未被标记已摘：batch 追加 i\n     如果 batch 为空：跳出\n     对 batch 里每个 u：\n        标记 u 已摘；removed 加 1\n        对 adj[u] 里每个 v：indegree[v] 减 1\n5. return removed 等于 n\n\n无环图必然存在入度 0 的点，所以能一路摘完\n复杂度：时间 O(n·(n+e))；空间 O(n+e)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        List<List<Integer>> adj = new ArrayList<>();\n        for (int i = 0; i < numCourses; i++) adj.add(new ArrayList<>());\n        int[] indegree = new int[numCourses];\n        for (int[] p : prerequisites) {\n            adj.get(p[1]).add(p[0]);\n            indegree[p[0]]++;\n        }\n\n        boolean[] removed = new boolean[numCourses];\n        int count = 0;\n\n        while (true) {\n            List<Integer> batch = new ArrayList<>();\n            for (int i = 0; i < numCourses; i++) {\n                if (!removed[i] && indegree[i] == 0) batch.add(i);\n            }\n            if (batch.isEmpty()) break;\n            for (int u : batch) {\n                removed[u] = true;\n                count++;\n                for (int v : adj.get(u)) indegree[v]--;\n            }\n        }\n        return count == numCourses;\n    }\n}",
+      "timeComplexity": "O(n · (n + e))",
+      "spaceComplexity": "O(n + e)"
+    },
+    {
+      "tier": "better",
+      "title": "DFS 三色标记判环",
+      "idea": "判环更直接的思路是**在搜索过程中标记节点状态**。用三种颜色：\n- 白色（0）：还没访问过；\n- 灰色（1）：正在当前这条 DFS 路径上；\n- 黑色（2）：已经彻底搜完，确认它和它的后继都没有环。\n\n关键的判断只有一句：**如果 dfs 过程中遇到了一个灰色节点，就说明绕回了当前路径上的某个点，也就是找到了环。** 遇到黑色节点则安全返回——它的子树已经被证明无环了。\n\n**为什么「灰色」这个状态是必要的？** 如果只用 visited 布尔值，遇到已访问节点就返回，那会把「指向已完成子树的边」也误判成环。灰色和黑色的区分正是为了让「回边」和「交叉边 / 前向边」能够区分开。这是有向图 DFS 的核心细节，无向图里不存在这个问题。\n\n**递归结束后必须把节点标黑**——这一步不做的话，同一个节点会被反复当成灰色，导致误判。\n\n复杂度 O(n + e)：每个点进一次灰色、出一次黑色，每条边看一次。\n\n坑：\n1. 递归返回后忘记改成 2（黑色）；\n2. 建图方向搞反（`p[1] → p[0]`，先修 b 才能修 a）；\n3. 图可能不连通，要对每个未访问点都起一次 DFS。",
+      "pseudocode": "输入：课程数 n，依赖对 prerequisites\n输出：能否修完\n\n1. adj = n 个空列表；对每个 [a, b]：adj[b] 追加 a\n2. color = 长度 n 的数组，全 0（白）\n3. 对 i 从 0 到 n-1：\n     如果 color[i] 等于 0 且 dfs(i) 返回 false：return false\n4. return true\n\ndfs(u)：\n5. color[u] = 1                            // 灰色，进入当前路径\n6. 对 adj[u] 里每个 v：\n     如果 color[v] 等于 1：return false     // 回边，找到环\n     如果 color[v] 等于 0 且 dfs(v) 返回 false：return false\n7. color[u] = 2                            // 黑色，彻底完成\n8. return true\n\n灰色表示在当前路径上，黑色表示已确认无环\n复杂度：时间 O(n+e)；空间 O(n+e)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private List<List<Integer>> adj;\n    private int[] color;\n\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        adj = new ArrayList<>();\n        for (int i = 0; i < numCourses; i++) adj.add(new ArrayList<>());\n        for (int[] p : prerequisites) adj.get(p[1]).add(p[0]);\n\n        color = new int[numCourses];\n        for (int i = 0; i < numCourses; i++) {\n            if (color[i] == 0 && !dfs(i)) return false;\n        }\n        return true;\n    }\n\n    private boolean dfs(int u) {\n        color[u] = 1;\n        for (int v : adj.get(u)) {\n            if (color[v] == 1) return false;\n            if (color[v] == 0 && !dfs(v)) return false;\n        }\n        color[u] = 2;\n        return true;\n    }\n}",
+      "timeComplexity": "O(n + e)",
+      "spaceComplexity": "O(n + e)"
+    },
+    {
+      "tier": "optimal",
+      "title": "BFS 拓扑排序（Kahn 算法）",
+      "idea": "Kahn 算法把「摘叶子」这个动作做到极致：**用队列记录所有当前入度为 0 的点，摘一个就把它的后继入度减一，减到 0 就立刻入队。** 每个点只入队一次、出队一次，每条边只看一次，总复杂度 O(n + e)。\n\n判断方式也很干净：最后统计「被摘掉的点数量」，如果等于总点数就无环，否则剩下的点都在环里。\n\n**为什么 Kahn 是最优？** 有三个理由。\n\n**一、它是 BFS 而非 DFS**，没有递归深度问题。课程数达到 2000 时递归版理论上有栈溢出风险，Kahn 完全没有。\n\n**二、它顺手就给出了拓扑序**——出队顺序本身就是一个合法学习顺序。所以 210 题（课程表 II）只需要在这道题的代码里把出队元素收集起来，几乎零改动。这就是为什么这一版值得作为主力方案。\n\n**三、它能提前退出**。如果你想在发现环的那一刻立刻返回，Kahn 可以做到（队列空了但还没摘完 n 个点）。\n\n坑：\n1. 建图方向必须是 `p[1] → p[0]`，入度加在 `p[0]` 上；\n2. 初始入队要把所有入度为 0 的点都放进去，不能只放一个；\n3. 用 `ArrayDeque` 而不是 `Stack` 或 `LinkedList`，常数最小。",
+      "pseudocode": "输入：课程数 n，依赖对 prerequisites\n输出：能否修完\n\n1. adj = n 个空列表；indegree = 长度 n 的 0 数组\n2. 对每个 [a, b]：adj[b] 追加 a；indegree[a] 加 1\n3. queue = 空队列\n4. 对 i 从 0 到 n-1：如果 indegree[i] 等于 0：queue 加入 i\n5. count = 0\n6. 当 queue 非空：\n     u = queue 取出\n     count 加 1\n     对 adj[u] 里每个 v：\n        indegree[v] 减 1\n        如果 indegree[v] 等于 0：queue 加入 v\n7. return count 等于 n\n\n出队顺序本身就是一个合法拓扑序，210 题直接复用\n复杂度：时间 O(n+e)；空间 O(n+e)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        List<List<Integer>> adj = new ArrayList<>();\n        for (int i = 0; i < numCourses; i++) adj.add(new ArrayList<>());\n        int[] indegree = new int[numCourses];\n        for (int[] p : prerequisites) {\n            adj.get(p[1]).add(p[0]);\n            indegree[p[0]]++;\n        }\n\n        Deque<Integer> queue = new ArrayDeque<>();\n        for (int i = 0; i < numCourses; i++) {\n            if (indegree[i] == 0) queue.add(i);\n        }\n\n        int count = 0;\n        while (!queue.isEmpty()) {\n            int u = queue.poll();\n            count++;\n            for (int v : adj.get(u)) {\n                if (--indegree[v] == 0) queue.add(v);\n            }\n        }\n        return count == numCourses;\n    }\n}",
+      "timeComplexity": "O(n + e)",
+      "spaceComplexity": "O(n + e)"
+    }
+  ]
+}

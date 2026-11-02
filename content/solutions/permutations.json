@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "逐个插入新元素 · 生成所有排列",
+      "idea": "排列的递归结构非常干净：**n 个数的全排列 = 把第 n 个数插到 (n-1) 个数的每个全排列的每个空隙里**。例如 `[1,2]` 的排列是 `[1,2]` 和 `[2,1]`，插入 3 得到 `[3,1,2]`、`[1,3,2]`、`[1,2,3]`、`[3,2,1]`、`[2,3,1]`、`[2,1,3]`——共 6 个，正好是 3!。\n\n为什么这一定对？因为任意一个 n 元排列，删掉元素 3 之后剩下的必定是一个 (n-1) 元排列，而 3 原来在某个位置——正是「插入」的逆操作。所以「无遗漏」由归纳法保证。\n\n为什么这算暴力？每一轮都要复制整个列表再插入，涉及大量 ArrayList 的创建和拷贝，常数开销大；而且它不像回溯那样有统一的模板可以迁移到其他题。\n\n为什么值得先写？因为它用**最少的代码**展示了「排列 = 插入」这个递归结构，而且它是理解「为什么有 n! 个排列」最直观的方式——每一轮结果数量乘以当前位置数，正好凑出阶乘。\n\n坑：\n1. 插入位置是 `0` 到 `size`（含 size，即追加到末尾）；\n2. 每轮必须新建 `next` 列表，不能用同一个列表边遍历边改（会并发修改异常）；\n3. `new ArrayList<>(p)` 要复制，否则多个结果共享同一引用。\n\n复杂度 O(n · n!) 时间（结果本身就有 n! 个，每个长度 n），O(n · n!) 空间。",
+      "pseudocode": "输入：数组 nums\n输出：所有排列\n\n1. result = 空列表，里面放一个空列表     // 0 个元素的排列只有 1 个：空\n2. 对 nums 里每个 v：\n     next = 空列表\n     对 result 里每个排列 p：\n        对 位置 i 从 0 到 p 的长度（含末尾）：\n            q = p 的副本\n            在 q 的位置 i 插入 v\n            next 追加 q\n     result = next\n3. return result\n\nn 个数的全排列 = 把第 n 个数插到 (n-1) 个排列的每个空隙\n坑：插入位置含 size（追加末尾）；每轮要新建 next 列表\n复杂度：时间 O(n · n!)；空间 O(n · n!)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<List<Integer>> permute(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        result.add(new ArrayList<>());\n\n        for (int v : nums) {\n            List<List<Integer>> next = new ArrayList<>();\n            for (List<Integer> p : result) {\n                for (int i = 0; i <= p.size(); i++) {\n                    List<Integer> q = new ArrayList<>(p);\n                    q.add(i, v);\n                    next.add(q);\n                }\n            }\n            result = next;\n        }\n        return result;\n    }\n}",
+      "timeComplexity": "O(n · n!)",
+      "spaceComplexity": "O(n · n!)"
+    },
+    {
+      "tier": "better",
+      "title": "回溯 + used 标记数组",
+      "idea": "这是**排列问题的标准模板**，也是所有回溯题的入门范本。\n\n思路：维护一个 `path` 记录当前正在构造的排列，一个 `used[i]` 记录 `nums[i]` 有没有被用过。每层从左到右尝试每个没用过的元素：\n1. 标记 `used[i] = true`，把它加进 `path`；\n2. 递归下一层；\n3. **撤销**：`path` 删掉末尾，`used[i] = false`。\n\n当 `path.size() == n` 时，一个完整排列就产生了，把它（复制一份！）加进结果。\n\n为什么这一定对？因为「每层选一个用过的」这个约束保证了 path 里不会有重复元素，而「尝试所有没用过的」保证了不遗漏。递归到 n 层时，所有位置都填满，恰好对应一个排列。\n\n相比插入版改了什么？\n- **空间从 O(n·n!) 降到 O(n)**（只有 path 和 used，结果另算）；\n- 模板可迁移：把「used 数组」换成「起始下标 start」就是组合（77/39/40），换成「候选表」就是电话号码组合（17），换成「棋盘」就是 N 皇后（51）。**这是整章回溯的地基。**\n\n**最关键的操作是「撤销」**（`path.remove(path.size()-1)` + `used[i] = false`）——漏掉它，第二层就找不到可用元素，结果为空。这是新手最常犯的错误。\n\n坑：\n1. 撤销必须写，且要在递归返回之后立刻写；\n2. 加结果时必须 `new ArrayList<>(path)`，否则所有结果指向同一个列表，最终全是同一份内容；\n3. `used` 用 `boolean[n]`，可以用「交换法」省掉它（见下一版）。\n\n复杂度 O(n · n!) 时间，O(n) 空间（不含输出）。",
+      "pseudocode": "输入：nums\n输出：所有排列\n\nresult = 空列表，path = 空列表，used = 长度 n 的全 false 数组\n\nbacktrack()：\n  如果 path 长度等于 n：\n     result 追加 path 的副本      // 必须复制！\n     return\n  对 i 从 0 到 n-1：\n     如果 used[i] 为 true：跳过\n     used[i] = true\n     path 追加 nums[i]\n     backtrack()\n     path 删掉最后一个             // 撤销\n     used[i] = false\n\n主流程：backtrack()，return result\n\n模板地基：used 换 start 就是组合，换候选表就是 17，换棋盘就是 51\n坑：撤销必须写；加结果必须复制 path\n复杂度：时间 O(n · n!)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private List<List<Integer>> result = new ArrayList<>();\n    private List<Integer> path = new ArrayList<>();\n    private boolean[] used;\n\n    public List<List<Integer>> permute(int[] nums) {\n        used = new boolean[nums.length];\n        backtrack(nums);\n        return result;\n    }\n\n    private void backtrack(int[] nums) {\n        if (path.size() == nums.length) {\n            result.add(new ArrayList<>(path));   // 必须复制\n            return;\n        }\n        for (int i = 0; i < nums.length; i++) {\n            if (used[i]) continue;\n\n            used[i] = true;\n            path.add(nums[i]);\n\n            backtrack(nums);\n\n            path.remove(path.size() - 1);   // 撤销\n            used[i] = false;\n        }\n    }\n}",
+      "timeComplexity": "O(n · n!)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "原地交换法 · 不需要 used 数组",
+      "idea": "上一版用一个 `boolean[] used` 记住「哪些元素已经选了」。但仔细想：**「已经选了」和「还没选」的分界线，其实可以直接在数组里表示**——用「前 k 个位置是已选部分」这个约定，就完全不需要额外数组。\n\n做法：递归函数 `backtrack(k)` 表示「第 0..k-1 位已经定好」，之后**把第 k 位和后面每个位置 `i` 交换**，表示「把 nums[i] 放到第 k 位」，递归 `backtrack(k+1)`，返回后再交换回来（撤销）。\n\n为什么这一定对？因为排列的本质是「给每个位置选一个还没用过的元素」。交换法通过「把选中的元素换到前面」实现了这个语义：第 k 位之前的都是已用，第 k 位及之后的都是候选。**数组本身充当了 used 数组。**\n\n为什么这版最优？\n- **空间从 O(n)（used 数组）降到 O(1)**（只有递归栈，且递归栈本来就不可避免）；\n- 减少了 `used` 数组的读写，常数更小；\n- **代码更短**（少了 used 的维护）。\n\n这是排列题最经典的写法，也是面试时最受认可的版本。**但要注意它的局限**：交换法依赖「数组可以任意重排」。如果输入不能修改（比如是 `List` 且要求保持不变），或者需要**去重**（含重复元素的排列，如 47 题），交换法就要额外加一个 Set 去重，不如 used 数组版清晰。所以**两者都要会**，按场景选。\n\n坑：\n1. 交换和递归的顺序不能错：先 swap，递归，再 swap 回来；\n2. `k == nums.length` 时才收集结果；\n3. 结果仍要 `new ArrayList<>` 逐元素转（int[] 不能直接装进 List<Integer>），或者在最后统一转换。\n\n复杂度 O(n · n!) 时间，O(n) 空间（递归栈，不含输出）。",
+      "pseudocode": "输入：nums\n输出：所有排列\n\nresult = 空列表\n\nbacktrack(k)：第 0 到 k-1 位已定好，现在定第 k 位\n  如果 k 等于 n：\n     result 追加当前 nums 转成的列表\n     return\n  对 i 从 k 到 n-1：\n     交换 nums[k] 和 nums[i]          // 把候选换到第 k 位\n     backtrack(k + 1)\n     交换 nums[k] 和 nums[i]          // 撤销\n\n主流程：backtrack(0)，return result\n\n数组前 k 个位置 = 已选部分，数组本身就是 used 数组\n空间从 O(n) 降到 O(1)（只有递归栈）\n局限：含重复元素时不如 used 数组版好去重\n复杂度：时间 O(n · n!)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private List<List<Integer>> result = new ArrayList<>();\n\n    public List<List<Integer>> permute(int[] nums) {\n        backtrack(nums, 0);\n        return result;\n    }\n\n    private void backtrack(int[] nums, int k) {\n        if (k == nums.length) {\n            List<Integer> perm = new ArrayList<>(nums.length);\n            for (int v : nums) perm.add(v);\n            result.add(perm);\n            return;\n        }\n        for (int i = k; i < nums.length; i++) {\n            swap(nums, k, i);      // 把候选换到第 k 位\n            backtrack(nums, k + 1);\n            swap(nums, k, i);      // 撤销\n        }\n    }\n\n    private void swap(int[] a, int i, int j) {\n        int t = a[i]; a[i] = a[j]; a[j] = t;\n    }\n}",
+      "timeComplexity": "O(n · n!)",
+      "spaceComplexity": "O(n)"
+    }
+  ]
+}

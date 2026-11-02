@@ -1,0 +1,49 @@
+{
+  "slug": "generate-parentheses",
+  "frontendId": "22",
+  "titleEn": "Generate Parentheses",
+  "titleCn": "括号生成",
+  "difficulty": "Medium",
+  "tags": "字符串,动态规划,回溯,括号序列",
+  "contentHtml": "<p>Given <code>n</code> pairs of parentheses, write a function to <em>generate all combinations of well-formed parentheses</em>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<pre><strong>Input:</strong> n = 3\n<strong>Output:</strong> [\"((()))\",\"(()())\",\"(())()\",\"()(())\",\"()()()\"]\n</pre><p><strong>Example 2:</strong></p>\n<pre><strong>Input:</strong> n = 1\n<strong>Output:</strong> [\"()\"]\n</pre>\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= n &lt;= 8</code></li>\n</ul>",
+  "contentCnHtml": "<p>数字 <code>n</code>&nbsp;代表生成括号的对数，请你设计一个函数，用于能够生成所有可能的并且 <strong>有效的 </strong>括号组合。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>n = 3\n<strong>输出：</strong>[\"((()))\",\"(()())\",\"(())()\",\"()(())\",\"()()()\"]\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>n = 1\n<strong>输出：</strong>[\"()\"]\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= n &lt;= 8</code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public List<String> generateParenthesis(int n) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "generate-parentheses",
+      "tier": "brute",
+      "title": "生成全部括号串再逐个校验",
+      "idea": "最笨但最无歧义的思路：n 对括号就是长度 2n 的字符串，每一位只有 `(` 或 `)` 两种可能，总共 2^(2n) 种。全部生成一遍，再逐个检查是否合法。\n\n为什么这一定对？因为它把「合法」的定义完全交给校验函数，生成阶段不做任何假设。**这种「暴力枚举 + 独立校验」在证明上最可靠**，是验证更聪明算法正确性的标准手段（也正是后面剪枝版的思想来源）。\n\n为什么这算暴力？搜索空间是 2^(2n)，n=8 时是 65536，n=10 时是 1048576，而合法解只有 Catalan(10)=16796 个。**绝大多数生成都浪费了。**\n\n为什么值得先写？三个价值：\n1. 校验函数 `isValid` 是所有版本都要用的基础设施，而且它本身是一道经典题（20 有效括号的变体）；\n2. 它给出了「为什么需要剪枝」的量化证据：无效比例随 n 指数上升；\n3. **它揭示了两条必须满足的约束**：`)` 不能比 `(` 早出现、最终两者数量相等。这两条就是下一版剪枝的依据。\n\n坑：\n1. 长度必须是 2n，且校验时计数器不能中途变负数；\n2. 递归生成要用 char 数组按下标填充（见电话号码组合的最优版），比字符串拼接省；\n3. `2^(2n)` 里 n 稍大就会超时（n=8 勉强，n=9 以上基本过不了），所以这版**只能用于理解**。\n\n复杂度 O(4ⁿ · n) 时间（枚举 2^(2n) 个串，每个校验 O(n)），O(n) 空间。",
+      "pseudocode": "输入：n（括号对数）\n输出：所有合法括号串\n\nisValid(s)：\n  balance = 0\n  对 s 里每个字符 c：\n    如果 c 是左括号：balance 加 1\n    否则：balance 减 1\n    如果 balance 小于 0：return false      // 右括号比左括号多，立刻非法\n  return balance 等于 0\n\ngen(index, buf)：\n  如果 index 等于 2n：\n     s = buf 转字符串\n     如果 isValid(s)：result 追加 s\n     return\n  buf[index] = 左括号，gen(index+1, buf)\n  buf[index] = 右括号，gen(index+1, buf)\n\n主流程：gen(0, 长度 2n 的字符数组)\n\n搜索空间 2 的 2n 次方，合法解只有 Catalan(n) 个，浪费巨大\n校验揭示两条约束：balance 不能为负、最后必须为 0\n复杂度：时间 O(4 的 n 次方 · n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private List<String> result = new ArrayList<>();\n\n    public List<String> generateParenthesis(int n) {\n        char[] buf = new char[2 * n];\n        gen(buf, 0, n);\n        return result;\n    }\n\n    private void gen(char[] buf, int index, int n) {\n        if (index == buf.length) {\n            String s = new String(buf);\n            if (isValid(s)) result.add(s);\n            return;\n        }\n        buf[index] = '(';\n        gen(buf, index + 1, n);\n        buf[index] = ')';\n        gen(buf, index + 1, n);\n    }\n\n    private boolean isValid(String s) {\n        int balance = 0;\n        for (char c : s.toCharArray()) {\n            if (c == '(') balance++;\n            else balance--;\n            if (balance < 0) return false;   // 右括号超前，立刻非法\n        }\n        return balance == 0;\n    }\n}",
+      "timeComplexity": "O(4ⁿ · n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "generate-parentheses",
+      "tier": "better",
+      "title": "回溯 · 只生成合法前缀",
+      "idea": "上一版最大的浪费是「先生成再校验」。但校验函数既然能判断合法性，为什么不在**生成过程中就保证前缀始终合法**？\n\n两条约束直接变成两个剪枝条件：\n1. **左括号数量 `< n` 时才能放左括号**（不可能超过 n 个）；\n2. **左括号数量 `> 右括号数量` 时才能放右括号**（否则前缀出现 `)` 比 `(` 多，永远救不回来）；\n\n满足这两条一路递归下去，到长度 2n 时**必然合法**，不需要校验。\n\n为什么这一定对？因为两条约束恰好刻画了「合法前缀」的全部条件：任何合法串的每个前缀都满足「左右差 ≥ 0」且「左括号 ≤ n」，反过来满足这两条的路径走到终点必然合法。**搜索空间从 2^(2n) 缩小到 Catalan(n)，减少了指数级浪费。**\n\n相比暴力版改了什么？把 O(2^(2n)) 的枚举降成 O(Catalan(n))，n=10 从 1048576 降到 16796，快 60 倍。**这是「提前剪枝」相对「事后校验」的典型胜利。**\n\n坑：\n1. 两个 if 的顺序不影响正确性，但同时写 `if (open < n)` 和 `if (close < open)` 最清晰；\n2. 用 `open` 和 `close` 两个计数，不要用 balance 一个变量（因为还要判断「左括号是否已满 n」）；\n3. 结果收集用 `new String(buf)`，位置由 index 决定，不需要撤销。\n\n复杂度 O(Catalan(n) · n) 时间，O(n) 空间。",
+      "pseudocode": "输入：n\n输出：所有合法括号串\n\nbuf = 长度 2n 的字符数组\nresult = 空列表\n\nbacktrack(open, close)：\n  如果 buf 已填满（open + close 等于 2n）：\n     result 追加 new String(buf)\n     return\n  如果 open 小于 n：\n     buf[open + close] = 左括号\n     backtrack(open + 1, close)\n  如果 close 小于 open：              // 右括号不能多于左括号\n     buf[open + close] = 右括号\n     backtrack(open, close + 1)\n\n主流程：backtrack(0, 0)，return result\n\n两条约束：左括号不超 n；右括号不多于左括号\n搜索空间从 2 的 2n 次方缩到 Catalan(n)\n不用校验，走到终点必然合法\n复杂度：时间 O(Catalan(n) · n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private List<String> result = new ArrayList<>();\n    private char[] buf;\n\n    public List<String> generateParenthesis(int n) {\n        buf = new char[2 * n];\n        backtrack(0, 0, n);\n        return result;\n    }\n\n    private void backtrack(int open, int close, int n) {\n        if (open + close == 2 * n) {\n            result.add(new String(buf));\n            return;\n        }\n        if (open < n) {                    // 左括号不能超 n 个\n            buf[open + close] = '(';\n            backtrack(open + 1, close, n);\n        }\n        if (close < open) {                // 右括号不能多于左括号\n            buf[open + close] = ')';\n            backtrack(open, close + 1, n);\n        }\n    }\n}",
+      "timeComplexity": "O(Catalan(n) · n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "generate-parentheses",
+      "tier": "optimal",
+      "title": "按「第一个拆分点」递归 · 结构化解法",
+      "idea": "前两版都是「逐位构造 + 剪枝」，属于搜索视角。这版完全换一个坐标系：**从括号串的结构出发**。\n\n关键观察：任何合法的非空括号串都可以唯一分解成\n\n> `(` + A + `)` + B\n\n其中 A 和 B 都是合法括号串（可以为空）。为什么唯一？因为「与第一个 `(` 匹配的那个 `)`」位置确定，它把串分成「里面 A」和「后面 B」两段，两段都是合法的。这是 Catalan 结构的标准分解。\n\n于是递归变成：枚举 A 用的对数 `i`（0 到 n-1），B 自然就是 `n-1-i` 对，然后把所有 A 和 B 做笛卡尔积拼接。\n\n为什么这算最优？\n- **复杂度同阶，但常数明显更小**：它不做「试错」，每一步拼接都直接产出合法串，没有分支被浪费；\n- **天然带记忆化的基础**：因为 A 和 B 是独立子问题，可以直接把结果缓存起来（`memo[n]`），n 大时能复用；\n- **认知价值最高**：它揭示括号生成和「二叉树形状计数」「出栈序列计数」是同一个 Catalan 结构。**这才是真正的「理解」，而不只是「会写剪枝」。**\n\n**记忆化版本**：加一个 `List<String>[] memo`，先查缓存再算。注意 `memo[0]` 必须是 `[\"\"]`（空串算一种合法），这是递推的基底，漏了会导致所有结果都丢。\n\n坑：\n1. 分解公式是 `\"(\" + A + \")\" + B`，括号位置不能错；\n2. `i` 从 0 到 `n-1`，B 的对数是 `n-1-i`；\n3. `memo[0] = [\"\"]` 而不是空列表——这是最容易错的地方；\n4. 结果数量是 Catalan(n)，超出 int 范围时（n>18）要注意，但力扣限制 n≤8。\n\n复杂度 O(Catalan(n) · n) 时间，O(Catalan(n)) 空间（含记忆化缓存）。",
+      "pseudocode": "输入：n\n输出：所有合法括号串\n\nmemo = 长度 n+1 的缓存数组\nmemo[0] = 只含一个空串的列表        // 基底：0 对括号只有空串一种\n\nsolve(k)：返回 k 对括号的所有合法串\n  如果 memo[k] 已算过：return memo[k]\n  res = 空列表\n  对 i 从 0 到 k-1：                // i 是里面 A 用的对数\n     对 A 里每个串 a（来自 solve(i)）：\n        对 B 里每个串 b（来自 solve(k-1-i)）：\n           res 追加 左括号 加 a 加 右括号 加 b\n  memo[k] = res\n  return res\n\n主流程：return solve(n)\n\n任何合法串唯一分解为 左括号 + A + 右括号 + B，A、B 也合法\n这是 Catalan 结构：与二叉树形状、出栈序列同构\n坑：memo[0] 必须是含空串的列表，不是空列表\n复杂度：时间 O(Catalan(n) · n)；空间 O(Catalan(n))",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private List<String>[] memo;\n\n    public List<String> generateParenthesis(int n) {\n        memo = new List[n + 1];\n        List<String> base = new ArrayList<>();\n        base.add(\"\");                    // 基底：0 对括号只有空串\n        memo[0] = base;\n        return solve(n);\n    }\n\n    private List<String> solve(int k) {\n        if (memo[k] != null) return memo[k];\n\n        List<String> res = new ArrayList<>();\n        for (int i = 0; i < k; i++) {\n            for (String a : solve(i)) {\n                for (String b : solve(k - 1 - i)) {\n                    res.add(\"(\" + a + \")\" + b);\n                }\n            }\n        }\n        memo[k] = res;\n        return res;\n    }\n}",
+      "timeComplexity": "O(Catalan(n) · n)",
+      "spaceComplexity": "O(Catalan(n))",
+      "sortOrder": 3
+    }
+  ]
+}

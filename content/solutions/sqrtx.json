@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "线性试探 · 找最大的 k 满足 k² ≤ x",
+      "idea": "题目要的是「算术平方根的整数部分」，也就是**最大的非负整数 k，满足 k² ≤ x**。最直接的实现：k 从 0 开始一个个试，直到 `k² > x`，返回 k-1。\n\n为什么这个定义很重要？因为题目说「向下取整」，而平方根可能是小数。把「取整」翻译成「找最大满足 k² ≤ x 的整数」，问题就变成离散搜索了——**这是本题从「数学题」变成「二分题」的转折点**，能说出这个转化比写出代码更值钱。\n\n为什么必超时？x 最大到 2³¹-1 ≈ 2.1×10⁹，线性试探要 46340 次左右。其实 4.6 万次在 Java 里也能过，但面试官会追问「有没有更快」，而且题目进阶要求 O(log x)。\n\n为什么值得先写？三个原因：\n1. 它明确给出了「答案的判定条件」：`k*k <= x`，这个条件就是二分的判据；\n2. 它暴露了**溢出问题**——用 int 计算 `k*k`，当 k ≈ 46341 时 `k*k` 会溢出成负数，导致判断反转。必须用 `long`。这个坑在二分版里完全一样；\n3. 它给了正确的验证基准。\n\n坑：x = 0 时返回 0，别让循环逻辑漏掉。\n\n复杂度 O(√x) 时间，O(1) 空间。",
+      "pseudocode": "输入：非负整数 x\n输出：x 的算术平方根的整数部分\n\n1. 如果 x 等于 0：return 0\n2. k = 1\n3. 当 k 乘 k 小于等于 x（用 long 计算）：k = k + 1\n4. 返回 k - 1\n\n关键：把「平方根取整」翻译成「找最大的 k 满足 k*k <= x」\n坑：k*k 用 int 会溢出，必须转 long\n复杂度：时间 O(根号 x)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int mySqrt(int x) {\n        if (x == 0) return 0;\n        int k = 1;\n        // 用 long 防止 k*k 溢出\n        while ((long) k * k <= x) {\n            k++;\n        }\n        return k - 1;\n    }\n}",
+      "timeComplexity": "O(√x)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "better",
+      "title": "标准二分 · 在 [0, x] 上搜答案",
+      "idea": "把线性试探换成二分。搜索区间是 `[0, x]`（答案一定不超过 x，x ≥ 1 时），判据是 `mid*mid <= x`。\n\n两种典型写法，这里用「记录答案」的写法：\n- `mid*mid <= x`：mid 是候补答案，记下来，`left = mid + 1` 继续往右找更大的；\n- `mid*mid > x`：mid 太大，`right = mid - 1`。\n\n循环结束，记下的 ans 就是最大满足条件的值。\n\n为什么必须用 `long` 计算 mid*mid？`mid` 最大可以到 x = 2³¹-1，`mid*mid` 远超 int 范围，会溢出成负数，导致 `mid*mid <= x` 误判为真。这是本题排名第一的错误。写法上最省事的是 `long m = (long) mid * mid;`。\n\n相比线性版改了什么？O(√x) → O(log x)。x = 2×10⁹ 时，从 4.6 万次降到 31 次。\n\n为什么还不是最优？其实这版已经是 O(log x)、O(1) 空间了，逻辑上就是最优。第三版放在这里是两种更「高级」的思路：牛顿迭代（数学上收敛更快）和左闭右开模板（代码更短、复用性更好）。面试里二分版已经是满分答案，牛顿迭代是加分项。\n\n坑：`x == 0` 时要特判返回 0，否则区间 `[0, 0]` 虽也能处理，但 `x == 1` 时 mid 计算要小心。\n\n复杂度 O(log x) 时间，O(1) 空间。",
+      "pseudocode": "输入：非负整数 x\n输出：整数平方根\n\n1. 如果 x 小于 2：return x\n2. left = 0，right = x，ans = 0\n3. 当 left 小于等于 right 循环：\n     mid = left + (right - left) / 2\n     sq = (long) mid 乘 mid            // 必须用 long\n     a. 如果 sq 小于等于 x：ans = mid，left = mid + 1   // 记录并往右找更大\n     b. 否则：right = mid - 1\n4. 返回 ans\n\n坑：mid*mid 必须用 long，否则溢出让判断反转\n复杂度：时间 O(log x)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int mySqrt(int x) {\n        if (x < 2) return x;\n\n        int left = 0, right = x, ans = 0;\n        while (left <= right) {\n            int mid = left + (right - left) / 2;\n            long sq = (long) mid * mid;   // 必须用 long 防溢出\n            if (sq <= x) {\n                ans = mid;      // mid 是候补答案\n                left = mid + 1; // 往右找更大的\n            } else {\n                right = mid - 1;\n            }\n        }\n        return ans;\n    }\n}",
+      "timeComplexity": "O(log x)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "optimal",
+      "title": "左闭右开模板 · 一个骨架收口",
+      "idea": "上一版需要额外的 `ans` 变量来记录。这版用「左闭右开 + 只收缩」的模板，一次都不用记中间值，代码更短更稳。\n\n思路：直接在 `[0, x]` 上找**第一个满足 `mid*mid > x` 的位置**，那么它左边一格就是答案。或者等价地，把右端点开在 `x+1`，求「第一个 v 使得 v*v > x」，返回 `left - 1`。\n\n这里给出更常见也更好记的写法：**在右开区间 `[0, x]` 上找最后一个满足 `mid*mid <= x` 的位置**。用「right = mid」的收缩方式求上界，最后返回 `left - 1`。\n\n但说实话，这道题更值得讲的「高级解法」是**牛顿迭代法**：\n\n求 √x 就是解 f(t) = t² - x = 0。牛顿迭代公式 `t_new = (t + x/t) / 2`，从 t = x 出发反复迭代，会极快地收敛。实现上只要 `while (t > x / t) t = (t + x / t) / 2; return t;`——**注意用 `t > x / t` 而不是 `t*t > x`，这是又一处防溢出的技巧**。\n\n为什么牛顿迭代算「更优」？它的收敛速度是**二次收敛**，每次迭代有效位数翻倍，实际迭代次数是 O(log log x)，比二分的 O(log x) 快得多。x = 2³¹ 时二分 31 次，牛顿只要 6 次左右。\n\n但面试里的建议：**先给二分，再提牛顿**。理由是二分稳定无坑，牛顿需要证明收敛、还要处理初始值和终止条件。能说出「有 O(log log x) 的方法但我选 O(log x) 的二分因为它更不容易写错」，这才是工程判断力。\n\n复杂度：二分 O(log x)，牛顿 O(log log x)；空间都是 O(1)。",
+      "pseudocode": "—— 二分写法（左闭右开模板）——\n1. 如果 x 小于 2：return x\n2. left = 1，right = x，ans = 1\n3. 当 left 小于等于 right：\n     mid = left + (right - left) / 2\n     如果 mid 乘 mid 小于等于 x（用 long）：ans = mid，left = mid + 1\n     否则：right = mid - 1\n4. return ans\n\n—— 牛顿迭代写法 ——\n1. t = x（初始猜测）\n2. 当 t 大于 x 除以 t（用整除比较，避免溢出）：\n     t = (t + x / t) / 2\n3. return t\n\n牛顿是二次收敛，迭代次数 O(log log x)，比二分快得多\n但面试建议先给二分：稳定无坑，再提牛顿显示视野\n复杂度：二分 O(log x)，牛顿 O(log log x)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int mySqrt(int x) {\n        if (x < 2) return x;\n        // 牛顿迭代：t 从 x 出发，每轮 (t + x/t) / 2\n        long t = x;\n        while (t > x / t) {           // 用整除比较，彻底避开溢出\n            t = (t + x / t) / 2;\n        }\n        return (int) t;\n    }\n}",
+      "timeComplexity": "O(log log x)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

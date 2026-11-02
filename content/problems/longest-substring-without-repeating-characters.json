@@ -1,0 +1,49 @@
+{
+  "slug": "longest-substring-without-repeating-characters",
+  "frontendId": "3",
+  "titleEn": "Longest Substring Without Repeating Characters",
+  "titleCn": "无重复字符的最长子串",
+  "difficulty": "Medium",
+  "tags": "哈希表,字符串,滑动窗口",
+  "contentHtml": "<p>Given a string <code>s</code>, find the length of the <strong>longest</strong> <span><strong>substring</strong></span> without duplicate characters.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> s = &quot;abcabcbb&quot;\n<strong>Output:</strong> 3\n<strong>Explanation:</strong> The answer is &quot;abc&quot;, with the length of 3. Note that <code>&quot;bca&quot;</code> and <code>&quot;cab&quot;</code> are also correct answers.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> s = &quot;bbbbb&quot;\n<strong>Output:</strong> 1\n<strong>Explanation:</strong> The answer is &quot;b&quot;, with the length of 1.\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> s = &quot;pwwkew&quot;\n<strong>Output:</strong> 3\n<strong>Explanation:</strong> The answer is &quot;wke&quot;, with the length of 3.\nNotice that the answer must be a substring, &quot;pwke&quot; is a subsequence and not a substring.\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= s.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>s</code> consists of English letters, digits, symbols and spaces.</li>\n</ul>",
+  "contentCnHtml": "<p>给定一个字符串 <code>s</code> ，请你找出其中不含有重复字符的&nbsp;<strong>最长 <span>子串</span></strong><strong>&nbsp;</strong>的长度。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例&nbsp;1:</strong></p>\n\n<pre>\n<strong>输入: </strong>s = \"abcabcbb\"\n<strong>输出: </strong>3 \n<strong>解释:</strong> 因为无重复字符的最长子串是 <code>\"abc\"</code>，所以其长度为 3。注意 \"bca\" 和 \"cab\" 也是正确答案。\n</pre>\n\n<p><strong>示例 2:</strong></p>\n\n<pre>\n<strong>输入: </strong>s = \"bbbbb\"\n<strong>输出: </strong>1\n<strong>解释: </strong>因为无重复字符的最长子串是 <code>\"b\"</code>，所以其长度为 1。\n</pre>\n\n<p><strong>示例 3:</strong></p>\n\n<pre>\n<strong>输入: </strong>s = \"pwwkew\"\n<strong>输出: </strong>3\n<strong>解释: </strong>因为无重复字符的最长子串是&nbsp;<code>\"wke\"</code>，所以其长度为 3。\n&nbsp;    请注意，你的答案必须是 <strong>子串 </strong>的长度，<code>\"pwke\"</code>&nbsp;是一个<em>子序列，</em>不是子串。\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>0 &lt;= s.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>s</code>&nbsp;由英文字母、数字、符号和空格组成</li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "longest-substring-without-repeating-characters",
+      "tier": "brute",
+      "title": "枚举所有子串 · 用 Set 查重",
+      "idea": "题目要「无重复字符的最长子串」，最直白的想法就是把所有子串都列出来，逐个检查有没有重复字符，记录最长的那个。\n\n怎么写？外层 left 定起点，内层 right 从 left 开始向右扩张；每扩张一格，先看这个字符在 Set 里有没有出现过——没出现就加进 Set、更新答案；出现了说明以 left 为起点的子串到头了，break 换下一个起点。\n\n为什么这版会超时？外层 n 个起点，内层平均 n/2 次扩张，每次还要做一次 HashSet 查找，总体约 O(n²) 甚至 O(n²log)。n = 5×10⁴ 时 2.5×10⁹ 次，超时。\n\n为什么它值得先写？因为它把「子串」「重复」「如何增量判断重复」这三个关键点立住了。它内层的「边扩张边查重」其实已经是滑动窗口的雏形——最优解只是把它从「每次重开一个 Set」改成「Set 复用 + 左指针跳转」。\n\n坑：每次换 left 都要重新 new 一个 Set 并清空；如果忘了清空，会把上一轮的字符合进来，答案偏大。\n\n复杂度 O(n²) 时间，O(字符集大小) 空间。",
+      "pseudocode": "输入：字符串 s\n输出：无重复字符的最长子串长度\n\n1. n = s 长度，best = 0\n2. left 从 0 循环到 n-1：\n     a. 建一个空的 Set\n     b. right 从 left 循环到 n-1：\n          字符 c = s[right]\n          如果 Set 里已经有 c：跳出内层循环（以 left 为起点的子串到头了）\n          否则：把 c 放进 Set\n                 best = max(best, right - left + 1)\n3. 返回 best\n\n复杂度：时间 O(n²)；空间 O(字符集大小)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int lengthOfLongestSubstring(String s) {\n        int n = s.length();\n        int best = 0;\n\n        for (int left = 0; left < n; left++) {\n            Set<Character> seen = new HashSet<>();   // 每个起点都要重新开\n            for (int right = left; right < n; right++) {\n                char c = s.charAt(right);\n                if (seen.contains(c)) break;          // 出现重复，这个起点到头了\n                seen.add(c);\n                best = Math.max(best, right - left + 1);\n            }\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(字符集大小)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "longest-substring-without-repeating-characters",
+      "tier": "better",
+      "title": "滑动窗口 · Set 维护当前窗口",
+      "idea": "上一版最蠢的地方是：每次 left 前进一格，内层都要从 left 重新扫、Set 重新清空。但相邻的两个起点，它们的窗口有大量重叠——为什么不复用？\n\n滑动窗口的核心：维护一个「窗口」[left, right]，保证窗口内没有重复字符。做法是 right 一直往右扩张，每次把新字符加进 Set；一旦发现重复，就让 left 右移、把离开窗口的字符从 Set 里删掉，直到重复消失。\n\n这样 left 和 right 都单调右移，每个字符最多被加入一次、删除一次，总操作次数 O(n)。\n\n相比暴力版改了什么？**Set 全局复用，left 不再回退**。暴力版的 left 每次归零重扫，滑动窗口的 left 只进不退，这是复杂度从 O(n²) 降到 O(n) 的关键。\n\n坑一：while 循环里的删除顺序。必须「先删掉 s.charAt(left)，再 left++」，写反会把不该删的字符删掉。\n坑二：判断重复用 `while (set.contains(c))` 而不是 `if`。因为可能一次要移掉好几个字符才能消掉重复。\n\n为什么它不是最优？因为它用了 Set，而字符的「上次出现位置」信息其实可以用一个数组直接记下来，从而让 left 一步跳到位，省掉 while 里的多次删除。这就引出最快的版本。\n\n复杂度 O(n) 时间，O(字符集大小) 空间。",
+      "pseudocode": "输入：字符串 s\n输出：最长无重复子串长度\n\n1. n = s 长度，best = 0，left = 0\n2. 建一个空的 Set（存窗口内的字符）\n3. right 从 0 循环到 n-1：\n     a. c = s[right]\n     b. 当 Set 里包含 c 时循环：          // 可能要移掉多个\n          从 Set 里删掉 s[left]\n          left 加 1\n     c. 把 c 放进 Set\n     d. best = max(best, right - left + 1)\n4. 返回 best\n\n复杂度：时间 O(n) 每个字符最多进出窗口各一次；空间 O(字符集大小)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int lengthOfLongestSubstring(String s) {\n        int n = s.length();\n        int best = 0;\n        int left = 0;\n        Set<Character> window = new HashSet<>();\n\n        for (int right = 0; right < n; right++) {\n            char c = s.charAt(right);\n            // 有重复就不断收缩左边界，直到重复消失（可能要移掉多个）\n            while (window.contains(c)) {\n                window.remove(s.charAt(left));\n                left++;\n            }\n            window.add(c);\n            best = Math.max(best, right - left + 1);\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(字符集大小)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "longest-substring-without-repeating-characters",
+      "tier": "optimal",
+      "title": "数组记录上次位置 · left 直接跳转",
+      "idea": "这是本题最快的写法，也是「滑动窗口 + 哈希」的标准最优形态。\n\n上一版用 Set 只知道「这个字符在窗口里」，不知道「它具体在哪」，所以只能一格一格地移 left。如果记住每个字符最后出现的位置，那么遇到重复时，left 可以直接跳到「上次出现位置 + 1」，一步到位，省掉 while 里的多次删除。\n\n实现上还有一个重要简化：**只存 ascii 128 个字符**（题目里 s 由英文字母、数字、符号和空格组成，正好都在 ASCII 范围内），用一个长度 128 的 int 数组 last，初始化为 -1。这样既比 HashMap 快，又不需要哈希计算。\n\n关键的一行是 `left = Math.max(left, last[c] + 1)`。为什么要取 max？因为 last[c] 可能落在 left 左边（那个字符已经不在窗口里了），这时候不能让 left 回退——left 必须单调右移。这是最容易写错的地方，漏了 max 会导致 left 倒车、答案偏大。\n\n相比 Set 版改了什么？把「循环逐个移出」换成「一步跳转」，虽然复杂度同为 O(n)，但常数小很多，而且不需要维护 Set。\n\n如果字符集不是 ASCII（比如要求支持中文），把数组换成 HashMap 或长度 65536 的数组即可，思路完全一样。\n\n复杂度 O(n) 时间，O(1) 空间（128 个固定格子）。",
+      "pseudocode": "输入：字符串 s\n输出：最长无重复子串长度\n\n1. n = s 长度\n2. last[128] 全部初始化为 -1          // last[c] = 字符 c 上次出现的下标\n3. left = 0，best = 0\n4. right 从 0 循环到 n-1：\n     a. c = s[right]\n     b. 如果 last[c] 大于等于 left：\n          // 上次出现的位置还在窗口里，left 必须跳过去\n          left = last[c] + 1\n     c. last[c] = right\n     d. best = max(best, right - left + 1)\n5. 返回 best\n\n为什么 left 要用 max 保护：last[c] 可能落在 left 左边（那个 c 已不在窗口），\n此时 left 绝不能回退。等价写法：left = max(left, last[c] + 1)\n\n复杂度：时间 O(n)；空间 O(1)（128 个固定格子）",
+      "codeJava": "class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        int n = s.length();\n        int[] last = new int[128];\n        java.util.Arrays.fill(last, -1);   // -1 表示还没出现过\n\n        int left = 0, best = 0;\n        for (int right = 0; right < n; right++) {\n            char c = s.charAt(right);\n            // 上次出现的位置还在窗口内，左边界直接跳到它后面一位\n            // 取 max 是防止 last[c] 落在 left 左边时把 left 往回拉\n            left = Math.max(left, last[c] + 1);\n            last[c] = right;\n            best = Math.max(best, right - left + 1);\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

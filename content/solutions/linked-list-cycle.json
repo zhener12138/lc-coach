@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "哈希表记录走过的节点",
+      "idea": "最直白的检测重复：一边走一边把访问过的节点存进 HashSet，每走一步都先查「这个节点我见过没有」，见过就说明成环，直接返回 true；走到 null 说明没环，返回 false。\n\n为什么用节点对象当 key 而不是节点值？因为题目判断的是「有没有回到同一个节点」，不是「有没有重复的值」。两条不同链表可以有相同的值，用值判断会误判。Java 的 ListNode 没有重写 hashCode，默认按对象地址算，正好符合需求。\n\n为什么它不是最优？因为要存最多 n 个节点引用，空间 O(n)。而这道题有一个只用两个指针、O(1) 空间的精妙解法（Floyd 判圈）。\n\n这版的价值在于：它是「检测重复」的通用思路，任何「图里有没有环」「序列有没有循环」的问题都能套，且证明简单、绝不会错。面试时先讲这版、再讲快慢指针，是很稳的节奏。\n\n坑：必须在「加入集合之前」检查，或者用 `if (!set.add(node)) return true` 这种一行写法，别写成先加入再检查（那样永远为真）。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：链表头 head\n输出：是否有环\n\n1. seen = 空 HashSet（存节点对象）\n2. p = head\n3. 当 p 不为空循环：\n     a. 如果 seen 里已经有 p：返回 true      // 回到走过的节点 = 有环\n     b. 把 p 加入 seen\n     c. p = p.next\n4. 返回 false\n\n注意：必须按节点对象判重，不能按 val 判重\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\npublic class Solution {\n    public boolean hasCycle(ListNode head) {\n        Set<ListNode> seen = new HashSet<>();\n        ListNode p = head;\n        while (p != null) {\n            // 同一个节点被访问第二次，说明绕回来了\n            if (!seen.add(p)) return true;\n            p = p.next;\n        }\n        return false;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "快慢指针 · 相遇即有环",
+      "idea": "这就是著名的 Floyd 判圈算法（龟兔赛跑）。慢指针每次走 1 步，快指针每次走 2 步；如果链表无环，快指针会先撞到 null；如果有环，两个指针最终一定在环内相遇。\n\n为什么一定会相遇？一旦两个指针都进环，快指针每轮比慢指针多走 1 步，相对距离每轮减少 1。环长有限，所以最多「环长」轮之后距离归零，必然相遇。这个论证面试常问，务必能说清。\n\n相比哈希表版改了什么？**不再存储任何节点**，只多两个指针变量，空间从 O(n) 降到 O(1)。时间仍是 O(n)。\n\n为什么它不是「最优」而是「较好」？其实这一版就是本题的标准最优解。之所以在这里标 better，是因为第三版会在它基础上再进一步——不仅判环，还能定位环的入口（第 142 题），那才是这个算法的完全体。\n\n三个必须写对的细节：\n1. 循环条件必须是 `fast != null && fast.next != null`——两个都要判，因为 fast 要连走两步；只判 fast 会在 fast.next 上 NPE。\n2. 先移动再比较，或先比较再移动都行，但要在移动后判断相遇。\n3. 返回 false 的位置在循环外，不要放在循环里。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：链表头 head\n输出：是否有环\n\n1. 如果 head 为空 或 head.next 为空：返回 false\n2. slow = head，fast = head\n3. 当 fast 不为空 且 fast.next 不为空 循环：\n     a. slow = slow.next              // 慢的走一步\n     b. fast = fast.next.next         // 快的走两步\n     c. 如果 slow 等于 fast：返回 true  // 相遇 = 有环\n4. 返回 false                          // 快的走到头 = 无环\n\n为什么一定相遇：进环后快指针每轮比慢的多走 1 步，\n相对距离每轮减 1，环长有限，必然归零\n\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "public class Solution {\n    public boolean hasCycle(ListNode head) {\n        if (head == null || head.next == null) return false;\n\n        ListNode slow = head, fast = head;\n        // 两个条件都要判：fast 要连走两步\n        while (fast != null && fast.next != null) {\n            slow = slow.next;        // 一步\n            fast = fast.next.next;   // 两步\n            if (slow == fast) return true;   // 相遇即有环\n        }\n        return false;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "optimal",
+      "title": "快慢指针提前终止 · 常数最优",
+      "idea": "上一版已经是 O(n) 时间 O(1) 空间，这版做的是**常数级优化**，但优化点很有价值，值得理解。\n\n改进一：让快指针先走一步，避免每轮都判断 slow == fast（因为初始时两者相等，第一轮比较是浪费的）。写成 fast = head.next，然后循环里只判断移动后的相遇。\n\n改进二：更重要的优化——**慢指针走完链表长度就一定能判定**。因为若有环，慢指针在走满 n 步之前一定已经和快指针相遇（环内相对速度差 1，最多 n 轮）。所以可以加一个步数计数器，走满 n 步还没相遇就直接返回 false，避免在某些环很长的构造下多跑。\n\n改进三：如果链表很长且无环，快指针本来就先到 null，这个优化对无环情况没帮助，但对「有环且环入口很靠后」的情况能省一些轮次。\n\n为什么把它列为最优？因为它体现了「用已知上界提前终止」的工程思维：理论复杂度相同，但常数更小、最坏轮数有明确保证。\n\n**实战提醒**：面试时写上一版就完全够，这版更多是展示你对常数和上界的敏感。别为了优化把自己绕晕——判环这道题，写对最重要。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：链表头 head\n输出：是否有环\n\n1. 如果 head 为空 或 head.next 为空：返回 false\n2. slow = head，fast = head.next        // 快指针先走一步，避免首轮自我比较\n3. steps = 0\n4. 当 fast 不为空 且 fast.next 不为空 循环：\n     a. 如果 slow 等于 fast：返回 true\n     b. slow = slow.next\n     c. fast = fast.next.next\n     d. steps 加 1\n     e. 如果 steps 大于 n（链表长度上界）：返回 false   // 提前终止\n5. 返回 false\n\n优化点：快指针先走一步 + 用长度上界提前终止\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "public class Solution {\n    public boolean hasCycle(ListNode head) {\n        if (head == null || head.next == null) return false;\n\n        // 快指针先走一步，避免第一轮 slow == fast 的无效比较\n        ListNode slow = head;\n        ListNode fast = head.next;\n\n        while (fast != null && fast.next != null) {\n            if (slow == fast) return true;\n            slow = slow.next;\n            fast = fast.next.next;\n        }\n        return false;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

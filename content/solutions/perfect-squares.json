@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "BFS：把数字当状态，每次减一个平方数",
+      "idea": "题目问「最少用几个完全平方数凑出 n」。换成最短路的语言：**状态是当前剩余的数，每条边是「减去一个不超过它的平方数」，问从 n 走到 0 最少几步。** 边长都是 1，所以 BFS 第一次到达 0 时的层数就是答案。\n\n这一版之所以叫暴力，是因为**没有记录访问过的状态**——同一个剩余值会被不同路径反复展开，搜索树指数爆炸。n=100 时已经很难跑完。\n\n**但它的建模价值极高。** 力扣有一整类题是「最少操作次数」：完全平方数、零钱兑换、整数拆分、打开转盘锁、单词接龙。**它们的共同结构是「状态 + 一步变换 + 求最短」，正确答案永远是 BFS，而不是 DP。** 你要练的就是看见「最少几次」就想 BFS，看见「有多少种方案」就想 DP。这个区分比背多少道题都值钱。\n\n坑：\n1. 平方数只取到 `k*k <= 剩余值`；\n2. 必须按层统计（`size` 锁层），否则算不出步数；\n3. 这一版没去重，正是它慢的原因。",
+      "pseudocode": "输入：目标数 n\n输出：最少平方数个数\n\n1. queue 加入 n；steps = 0\n2. 当 queue 非空：\n     size = queue 当前大小\n     重复 size 次：\n        cur = queue 取出\n        如果 cur 等于 0：return steps\n        对 k 从 1 开始，当 k 乘 k 不超过 cur：\n           queue 加入 cur 减 k 乘 k\n     steps 加 1\n3. return steps\n\n「最少几次」= 无权图最短路 = BFS，这是本题最重要的认知\n这一版没有去重，同一状态被反复展开\n复杂度：时间 指数级；空间 指数级",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int numSquares(int n) {\n        Deque<Integer> queue = new ArrayDeque<>();\n        queue.add(n);\n        int steps = 0;\n\n        while (!queue.isEmpty()) {\n            int size = queue.size();\n            for (int i = 0; i < size; i++) {\n                int cur = queue.poll();\n                if (cur == 0) return steps;\n                for (int k = 1; k * k <= cur; k++) {\n                    queue.add(cur - k * k);\n                }\n            }\n            steps++;\n        }\n        return steps;\n    }\n}",
+      "timeComplexity": "指数级",
+      "spaceComplexity": "指数级"
+    },
+    {
+      "tier": "better",
+      "title": "DP：dp[i] 由所有 dp[i 减平方] 推出",
+      "idea": "把 BFS 的搜索改成填表。定义 `dp[i]` 为「凑出 i 最少需要几个平方数」。最后一个平方数若取 k²，那么剩下的就是 i-k²，所以：\n\n`dp[i] = 1 + min(dp[i - k²])`，对所有 k² ≤ i 取最小。\n\n边界 `dp[0] = 0`。从小到大填，每个 i 内层枚举所有平方数，总 O(n√n)。\n\n**为什么 DP 比 BFS 好？** 因为 BFS 的状态会被重复入队（同一剩余值可能从多条路径到达），而去重之后它其实就是 DP。**DP 天然保证每个状态只算一次**，所以更稳定。而且不需要队列，不用管层数。\n\n**但这题用 DP 也不是理论最优**（见下一版），因为有一个纯数学结论可以 O(√n) 解决。\n\n坑：\n1. `dp` 数组要开到 n+1，`dp[0]` 一定要设 0；\n2. 内层循环条件 `k*k <= i`，别写成 `k*k < i`；\n3. 初始值设成大数（`Integer.MAX_VALUE` 或 n+1）当无穷大，但取 min 时要防止 `1 + 无穷大` 溢出——用 `n+1` 更安全。",
+      "pseudocode": "输入：目标数 n\n输出：最少平方数个数\n\n1. dp = 长度 n 加 1 的数组，全填 n 加 1（当无穷大用）\n2. dp[0] = 0\n3. 对 i 从 1 到 n：\n     对 k 从 1 开始，当 k 乘 k 不超过 i：\n        dp[i] = min(dp[i], dp[i 减 k 乘 k] 加 1)\n4. return dp[n]\n\ndp[i] 只依赖更小的 i，所以从小到大填必然正确\n初始值用 n 加 1 而不是 MAX，避免加一后溢出\n复杂度：时间 O(n 乘根号 n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int numSquares(int n) {\n        int[] dp = new int[n + 1];\n        for (int i = 1; i <= n; i++) dp[i] = n + 1;\n        dp[0] = 0;\n\n        for (int i = 1; i <= n; i++) {\n            for (int k = 1; k * k <= i; k++) {\n                dp[i] = Math.min(dp[i], dp[i - k * k] + 1);\n            }\n        }\n        return dp[n];\n    }\n}",
+      "timeComplexity": "O(n√n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "四平方和定理，纯数学 O(√n)",
+      "idea": "这题有一个漂亮的数论结论（拉格朗日四平方和定理）：**任何正整数都能表示成至多 4 个平方数之和。** 所以答案只可能是 1、2、3、4。\n\n于是可以逐层排除：\n\n**答案是 1 吗？** n 本身是完全平方数即可，判 `(int)Math.sqrt(n)` 的平方是否等于 n。\n\n**答案是 4 吗？** 有一个判据：若 n 形如 `4^a * (8b + 7)`，答案必为 4。做法是先把 n 里所有 4 的因子除掉，再看除以 8 的余数是否为 7。**这是唯一需要「记住」的结论**，但记住它的成本远低于记住整套 DP。\n\n**答案是 2 吗？** 枚举 a 从 1 到 √n，看 `n - a²` 是否为完全平方数。这一步 O(√n)。\n\n**否则答案是 3。** 因为 1 和 4 都排除了，2 也排除了，只剩 3。\n\n**为什么这是最优？** 时间 O(√n)，空间 O(1)。DP 是 O(n√n)，BFS 更慢。**这是数量级的差距，不是常数优化。** 力扣本题 n 最大 10^4，DP 也能过，但如果 n 是 10^9，只有这一版能活。\n\n**要不要在面试里写这一版？** 建议：先讲 DP（体现你能建模），再补一句「这题还有四平方和定理可以做 O(√n)」，然后写这一版。**展示你知道多个层次，比只会最巧的那个更加分。**\n\n坑：\n1. 判完全平方数时用 `int s = (int)Math.sqrt(x); return s*s == x;`，注意 s*s 用 int 可能溢出（n 大时用 long）；\n2. `n % 8 == 7` 之前必须先把 4 的因子除干净；\n3. 排除顺序不能乱：先判 1，再判 4，再判 2。",
+      "pseudocode": "输入：目标数 n\n输出：1 到 4 之间的答案\n\n1. 如果 n 是完全平方数：return 1\n2. 复制一份 m = n；当 m 能被 4 整除：m = m 除以 4\n3. 如果 m 除以 8 的余数等于 7：return 4\n4. 对 a 从 1 开始，当 a 乘 a 不超过 n：\n     如果 n 减 a 乘 a 是完全平方数：return 2\n5. return 3\n\n四平方和定理保证答案不超过 4，逐层排除即可\n排除顺序：1、4、2，剩下的就是 3\n复杂度：时间 O(根号 n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int numSquares(int n) {\n        if (isSquare(n)) return 1;\n\n        int m = n;\n        while (m % 4 == 0) m /= 4;\n        if (m % 8 == 7) return 4;\n\n        for (int a = 1; a * a <= n; a++) {\n            if (isSquare(n - a * a)) return 2;\n        }\n        return 3;\n    }\n\n    private boolean isSquare(int x) {\n        int s = (int) Math.sqrt(x);\n        return (long) s * s == x;\n    }\n}",
+      "timeComplexity": "O(√n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

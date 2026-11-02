@@ -1,0 +1,49 @@
+{
+  "slug": "binary-tree-right-side-view",
+  "frontendId": "199",
+  "titleEn": "Binary Tree Right Side View",
+  "titleCn": "二叉树的右视图",
+  "difficulty": "Medium",
+  "tags": "树,深度优先搜索,广度优先搜索,二叉树",
+  "contentHtml": "<p>Given the <code>root</code> of a binary tree, imagine yourself standing on the <strong>right side</strong> of it, return <em>the values of the nodes you can see ordered from top to bottom</em>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>root = [1,2,3,null,5,null,4]</span></p>\n\n<p><strong>Output:</strong> <span>[1,3,4]</span></p>\n\n<p><strong>Explanation:</strong></p>\n\n<p><img alt=\"\" src=\"https://assets.leetcode.com/uploads/2024/11/24/tmpd5jn43fs-1.png\" /></p>\n</div>\n\n<p><strong>Example 2:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>root = [1,2,3,4,null,null,null,5]</span></p>\n\n<p><strong>Output:</strong> <span>[1,3,4,5]</span></p>\n\n<p><strong>Explanation:</strong></p>\n\n<p><img alt=\"\" src=\"https://assets.leetcode.com/uploads/2024/11/24/tmpkpe40xeh-1.png\" /></p>\n</div>\n\n<p><strong>Example 3:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>root = [1,null,3]</span></p>\n\n<p><strong>Output:</strong> <span>[1,3]</span></p>\n</div>\n\n<p><strong>Example 4:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>root = []</span></p>\n\n<p><strong>Output:</strong> <span>[]</span></p>\n</div>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li>The number of nodes in the tree is in the range <code>[0, 100]</code>.</li>\n\t<li><code>-100 &lt;= Node.val &lt;= 100</code></li>\n</ul>",
+  "contentCnHtml": "<p>给定一个二叉树的 <strong>根节点</strong> <code>root</code>，想象自己站在它的右侧，按照从顶部到底部的顺序，返回从右侧所能看到的节点值。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<div>\n<p><span><b>输入：</b>root = [1,2,3,null,5,null,4]</span></p>\n\n<p><strong>输出：</strong><span>[1,3,4]</span></p>\n\n<p><strong>解释：</strong></p>\n\n<p><img alt=\"\" src=\"https://assets.leetcode.com/uploads/2024/11/24/tmpd5jn43fs-1.png\" /></p>\n</div>\n\n<p><strong>示例 2：</strong></p>\n\n<div>\n<p><span><b>输入：</b>root = [1,2,3,4,null,null,null,5]</span></p>\n\n<p><span><b>输出：</b>[1,3,4,5]</span></p>\n\n<p><strong>解释：</strong></p>\n\n<p><img alt=\"\" src=\"https://assets.leetcode.com/uploads/2024/11/24/tmpkpe40xeh-1.png\" /></p>\n</div>\n\n<p><strong>示例 3：</strong></p>\n\n<div>\n<p><strong>输入：</strong><span>root = [1,null,3]</span></p>\n\n<p><strong>输出：</strong><span>[1,3]</span></p>\n</div>\n\n<p><strong>示例 4：</strong></p>\n\n<div>\n<p><span><b>输入：</b>root = []</span></p>\n\n<p><strong>输出：</strong><span>[]</span></p>\n\n<p>&nbsp;</p>\n</div>\n\n<p><strong>提示:</strong></p>\n\n<ul>\n\t<li>二叉树的节点个数的范围是 <code>[0,100]</code></li>\n\t<li><meta charset=\"UTF-8\" /><code>-100&nbsp;&lt;= Node.val &lt;= 100</code>&nbsp;</li>\n</ul>",
+  "javaTemplate": "/**\n * Definition for a binary tree node.\n * public class TreeNode {\n *     int val;\n *     TreeNode left;\n *     TreeNode right;\n *     TreeNode() {}\n *     TreeNode(int val) { this.val = val; }\n *     TreeNode(int val, TreeNode left, TreeNode right) {\n *         this.val = val;\n *         this.left = left;\n *         this.right = right;\n *     }\n * }\n */\nclass Solution {\n    public List<Integer> rightSideView(TreeNode root) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "binary-tree-right-side-view",
+      "tier": "brute",
+      "title": "BFS 层序 · 每层取最后一个",
+      "idea": "右视图的定义是「站在树的右边看，每层能看到的那个节点」。换算成层序遍历就是：**每一层的最右边那个节点**。\n\n所以最直接：BFS 逐层遍历，每层收集所有节点的值，最后取本层列表的最后一个。\n\n为什么这一定对？因为从右侧看，同一层的节点里只有最右边那个不被前面的遮住。层序的最右 = 右视图的下一个元素。\n\n为什么这版算「暴力」？时间复杂度 O(n) 已是最优，但它在每层都收集了**整层所有值**，只为取最后一个——空间上多存了一整个 level 列表。可以直接只存「本层最后一个」，省掉列表。\n\n为什么值得先写？因为它把「右视图」准确地翻译成了「每层最右」，这个翻译是本题的核心，比代码重要。**先有正确的语义映射，才有正确的代码**。\n\n坑：`res.add(level.get(level.size() - 1))`，空层不会出现（BFS 只处理有节点的层），所以不用判空。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：root\n输出：从右侧能看到的节点值，自上而下\n\n1. 如果 root 为空：return 空列表\n2. res = 空列表，queue 放入 root\n3. 当 queue 不为空 循环：\n     size = queue 长度\n     level = 空列表\n     重复 size 次：\n        node = queue 弹出\n        level 追加 node.val\n        两个孩子非空则入队\n     res 追加 level 的最后一个元素\n4. 返回 res\n\n右视图 = 每层最右的节点\n可以优化：不用存整个 level，只记本层最后一个\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<Integer> rightSideView(TreeNode root) {\n        List<Integer> res = new ArrayList<>();\n        if (root == null) return res;\n\n        Deque<TreeNode> queue = new ArrayDeque<>();\n        queue.offer(root);\n\n        while (!queue.isEmpty()) {\n            int size = queue.size();\n            List<Integer> level = new ArrayList<>(size);\n            for (int i = 0; i < size; i++) {\n                TreeNode node = queue.poll();\n                level.add(node.val);\n                if (node.left != null) queue.offer(node.left);\n                if (node.right != null) queue.offer(node.right);\n            }\n            res.add(level.get(level.size() - 1));   // 本层最右\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "binary-tree-right-side-view",
+      "tier": "better",
+      "title": "BFS 只记本层最后一个 · 不建 level 列表",
+      "idea": "上一版每层都建了一个临时列表，只为取末尾一个元素——纯浪费。这版在遍历本层时，**只要 `i == size - 1` 就记录当前节点值**，彻底省掉 level 列表。\n\n为什么这样一定对？因为在本层的循环中，第 `size - 1` 次（最后一次）处理的节点就是本层最后一个入队时排在最右的位置。**BFS 保证了同层节点按从左到右的顺序出队**，所以最后一个出队的就是最右节点。\n\n这个「最右 = 最后出队」的保证来自入队顺序：处理父节点时先 `offer(node.left)` 再 `offer(node.right)`，于是同层的左右顺序被严格保持。**如果哪天把这两行调换，右视图就变成了左视图**——这是一个隐藏的顺序依赖，值得明确写出来。\n\n相比上一版改了什么？空间上省掉每层的临时列表（降为常数级额外空间），时间不变。代码也更短更直白。\n\n坑：判断用 `i == size - 1`，不是 `i == size`（越界）也不是 `queue.size() - 1`（这时 size 已经变了）。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：root\n输出：右视图列表\n\n1. 如果 root 为空：return 空列表\n2. res = 空列表，queue 放入 root\n3. 当 queue 不为空 循环：\n     size = queue 长度\n     重复 i 从 0 到 size-1：\n        node = queue 弹出\n        如果 i 等于 size-1：res 追加 node.val     // 本层最右\n        先入队左孩子，再入队右孩子                // 顺序不能反，否则变成左视图\n4. 返回 res\n\n最右 = 最后出队，靠的是「先左后右」的入队顺序\n坑：判断条件是 i == size-1\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<Integer> rightSideView(TreeNode root) {\n        List<Integer> res = new ArrayList<>();\n        if (root == null) return res;\n\n        Deque<TreeNode> queue = new ArrayDeque<>();\n        queue.offer(root);\n\n        while (!queue.isEmpty()) {\n            int size = queue.size();\n            for (int i = 0; i < size; i++) {\n                TreeNode node = queue.poll();\n                if (i == size - 1) res.add(node.val);   // 本层最右\n                // 先左后右，保证同层从左到右出队\n                if (node.left != null) queue.offer(node.left);\n                if (node.right != null) queue.offer(node.right);\n            }\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "binary-tree-right-side-view",
+      "tier": "optimal",
+      "title": "DFS 先右后左 · 每层首次到达即记录",
+      "idea": "BFS 版的时间已经触底（O(n)），但空间是 O(最宽层)。这版用 DFS 把空间降到 **O(h)**，思路非常巧妙：\n\n**先递归右子树，再递归左子树**。这样每一层**第一次被访问到的节点一定是最右边的那个**。于是只要在递归时判断「这个深度是不是还没记录过」，没记录过就加进结果。\n\n为什么这一定对？因为「先右后左」的访问顺序使得在任意深度上，右侧的节点永远先于左侧同层节点被访问。所以每层的首次访问者必然是右视图成员。**这个「顺序决定首次」的技巧，比遍历本身更值钱**。\n\n为什么这算最优？\n- **空间从 O(最宽层) 降到 O(h)**。完全二叉树时 h = log n，而最宽层是 n/2——差距巨大；\n- 时间仍是 O(n)，但常数更小（不用维护队列）；\n- 代码只有 6 行。\n\n**关键的判断条件**：`if (depth == res.size()) res.add(node.val);`。为什么用 `==` 而不是 `>=`？因为 DFS 每次进入新的深度只会有一个节点成为「首次」，所以 `depth` 最多等于 `res.size()`，不会超过。用 `==` 语义最准确（表达「这一层还是空的」）。\n\n**如果把「先右后左」改成「先左后右」，这版就变成了左视图**——同一个模板，改两个字的顺序就换了一个功能。这个对称性值得记住。\n\n坑：\n1. 递归顺序必须先右后左，否则得到左视图；\n2. `depth` 从 0 开始，和 `res.size()` 的 0 索引对齐；\n3. 根节点 depth=0 时 `res.size()==0`，自然被加入。\n\n复杂度 O(n) 时间，O(h) 空间。",
+      "pseudocode": "输入：root\n输出：右视图列表\n\nres = 空列表\n\ndfs(node, depth)：\n  如果 node 为空：return\n  如果 depth 等于 res 的长度：\n     res 追加 node.val      // 这一层首次被访问，必然是最右的\n  dfs(node.right, depth + 1)   // 先右！\n  dfs(node.left,  depth + 1)   // 后左\n\n主流程：dfs(root, 0)，返回 res\n\n先右后左 → 每层首次访问者必然是最右节点\n改成先左后右就得到左视图，同一个模板\n空间从 O(最宽层) 降到 O(h)\n复杂度：时间 O(n)；空间 O(h)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<Integer> rightSideView(TreeNode root) {\n        List<Integer> res = new ArrayList<>();\n        dfs(root, 0, res);\n        return res;\n    }\n\n    private void dfs(TreeNode node, int depth, List<Integer> res) {\n        if (node == null) return;\n        // 这一层首次被访问 → 必然是最右的节点\n        if (depth == res.size()) res.add(node.val);\n        dfs(node.right, depth + 1, res);   // 先右，顺序不能反\n        dfs(node.left, depth + 1, res);\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(h)",
+      "sortOrder": 3
+    }
+  ]
+}

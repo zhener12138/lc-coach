@@ -1,0 +1,49 @@
+{
+  "slug": "3sum",
+  "frontendId": "15",
+  "titleEn": "3Sum",
+  "titleCn": "三数之和",
+  "difficulty": "Medium",
+  "tags": "数组,双指针,排序",
+  "contentHtml": "<p>Given an integer array nums, return all the triplets <code>[nums[i], nums[j], nums[k]]</code> such that <code>i != j</code>, <code>i != k</code>, and <code>j != k</code>, and <code>nums[i] + nums[j] + nums[k] == 0</code>.</p>\n\n<p>Notice that the solution set must not contain duplicate triplets.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [-1,0,1,2,-1,-4]\n<strong>Output:</strong> [[-1,-1,2],[-1,0,1]]\n<strong>Explanation:</strong> \nnums[0] + nums[1] + nums[2] = (-1) + 0 + 1 = 0.\nnums[1] + nums[2] + nums[4] = 0 + 1 + (-1) = 0.\nnums[0] + nums[3] + nums[4] = (-1) + 2 + (-1) = 0.\nThe distinct triplets are [-1,0,1] and [-1,-1,2].\nNotice that the order of the output and the order of the triplets does not matter.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [0,1,1]\n<strong>Output:</strong> []\n<strong>Explanation:</strong> The only possible triplet does not sum up to 0.\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [0,0,0]\n<strong>Output:</strong> [[0,0,0]]\n<strong>Explanation:</strong> The only possible triplet sums up to 0.\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>3 &lt;= nums.length &lt;= 3000</code></li>\n\t<li><code>-10<sup>5</sup> &lt;= nums[i] &lt;= 10<sup>5</sup></code></li>\n</ul>",
+  "contentCnHtml": "<p>给你一个整数数组 <code>nums</code> ，判断是否存在三元组 <code>[nums[i], nums[j], nums[k]]</code> 满足 <code>i != j</code>、<code>i != k</code> 且 <code>j != k</code> ，同时还满足 <code>nums[i] + nums[j] + nums[k] == 0</code> 。请你返回所有和为 <code>0</code> 且不重复的三元组。</p>\n\n<p><strong>注意：</strong>答案中不可以包含重复的三元组。</p>\n\n<p>&nbsp;</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [-1,0,1,2,-1,-4]\n<strong>输出：</strong>[[-1,-1,2],[-1,0,1]]\n<strong>解释：</strong>\nnums[0] + nums[1] + nums[2] = (-1) + 0 + 1 = 0 。\nnums[1] + nums[2] + nums[4] = 0 + 1 + (-1) = 0 。\nnums[0] + nums[3] + nums[4] = (-1) + 2 + (-1) = 0 。\n不同的三元组是 [-1,0,1] 和 [-1,-1,2] 。\n注意，输出的顺序和三元组的顺序并不重要。\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [0,1,1]\n<strong>输出：</strong>[]\n<strong>解释：</strong>唯一可能的三元组和不为 0 。\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [0,0,0]\n<strong>输出：</strong>[[0,0,0]]\n<strong>解释：</strong>唯一可能的三元组和为 0 。\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>3 &lt;= nums.length &lt;= 3000</code></li>\n\t<li><code>-10<sup>5</sup> &lt;= nums[i] &lt;= 10<sup>5</sup></code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public List<List<Integer>> threeSum(int[] nums) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "3sum",
+      "tier": "brute",
+      "title": "三重循环 · 枚举所有三元组",
+      "idea": "最直白：把所有 i < j < k 的组合都试一遍，和等于 0 就收集起来。\n\n这里唯一需要动脑的地方是「答案不能有重复三元组」。最笨的补法是收到结果后再去重：把每组三个数排序后拼成字符串当 key，塞进一个 Set，重复的丢掉。\n\n为什么这版一定超时？n 个数里挑 3 个，组合数是 n³/6 量级。n = 3000 时就是 45 亿次，Java 也扛不住。\n\n但这版的价值是：它让你先确认自己理解了「什么叫不重复」——不是下标不重复，而是三元组的内容不重复。这一点想清楚了，后面的排序去重才写得对。\n\n复杂度 O(n³)，面试时说出来，面试官就知道你有从朴素到优化的完整思路。",
+      "pseudocode": "输入：整数数组 nums\n输出：所有和为 0 且不重复的三元组\n\n1. 建一个空的 Set（key 是三数排序后拼成的字符串），用来去重\n2. 建一个空的答案列表\n3. i 从 0 循环到 n-3：\n     a. j 从 i+1 循环到 n-2：\n          b. k 从 j+1 循环到 n-1：\n               如果 nums[i] + nums[j] + nums[k] 等于 0：\n                    把这 3 个数排序，拼成一个字符串 key\n                    如果 key 不在 Set 里：\n                         把 key 放进 Set，同时把这三个数放进答案列表\n4. 返回答案列表\n\n复杂度：时间 O(n³) 三层循环，外加排序去重；空间 O(m) 存答案和去重集合",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<List<Integer>> threeSum(int[] nums) {\n        int n = nums.length;\n        Set<String> seen = new HashSet<>();\n        List<List<Integer>> ans = new ArrayList<>();\n\n        for (int i = 0; i < n - 2; i++) {\n            for (int j = i + 1; j < n - 1; j++) {\n                for (int k = j + 1; k < n; k++) {\n                    if (nums[i] + nums[j] + nums[k] == 0) {\n                        // 三个数排序后再拼 key，保证 [-1,0,1] 和 [1,-1,0] 是同一个 key\n                        int[] t = {nums[i], nums[j], nums[k]};\n                        Arrays.sort(t);\n                        String key = t[0] + \",\" + t[1] + \",\" + t[2];\n                        if (seen.add(key)) {\n                            ans.add(Arrays.asList(t[0], t[1], t[2]));\n                        }\n                    }\n                }\n            }\n        }\n        return ans;\n    }\n}",
+      "timeComplexity": "O(n³)",
+      "spaceComplexity": "O(m)，m 为答案个数",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "3sum",
+      "tier": "better",
+      "title": "排序 + 固定一数 + 哈希表找第三个数",
+      "idea": "先给数组排序。排序之后，重复的元素会挨在一起，这让「跳过重复」变得简单：只要判断当前数等不等于前一个数就行了。\n\n固定第一个数 nums[i]，问题就退化成：在 i 右边找一个二元组，使两数之和等于 -nums[i]。这不就是「两数之和」吗？所以对每个 i，用哈希表扫一遍右边即可。\n\n为什么比暴力快？暴力对每个 (i, j) 都要再扫一遍 k，而这里对每个 i 只扫一次右边，把最内层 O(n) 降成了 O(n)。总复杂度从 O(n³) 降到 O(n²)。\n\n坑一：**去重靠排序，不靠 Set**。排序后 `if (i > 0 && nums[i] == nums[i-1]) continue;` 就能跳过重复的第一个数，比暴力版里拼字符串去重干净得多。\n\n坑二：固定 i 之后，j 只能从 i+1 开始，否则会重复使用同一个元素。",
+      "pseudocode": "输入：整数数组 nums\n输出：所有和为 0 且不重复的三元组\n\n1. 把 nums 排序\n2. n = nums 长度，答案列表 ans\n3. i 从 0 循环到 n-3：\n     a. 如果 i > 0 且 nums[i] 等于 nums[i-1]：跳过本轮（第一个数去重）\n     b. 建一个空的 Set\n     c. j 从 i+1 循环到 n-1：\n          需要找的数 = -nums[i] - nums[j]\n          如果这个数在 Set 里：\n               把 [-nums[i]-nums[j], nums[j], -nums[i]] 加入 ans\n               然后一直跳过和 nums[j] 相等的后续元素（第二个数去重）\n          否则：把 nums[j] 放进 Set\n4. 返回 ans\n\n复杂度：时间 O(n²) 外层 n 次，内层 n 次；空间 O(n) 哈希表",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<List<Integer>> threeSum(int[] nums) {\n        Arrays.sort(nums);\n        int n = nums.length;\n        List<List<Integer>> ans = new ArrayList<>();\n\n        for (int i = 0; i < n - 2; i++) {\n            // 第一个数去重：和前一个相同就别再算了，否则结果里会出现重复三元组\n            if (i > 0 && nums[i] == nums[i - 1]) continue;\n            // 排序后如果最小的数都大于 0，后面不可能再凑出 0\n            if (nums[i] > 0) break;\n\n            Set<Integer> seen = new HashSet<>();\n            for (int j = i + 1; j < n; j++) {\n                int need = -nums[i] - nums[j];\n                if (seen.contains(need)) {\n                    ans.add(Arrays.asList(nums[i], need, nums[j]));\n                    // 第二个数去重：相同的 nums[j] 只处理一次\n                    while (j + 1 < n && nums[j + 1] == nums[j]) j++;\n                } else {\n                    seen.add(nums[j]);\n                }\n            }\n        }\n        return ans;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "3sum",
+      "tier": "optimal",
+      "title": "排序 + 双指针夹逼",
+      "idea": "这是三数之和的标准最优解。\n\n关键洞察：**数组有序之后，两数之和不需要哈希表。** 用左右两个指针，和太小就把左指针右移（让和变大），和太大就把右指针左移（让和变小）。每一步都能排除掉一整片不可能的组合，所以内层只需要 O(n)。\n\n为什么这么做是对的？设当前 left、right 的和为 s：\n- 若 s < 0，那么固定 left，把 right 往左移只会让 s 更小，全都无解。所以 left 这一整列都可以排除，left++。\n- 若 s > 0，对称地，right-- 就排除了 right 那一整行。\n\n这个过程不重不漏，而且额外空间从哈希表的 O(n) 降到 O(1)。\n\n坑：三个位置都要去重。i 跳过重复；left 在移动后要跳过和刚才相同的值；right 同理。少写任何一个都会给出重复答案。\n\n为什么比哈希版好？复杂度同为 O(n²)，但常数更小（没有哈希计算），空间 O(1)。面试时优先写这一版。",
+      "pseudocode": "输入：整数数组 nums\n输出：所有和为 0 且不重复的三元组\n\n1. 把 nums 排序\n2. n = nums 长度，答案列表 ans\n3. i 从 0 循环到 n-3：\n     a. 如果 i > 0 且 nums[i] 等于 nums[i-1]：跳过（第一个数去重）\n     b. 如果 nums[i] > 0：跳出循环（最小数都 > 0，凑不出 0）\n     c. left = i+1，right = n-1\n     d. 当 left < right 循环：\n          sum = nums[i] + nums[left] + nums[right]\n          如果 sum 等于 0：\n               把这三个数加入 ans\n               left 往右移，跳过和刚才相同的值\n               right 往左移，跳过和刚才相同的值\n          否则如果 sum < 0：left 往右移（让和变大）\n          否则：right 往左移（让和变小）\n4. 返回 ans\n\n复杂度：时间 O(n²) 排序 O(nlogn) + 外层 n 次 × 内层至多 n 次；空间 O(1) 不算排序和答案",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<List<Integer>> threeSum(int[] nums) {\n        Arrays.sort(nums);\n        int n = nums.length;\n        List<List<Integer>> ans = new ArrayList<>();\n\n        for (int i = 0; i < n - 2; i++) {\n            if (i > 0 && nums[i] == nums[i - 1]) continue; // 第一个数去重\n            if (nums[i] > 0) break;                        // 最小数都大于 0，无解\n\n            int left = i + 1, right = n - 1;\n            while (left < right) {\n                int sum = nums[i] + nums[left] + nums[right];\n                if (sum == 0) {\n                    ans.add(Arrays.asList(nums[i], nums[left], nums[right]));\n                    // 跳过重复的左值，否则会重复收集同一组答案\n                    while (left < right && nums[left] == nums[left + 1]) left++;\n                    while (left < right && nums[right] == nums[right - 1]) right--;\n                    left++;\n                    right--;\n                } else if (sum < 0) {\n                    left++;   // 和太小，左指针右移让和变大\n                } else {\n                    right--;  // 和太大，右指针左移让和变小\n                }\n            }\n        }\n        return ans;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

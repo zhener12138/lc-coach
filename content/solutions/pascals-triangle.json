@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "每个位置都直接算组合数",
+      "idea": "杨辉三角的第 i 行第 j 个元素等于组合数 C(i, j)（从 0 开始数）。所以最直接的做法是：对每个位置，单独用组合数公式算一遍。\n\n组合数用递归算：C(n, k) = C(n-1, k-1) + C(n-1, k)，边界 C(n, 0) = C(n, n) = 1。这其实和杨辉三角的递推是同一个式子，只是换了个方向——从「已知上行推下行」变成「从目标往下拆」。\n\n**为什么这一版很慢？** 因为每个格子都要独立走一遍组合数的递归树，n=30 时单次计算就是指数级。总共 n² 个格子，每个格子指数级，完全跑不动。\n\n**它的价值在哪？** 它让你看清一个事实：**杨辉三角的每个元素就是组合数**。知道这一点之后，你就会明白为什么第 n 行之和是 2 的 n 次方（二项式定理）、为什么会有无数道题用杨辉三角做预处理（比如组合数取模、概率 DP）。\n\n坑：\n1. 行号列号都从 0 开始，第 i 行有 i+1 个元素；\n2. C(n, 0) 和 C(n, n) 都返回 1；\n3. 递归必须写 k==0 或 k==n 的终止条件，否则无限递归。",
+      "pseudocode": "输入：行数 numRows\n输出：前 numRows 行组成的三角形\n\n1. result = 空列表\n2. 对 i 从 0 到 numRows 减 1：\n     row = 空列表\n     对 j 从 0 到 i：row 追加 C(i, j)\n     result 追加 row\n3. return result\n\nC(n, k)：\n4. 如果 k 等于 0 或 k 等于 n：return 1\n5. return C(n 减 1, k 减 1) 加 C(n 减 1, k)\n\n杨辉三角的每个元素就是组合数，这一版把这一点写死\n但每个格子独立递归，完全跑不动\n复杂度：时间 O(numRows 的平方 · 组合数递归代价)；空间 O(numRows 的平方)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<List<Integer>> generate(int numRows) {\n        List<List<Integer>> result = new ArrayList<>();\n        for (int i = 0; i < numRows; i++) {\n            List<Integer> row = new ArrayList<>();\n            for (int j = 0; j <= i; j++) {\n                row.add(comb(i, j));\n            }\n            result.add(row);\n        }\n        return result;\n    }\n\n    private int comb(int n, int k) {\n        if (k == 0 || k == n) return 1;\n        return comb(n - 1, k - 1) + comb(n - 1, k);\n    }\n}",
+      "timeComplexity": "O(numRows² · 组合数递归代价)",
+      "spaceComplexity": "O(numRows²)"
+    },
+    {
+      "tier": "better",
+      "title": "由上一行累加出本行",
+      "idea": "杨辉三角的定义本身就是递推：**本行第 j 个 = 上一行第 j-1 个 + 上一行第 j 个**，两端都是 1。\n\n于是逐行构造即可：第一行是 [1]，之后每一行先放一个 1，中间每个位置用上一行的相邻两项相加，最后再放一个 1。\n\n**为什么这比上一版快一个数量级？** 因为上一版每个格子都在重新解析组合数，而这一版每个格子只做一次加法。总格子数是 1+2+...+n = O(n²)，所以总时间 O(n²)——已经是输出规模的下界了（你必须把每个数字都写出来）。\n\n**这里有个重要的思维转变**：上一版是「从数学公式直接算」，这一版是「利用题目自身的结构」。当题目本身给出了递归结构时，**永远优先利用结构，不要绕回公式**。公式往往是最慢的路径。\n\n坑：\n1. 中间循环的边界是 `1` 到 `row.size()-1`，不是 `0` 到 `size`；\n2. 取上一行要用 `result.get(i-1)`，注意此时 result 里只有 i 行；\n3. 结果类型是 `List<List<Integer>>`，每行都得新建对象。",
+      "pseudocode": "输入：行数 numRows\n输出：三角形\n\n1. result = 空列表\n2. 对 i 从 0 到 numRows 减 1：\n     row = 空列表；row 追加 1\n     如果 i 大于 0：\n        prev = result 取第 i 减 1 行\n        对 j 从 1 到 prev 的长度减 1：\n           row 追加 prev 取 j 减 1 加 prev 取 j\n        row 追加 1\n     result 追加 row\n3. return result\n\n题目自带递归结构，直接用它，不要绕回组合数公式\n复杂度：时间 O(numRows 的平方)；空间 O(numRows 的平方)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<List<Integer>> generate(int numRows) {\n        List<List<Integer>> result = new ArrayList<>();\n        for (int i = 0; i < numRows; i++) {\n            List<Integer> row = new ArrayList<>();\n            row.add(1);\n            if (i > 0) {\n                List<Integer> prev = result.get(i - 1);\n                for (int j = 1; j < prev.size(); j++) {\n                    row.add(prev.get(j - 1) + prev.get(j));\n                }\n                row.add(1);\n            }\n            result.add(row);\n        }\n        return result;\n    }\n}",
+      "timeComplexity": "O(numRows²)",
+      "spaceComplexity": "O(numRows²)"
+    },
+    {
+      "tier": "optimal",
+      "title": "每行先填满 1 再原地改，少一次遍历判空",
+      "idea": "上一版思路已是最优复杂度，这一版改的是**实现细节**，但改的都是真实影响性能和可读性的地方。\n\n**改造一：先把本行填满 1，再从后往前覆盖中间位置。** 因为本行长度是 i+1，全部填 1 之后，位置 0 和位置 i 天然正确，中间位置 `j` 需要改成 `prev[j-1] + prev[j]`。\n\n**改造二：从后往前遍历中间位置。** 这一版其实从前往后也对（因为我们读的是 prev，写的是 row，两个不同的列表），但如果将来你要优化成「只用一个列表原地滚动」（把上一行的结果存在同一个列表里），**从后往前就是必须的**——从前往后会把还没读的 prev[j] 覆盖掉。所以养成从后往前的习惯，等于提前为空间优化留了门。\n\n**改造三：用 `Arrays.asList` 或预分配容量。** `new ArrayList<>(i+1)` 一次性分配好容量，避免扩容时反复复制数组。n 很大时这是实打实的常数优化。\n\n**为什么这算最优？** 时间是 O(numRows²)，等于输出规模，不可能更快；空间除了返回结果之外没有额外开销。**优化到此为止，再改就是折腾。**\n\n坑：\n1. 中间循环从后往前时，条件是 `j > 0`，`j` 从 `i` 开始递减；\n2. `prev.get(j-1) + prev.get(j)` 两个下标都在范围内（j 最大是 i-1 时 j 等于 prev.size()-1，安全）；\n3. 别用 `row.set` 越界——必须先 add 满再 set。",
+      "pseudocode": "输入：行数 numRows\n输出：三角形\n\n1. result = 空列表\n2. 对 i 从 0 到 numRows 减 1：\n     row = 新列表，容量预分配 i 加 1\n     对 j 从 0 到 i：row 追加 1          // 先全部填 1\n     如果 i 大于 0：\n        prev = result 取第 i 减 1 行\n        对 j 从 i 减 1 递减到 1：        // 从后往前，为原地优化留门\n           row.set(j, prev 取 j 减 1 加 prev 取 j)\n     result 追加 row\n3. return result\n\n预分配容量 + 从后往前覆盖，都是为空间优化预留的写法\n复杂度：时间 O(numRows 的平方)；空间 O(1) 额外（不计返回结果）",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<List<Integer>> generate(int numRows) {\n        List<List<Integer>> result = new ArrayList<>();\n        for (int i = 0; i < numRows; i++) {\n            List<Integer> row = new ArrayList<>(i + 1);\n            for (int j = 0; j <= i; j++) row.add(1);\n            if (i > 0) {\n                List<Integer> prev = result.get(i - 1);\n                for (int j = i - 1; j >= 1; j--) {\n                    row.set(j, prev.get(j - 1) + prev.get(j));\n                }\n            }\n            result.add(row);\n        }\n        return result;\n    }\n}",
+      "timeComplexity": "O(numRows²)",
+      "spaceComplexity": "O(1) 额外（不计返回结果）"
+    }
+  ]
+}

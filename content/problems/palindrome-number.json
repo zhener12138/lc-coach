@@ -1,0 +1,49 @@
+{
+  "slug": "palindrome-number",
+  "frontendId": "9",
+  "titleEn": "Palindrome Number",
+  "titleCn": "回文数",
+  "difficulty": "Easy",
+  "tags": "数学",
+  "contentHtml": "<p>Given an integer <code>x</code>, return <code>true</code> if <code>x</code> is a <span><strong>palindrome</strong></span>, and <code>false</code> otherwise.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> x = 121\n<strong>Output:</strong> true\n<strong>Explanation:</strong> 121 reads as 121 from left to right and from right to left.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> x = -121\n<strong>Output:</strong> false\n<strong>Explanation:</strong> From left to right, it reads -121. From right to left, it becomes 121-. Therefore it is not a palindrome.\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> x = 10\n<strong>Output:</strong> false\n<strong>Explanation:</strong> Reads 01 from right to left. Therefore it is not a palindrome.\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>-2<sup>31</sup>&nbsp;&lt;= x &lt;= 2<sup>31</sup>&nbsp;- 1</code></li>\n</ul>\n\n<p>&nbsp;</p>\n<strong>Follow up:</strong> Could you solve it without converting the integer to a string?",
+  "contentCnHtml": "<p>给你一个整数 <code>x</code> ，如果 <code>x</code> 是一个回文整数，返回 <code>true</code> ；否则，返回 <code>false</code> 。</p>\n\n<p><span>回文数</span>是指正序（从左向右）和倒序（从右向左）读都是一样的整数。</p>\n\n<ul>\n\t<li>例如，<code>121</code> 是回文，而 <code>123</code> 不是。</li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>x = 121\n<strong>输出：</strong>true\n</pre>\n\n<p><strong>示例&nbsp;2：</strong></p>\n\n<pre>\n<strong>输入：</strong>x = -121\n<strong>输出：</strong>false\n<strong>解释：</strong>从左向右读, 为 -121 。 从右向左读, 为 121- 。因此它不是一个回文数。\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>x = 10\n<strong>输出：</strong>false\n<strong>解释：</strong>从右向左读, 为 01 。因此它不是一个回文数。\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>-2<sup>31</sup>&nbsp;&lt;= x &lt;= 2<sup>31</sup>&nbsp;- 1</code></li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>进阶：</strong>你能不将整数转为字符串来解决这个问题吗？</p>",
+  "javaTemplate": "class Solution {\n    public boolean isPalindrome(int x) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "palindrome-number",
+      "tier": "brute",
+      "title": "转字符串，双指针判回文",
+      "idea": "判断一个整数是不是回文数（正着读反着读一样）。\n\n最直接的想法：**转成字符串，用双指针从两端往中间比较。**\n\n```\nString s = String.valueOf(x);\nint i = 0, j = s.length() - 1;\nwhile (i < j) {\n    if (s.charAt(i) != s.charAt(j)) return false;\n    i++; j--;\n}\nreturn true;\n```\n\n**负数天然不是回文**，因为带负号（`-121` 反转是 `121-`，不等于原数）。所以负数可以直接返回 false。**力扣的判定也是这样。**\n\n**为什么这算暴力？** 因为题目有一个很强的进阶要求：**「你能不将整数转为字符串来解决这个问题吗？」** 这版用了 O(log x) 的额外空间存字符串。\n\n**但这版必须写，因为它的「双指针判回文」是最通用的模板**，能迁移到 125 题（验证回文串）、680 题（验证回文串 II）等所有回文判断题。**先掌握通用模板，再学针对整数的优化。**\n\n坑：\n1. 负数直接返回 false；\n2. 双指针循环条件 `i < j`（不是 `<=`，奇数长度时中间那位不用比）；\n3. `x = 0` 是回文。",
+      "pseudocode": "输入：整数 x\n输出：是否是回文数\n\n1. 如果 x 小于 0：return false\n2. s = 把 x 转成字符串\n3. i = 0；j = s 长度减 1\n4. 当 i 小于 j 循环：\n     如果 s[i] 不等于 s[j]：return false\n     i 加 1；j 减 1\n5. return true\n\n双指针从两端向中间的模板可以迁移到所有回文判断题\n转字符串用了额外空间，不满足题目的进阶要求\n复杂度：时间 O(log x)；空间 O(log x)",
+      "codeJava": "class Solution {\n    public boolean isPalindrome(int x) {\n        if (x < 0) return false;\n        String s = String.valueOf(x);\n        int i = 0;\n        int j = s.length() - 1;\n        while (i < j) {\n            if (s.charAt(i) != s.charAt(j)) return false;\n            i++;\n            j--;\n        }\n        return true;\n    }\n}",
+      "timeComplexity": "O(log x)",
+      "spaceComplexity": "O(log x)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "palindrome-number",
+      "tier": "better",
+      "title": "反转整个数，与原数比较",
+      "idea": "如果反转后的数等于原数，就是回文。\n\n```\nint rev = 0, t = x;\nwhile (t > 0) { rev = rev * 10 + t % 10; t /= 10; }\nreturn rev == x;\n```\n\n**负数和末位为 0 的数要提前排除：**\n- 负数：带负号，不可能是回文；\n- **末位为 0 且不等于 0**（比如 `10`，`100`）：反转后变成 `1`，位数都不一样，不可能是回文。**这个条件如果不写，`10` 反转成 `1`，`1 != 10` 恰好会返回 false，看起来对；但 `x = 0` 时末位也是 0，就必须排除，所以要写 `x != 0 && x % 10 == 0`。**\n\n**为什么还只是「较好」？** 有两个问题：\n1. **反转整个数可能溢出 int**（虽然本题的判定不受影响，但严格来说需要 long 或者提前排除）；\n2. **做了多余的工作**：判断回文只需要比较「前半段」和「后半段的反转」就够了，**不需要把整个数反转**。\n\n**这有点像 136 题和 137 题的递进关系：先写能对的，再优化到刚好够用。** 而「刚好够用」的关键洞察是——**回文只关心对称性，翻转一半就能验证。**\n\n坑：\n1. 负数排除；\n2. `x != 0 && x % 10 == 0` 排除末位 0；\n3. 用 long 接住反转值防溢出（或用下一版的半翻转）。",
+      "pseudocode": "输入：x\n输出：是否回文\n\n1. 如果 x 小于 0：return false\n2. 如果 x 不等于 0 且 (x 模 10) 等于 0：return false\n3. rev = 0（long 类型）；t = x\n4. 当 t 大于 0 循环：\n     rev = rev 乘 10 加 (t 模 10)\n     t = t 除以 10\n5. return rev 等于 x\n\n回文等价于反转后等于原数\n但反转整个数有溢出风险，也做了多余的工作\n复杂度：时间 O(log x)；空间 O(1)",
+      "codeJava": "class Solution {\n    public boolean isPalindrome(int x) {\n        if (x < 0) return false;\n        if (x != 0 && x % 10 == 0) return false;\n        long rev = 0;\n        int t = x;\n        while (t > 0) {\n            rev = rev * 10 + t % 10;\n            t /= 10;\n        }\n        return rev == x;\n    }\n}",
+      "timeComplexity": "O(log x)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "palindrome-number",
+      "tier": "optimal",
+      "title": "只翻转后半段，与前半段比较",
+      "idea": "**关键洞察：判断回文只需要比「前半段」和「后半段的反转」。** 所以只翻转一半就够，**并且能天然避免溢出**（因为翻转后的数位数只有原来的一半）。\n\n流程：\n```\nint rev = 0;\nwhile (x > rev) {\n    rev = rev * 10 + x % 10;\n    x /= 10;\n}\n// 循环结束时：x 是前半段，rev 是后半段的反转\nreturn x == rev || x == rev / 10;\n```\n\n**为什么循环条件是 `x > rev`？** 这是本解法的精髓：\n- 每次循环 `x` 减少一位、`rev` 增加一位；\n- **当 `rev >= x` 时，说明已经翻转到「过半」了，停。**\n- 这样恰好 `x` 是前半段、`rev` 是后半段的反转。\n\n**最后两判的含义：**\n- `x == rev`：**偶数位**（比如 `1221`，循环后 `x=12, rev=12`）；\n- `x == rev / 10`：**奇数位**（比如 `12321`，循环后 `x=12, rev=123`，中间那位 `3` 要扔掉，所以 `rev / 10 = 12`）。**`rev / 10` 就是扔掉中间位。**\n\n**为什么这是最优？**\n- 时间 O(log x / 2)：只翻一半；\n- 空间 O(1)：无字符串、无 long；\n- **不会溢出**：`rev` 的位数最多是 `x` 的一半，远达不到 int 上限。\n\n**这个「只翻一半」的技巧还能迁移：** 判断链表回文（234 题）也是「找到中点 + 翻转后半段 + 比较」，**思路完全同构。** 记住这个模式：**回文问题的通用优化是「只处理一半」。**\n\n坑：\n1. 负数排除；\n2. 末位 0 排除（`x != 0 && x % 10 == 0`）；\n3. 循环条件 `x > rev` 不是 `x != 0`；\n4. 最后两个判断缺一不可（偶数位和奇数位）。",
+      "pseudocode": "输入：x\n输出：是否回文\n\n1. 如果 x 小于 0：return false\n2. 如果 x 不等于 0 且 (x 模 10) 等于 0：return false\n3. rev = 0\n4. 当 x 大于 rev 循环：                    // 翻到过半就停\n     rev = rev 乘 10 加 (x 模 10)\n     x = x 除以 10\n5. return (x 等于 rev) 或 (x 等于 rev 除以 10)\n\n只翻后半段，位数减半所以不可能溢出\n偶数位满足 x 等于 rev，奇数位满足 x 等于 rev 除以 10\n复杂度：时间 O(log x)；空间 O(1)",
+      "codeJava": "class Solution {\n    public boolean isPalindrome(int x) {\n        if (x < 0) return false;\n        if (x != 0 && x % 10 == 0) return false;\n\n        int rev = 0;\n        while (x > rev) {\n            rev = rev * 10 + x % 10;\n            x /= 10;\n        }\n        return x == rev || x == rev / 10;\n    }\n}",
+      "timeComplexity": "O(log x)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

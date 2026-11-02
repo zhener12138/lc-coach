@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "push 时倒腾 · 保证栈顶是队头",
+      "idea": "队列是先进先出，栈是后进先出。要用栈模拟队列，核心矛盾在「出口方向反了」。最直白的解法：**每次 push 都把整个栈翻转一次**，让栈顶永远等于队头。\n\n具体做法：push(x) 时，先把当前栈 in 的所有元素倒进临时栈 tmp，压入 x，再把 tmp 倒回 in。这样 x 就被压到了栈底，栈顶是原来的队头。pop 直接弹栈顶就是队头。\n\n为什么这版能对？因为它把「顺序」在 push 时刻就整理好了，pop/peek 直接取栈顶即可。\n\n为什么它慢？每次 push 都要搬 2n 个元素，push 是 O(n)。如果调用序列是 push 一万次然后 pop 一万次，总成本 O(n²)。\n\n那为什么值得先写？因为它把「队列语义」如何映射到「栈操作」讲得最清楚——**队头必须出现在栈顶**。第二、三版都是在这个目标下换更省的做法：不必每次搬，攒着等到 pop 时再搬。\n\n实现坑：pop 前必须判空（题目保证只对非空队列调用，但仍要写清空逻辑）；peek 和 pop 可以共用底层的搬移逻辑。\n\n复杂度：push O(n)，pop/peek/empty O(1)。空间 O(n)。",
+      "pseudocode": "输入：push / pop / peek / empty 操作序列\n输出：各操作返回值\n\n数据结构：一个栈 in，一个临时栈 tmp\n\npush(x)：\n  当 in 不为空：tmp 压入 in 弹出的元素     // 把 in 全部倒出来\n  in 压入 x                                // x 落到最底\n  当 tmp 不为空：in 压入 tmp 弹出的元素     // 倒回去\n\npop()：\n  return in 弹出\n\npeek()：\n  return in 栈顶\n\nempty()：\n  return in 是否为空\n\n目标：让队头永远待在栈顶\n复杂度：push O(n)，其余 O(1)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass MyQueue {\n    private Deque<Integer> in;\n    private Deque<Integer> tmp;\n\n    public MyQueue() {\n        in = new ArrayDeque<>();\n        tmp = new ArrayDeque<>();\n    }\n\n    public void push(int x) {\n        // 每次 push 都整体翻转，让 x 落到栈底、队头留在栈顶\n        while (!in.isEmpty()) tmp.push(in.pop());\n        in.push(x);\n        while (!tmp.isEmpty()) in.push(tmp.pop());\n    }\n\n    public int pop() {\n        return in.pop();\n    }\n\n    public int peek() {\n        return in.peek();\n    }\n\n    public boolean empty() {\n        return in.isEmpty();\n    }\n}",
+      "timeComplexity": "push O(n)，其余 O(1)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "双栈 in/out · 只在需要时倒腾",
+      "idea": "上一版每次 push 都搬两趟，太浪费。关键洞察：**不需要在 push 时就整理顺序，等到真正要 pop 的时候再搬**。\n\n于是维护两个栈：in 负责收（push 直接压 in），out 负责发（pop/peek 从 out 取）。当 out 为空时，把 in 里所有元素一次性倒进 out——**倒完之后 out 的栈顶就是队头**，之后连续 pop 都不用再搬。\n\n为什么倒一次能服务多次？因为倒置后 out 里的顺序正好是队列顺序：最后进 in 的元素（队尾）被压在 out 底部，最先进 in 的元素（队头）浮到 out 顶部。所以 out 弹完之前都不用管 in。\n\n**摊还复杂度分析**（面试必问）：每个元素最多被「从 in 搬到 out」一次，所以 m 次操作总共 O(m) 次搬移，均摊每次 O(1)。不是严格的每次 O(1)，但是摊还 O(1)。能说清「摊还」这个词就是加分点。\n\n相比每次翻转版改了什么？把 O(n) 的 push 移到「out 为空」这个时机，且一次搬移服务多次 pop，总搬移量从 O(n·m) 降到 O(m)。\n\n坑：peek 也要走「out 为空则倒」这段逻辑，不能只写 pop。所以最好抽一个私有方法 `transfer()` 或 `ensureOut()`。\n\n复杂度 push O(1)，pop/peek 摊还 O(1)，空间 O(n)。",
+      "pseudocode": "输入：push / pop / peek / empty 操作\n输出：各操作返回值\n\n数据结构：收栈 in，发栈 out\n\npush(x)：\n  in 压入 x\n\nensureOut()：                        // 私有辅助：保证 out 有货\n  如果 out 为空：\n     当 in 不为空：out 压入 in 弹出的元素   // 一次性倒完\n\npop()：\n  ensureOut()\n  return out 弹出\n\npeek()：\n  ensureOut()\n  return out 栈顶\n\nempty()：\n  return in 为空 且 out 为空\n\n摊还分析：每个元素最多被搬一次，m 次操作共 O(m) 搬移\n复杂度：push O(1)，pop/peek 摊还 O(1)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass MyQueue {\n    private Deque<Integer> in;    // 收\n    private Deque<Integer> out;   // 发\n\n    public MyQueue() {\n        in = new ArrayDeque<>();\n        out = new ArrayDeque<>();\n    }\n\n    public void push(int x) {\n        in.push(x);\n    }\n\n    public int pop() {\n        ensureOut();\n        return out.pop();\n    }\n\n    public int peek() {\n        ensureOut();\n        return out.peek();\n    }\n\n    public boolean empty() {\n        return in.isEmpty() && out.isEmpty();\n    }\n\n    // out 空了才把 in 整体倒过来，一次搬移服务多次 pop\n    private void ensureOut() {\n        if (out.isEmpty()) {\n            while (!in.isEmpty()) out.push(in.pop());\n        }\n    }\n}",
+      "timeComplexity": "push O(1)，pop/peek 摊还 O(1)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "双栈 + front 缓存 · peek 也可 O(1)",
+      "idea": "上一版有一个不够漂亮的地方：peek() 也要触发倒栈。如果调用序列是 peek, peek, peek...（一直不 pop），第一次 peek 会搬一堆元素，虽然摊还上仍可接受，但**单次最坏是 O(n)**。\n\n优化：维护一个 `front` 变量，记录「队列当前的队头值」。push 时如果 in 本来就是空的，说明新元素就是队头，更新 front = x。peek 时先看 out：非空就返回 out 栈顶；out 空就直接返回 front，**完全不用倒栈**。\n\n什么时候必须倒？只有 pop 时。pop 时如果 out 空才倒一次，把 in 全搬过去。\n\n为什么这版更好？peek 变成严格 O(1)，不触发任何搬移。日常使用中 peek 调用频率往往比 pop 高（比如「看一眼队头」。这个优化把「摊还」变成了「peek 严格 O(1)」。\n\nfront 的更新时机是唯一的坑：\n- push 时 `if (in.isEmpty()) front = x;` ——只有 in 为空，新元素才成为队头。**如果用 out 判空就错了**，因为 out 里有旧元素时队头还是旧的。\n- pop 后 out 空了，front 应该在倒栈后重新指向 out 栈顶——但其实下一次 peek 会走 `out` 非空分支，front 只在 out 空时用，而 out 空时 in 一定也空或下一次 push 会重设 front。所以这个细节只要保证「out 非空时优先读 out」就自动正确。\n\n相比双栈版改了什么？加一个 int 变量，把 peek 从「可能 O(n)」变成「严格 O(1)」，最坏情况也被消除。这是本题能做到的最优形态——所有操作（含单次最坏）都是 O(1) 或摊还 O(1)，且 peek 严格 O(1)。\n\n复杂度 push O(1)，peek/empty O(1)，pop 摊还 O(1)。空间 O(n)。",
+      "pseudocode": "输入：push / pop / peek / empty 操作\n输出：各操作返回值\n\n数据结构：收栈 in，发栈 out，变量 front（队头值）\n\npush(x)：\n  如果 in 为空：front = x           // 新元素成为队头，只在 in 空时更新\n  in 压入 x\n\npeek()：\n  如果 out 不为空：return out 栈顶   // 优先读 out，不倒栈\n  return front                      // 严格 O(1)\n\npop()：\n  如果 out 为空：\n     当 in 不为空：out 压入 in 弹出的元素\n  return out 弹出\n\nempty()：\n  return in 为空 且 out 为空\n\n为什么 front 只在 in 为空时更新：\n  in 非空说明前面还有更早的元素，队头没变\n\n复杂度：push/peek/empty 严格 O(1)，pop 摊还 O(1)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass MyQueue {\n    private Deque<Integer> in;\n    private Deque<Integer> out;\n    private int front;            // 队头值，让 peek 严格 O(1)\n\n    public MyQueue() {\n        in = new ArrayDeque<>();\n        out = new ArrayDeque<>();\n    }\n\n    public void push(int x) {\n        // 只有 in 为空时，新元素才是队头\n        if (in.isEmpty()) front = x;\n        in.push(x);\n    }\n\n    public int pop() {\n        if (out.isEmpty()) {\n            while (!in.isEmpty()) out.push(in.pop());\n        }\n        return out.pop();\n    }\n\n    public int peek() {\n        // out 非空读 out，否则直接返回缓存的队头，完全不搬移\n        if (!out.isEmpty()) return out.peek();\n        return front;\n    }\n\n    public boolean empty() {\n        return in.isEmpty() && out.isEmpty();\n    }\n}",
+      "timeComplexity": "push/peek/empty O(1)，pop 摊还 O(1)",
+      "spaceComplexity": "O(n)"
+    }
+  ]
+}

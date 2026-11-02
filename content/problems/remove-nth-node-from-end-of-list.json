@@ -1,0 +1,49 @@
+{
+  "slug": "remove-nth-node-from-end-of-list",
+  "frontendId": "19",
+  "titleEn": "Remove Nth Node From End of List",
+  "titleCn": "删除链表的倒数第 N 个结点",
+  "difficulty": "Medium",
+  "tags": "链表,双指针",
+  "contentHtml": "<p>Given the <code>head</code> of a linked list, remove the <code>n<sup>th</sup></code> node from the end of the list and return its head.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/10/03/remove_ex1.jpg\" />\n<pre>\n<strong>Input:</strong> head = [1,2,3,4,5], n = 2\n<strong>Output:</strong> [1,2,3,5]\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> head = [1], n = 1\n<strong>Output:</strong> []\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> head = [1,2], n = 1\n<strong>Output:</strong> [1]\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li>The number of nodes in the list is <code>sz</code>.</li>\n\t<li><code>1 &lt;= sz &lt;= 30</code></li>\n\t<li><code>0 &lt;= Node.val &lt;= 100</code></li>\n\t<li><code>1 &lt;= n &lt;= sz</code></li>\n</ul>\n\n<p>&nbsp;</p>\n<p><strong>Follow up:</strong> Could you do this in one pass?</p>",
+  "contentCnHtml": "<p>给你一个链表，删除链表的倒数第&nbsp;<code>n</code><em>&nbsp;</em>个结点，并且返回链表的头结点。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/10/03/remove_ex1.jpg\" />\n<pre>\n<strong>输入：</strong>head = [1,2,3,4,5], n = 2\n<strong>输出：</strong>[1,2,3,5]\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>head = [1], n = 1\n<strong>输出：</strong>[]\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>head = [1,2], n = 1\n<strong>输出：</strong>[1]\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li>链表中结点的数目为 <code>sz</code></li>\n\t<li><code>1 &lt;= sz &lt;= 30</code></li>\n\t<li><code>0 &lt;= Node.val &lt;= 100</code></li>\n\t<li><code>1 &lt;= n &lt;= sz</code></li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>进阶：</strong>你能尝试使用一趟扫描实现吗？</p>",
+  "javaTemplate": "/**\n * Definition for singly-linked list.\n * public class ListNode {\n *     int val;\n *     ListNode next;\n *     ListNode() {}\n *     ListNode(int val) { this.val = val; }\n *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }\n * }\n */\nclass Solution {\n    public ListNode removeNthFromEnd(ListNode head, int n) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "remove-nth-node-from-end-of-list",
+      "tier": "brute",
+      "title": "先数长度 · 再走到目标位置",
+      "idea": "两趟走法：第一趟数出链表总长 len；要删的是倒数第 n 个，也就是正数第 len-n+1 个；第二趟走到它的**前一个**节点（第 len-n 个），把 next 跳过目标即可。\n\n为什么要走到前一个？因为单链表只能单向走，删除一个节点必须改它前驱的 next 指针。找不到前驱就没法删。\n\n这版为什么不是最优？题目进阶要求「一趟扫描」。两趟虽然也是 O(n)，但被明确追问时答不上来。\n\n最大的坑：**要删的是头节点怎么办？** len == n 时，目标就是头，没有前驱。所以第二趟必须先 `if (len == n) return head.next;` 特判，或者引入 dummy。这版用特判，第三版用 dummy 统一处理。\n\n另一个坑：n 一定合法（1 ≤ n ≤ len），不用考虑越界。\n\n实现顺序：先算 len，处理删头的情况，再走 len-n-1 步到前驱，最后 `prev.next = prev.next.next`。\n\n复杂度 O(n) 时间（两趟），O(1) 空间。",
+      "pseudocode": "输入：链表头 head，倒数第 n 个\n输出：删除后的头\n\n1. len = 0；p = head；当 p 不为空：len 加 1，p = p.next\n2. 如果 len 等于 n：返回 head.next      // 删的是头节点\n3. prev = head\n   i 从 1 循环到 len-n-1：prev = prev.next    // 走到目标的前一个\n4. prev.next = prev.next.next\n5. 返回 head\n\n必须特判删头，因为头节点没有前驱\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public ListNode removeNthFromEnd(ListNode head, int n) {\n        int len = 0;\n        for (ListNode p = head; p != null; p = p.next) len++;\n\n        // 删的是头节点，没有前驱，必须特判\n        if (len == n) return head.next;\n\n        // 走到目标节点的前一个：正数第 len-n 个\n        ListNode prev = head;\n        for (int i = 1; i < len - n; i++) prev = prev.next;\n\n        prev.next = prev.next.next;\n        return head;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "remove-nth-node-from-end-of-list",
+      "tier": "better",
+      "title": "快慢指针 · 固定间隔找前驱",
+      "idea": "一趟版的经典技巧：先让 fast 走 n+1 步，然后 slow 和 fast 同步走，当 fast 变成 null 时，slow 正好停在**要删节点的前一个**。\n\n为什么是 n+1 步而不是 n 步？这是最容易错的点，值得推一遍。假设链表 1→2→3→4→5，删倒数第 2 个（就是 4）。\n- 如果 fast 先走 n=2 步，fast 在 3；同步走，fast 到 5 时 slow 在 4——那是目标本身，不是前驱，删不了。\n- 如果 fast 先走 n+1=3 步，fast 在 4；同步走，fast 走到 null 时 slow 在 3——正好是前驱。\n\n所以间隔是 n+1：`fast` 与 `slow` 之间始终保持 n+1 的距离，fast 落地时 slow 就在前驱位置。\n\n删头的问题怎么办？如果目标就是头，fast 先走 n+1 步时会直接走出链表（变成 null）。这时 slow 还在 head，但 head 本身要被删——这版用 `if (fast == null) return head.next;` 特判。\n\n相比两趟版改了什么？只走一趟，符合题目进阶要求。但代码为了让 fast 多走那一步、还要特判删头，显得零碎。第三版用 dummy 把这些边界全部消化掉。\n\n复杂度 O(n) 时间（一趟），O(1) 空间。",
+      "pseudocode": "输入：head，n\n输出：删除后的头\n\n1. fast = head，slow = head\n2. i 从 0 循环到 n：fast = fast.next      // 走 n+1 步\n3. 如果 fast 为空：返回 head.next          // 说明删的是头\n4. 当 fast 不为空循环：\n     fast = fast.next\n     slow = slow.next\n5. slow.next = slow.next.next\n6. 返回 head\n\n为什么是 n+1 步：让 fast 落地时 slow 停在【前驱】而不是目标本身\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public ListNode removeNthFromEnd(ListNode head, int n) {\n        ListNode fast = head, slow = head;\n\n        // 先走 n+1 步：这样 slow 最终会停在前驱位置\n        for (int i = 0; i <= n; i++) {\n            if (fast == null) return head.next;   // 删的是头节点\n            fast = fast.next;\n        }\n\n        while (fast != null) {\n            fast = fast.next;\n            slow = slow.next;\n        }\n        slow.next = slow.next.next;\n        return head;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "remove-nth-node-from-end-of-list",
+      "tier": "optimal",
+      "title": "虚拟头 + 快慢指针 · 边界全消",
+      "idea": "上一版要特判删头，显得不干净。用 dummy 虚拟头节点，把所有「没有前驱」的问题一次性消灭：dummy 永远是 head 的前驱，所以无论删哪个节点，slow 都一定停在它的前驱上。\n\ndummy 版的标准写法：`dummy.next = head`，`fast = dummy`，`slow = dummy`。先让 fast 走 n+1 步（因为 fast 从 dummy 出发，比从 head 出发多走了一个位置，正好对齐），然后同步走到 fast 为 null，此时 slow 就在目标前驱。最后 `slow.next = slow.next.next`，返回 `dummy.next`。\n\n为什么这样就不需要特判了？删头时目标的前驱就是 dummy，slow 停在 dummy 上，`slow.next = slow.next.next` 把 dummy.next 从 head 改成 head.next，完全正确——和删中间节点走的是同一段代码。**这就是 dummy 的价值：用一个人造节点吃掉所有边界情况。**\n\n这个「快慢指针 + dummy」的模板，在「删除排序链表中的重复元素」「分割链表」「重排链表」里都会反复用到，值得背下来。\n\n实现上还可以用整型计数器替代「先走 n+1 步」的循环，但两步走更直观。\n\n相比上一版改了什么？删掉了 `if (fast == null) return head.next;` 这个分支，逻辑路径从两条变成一条，正确性更容易保证。\n\n复杂度 O(n) 时间（一趟），O(1) 空间。",
+      "pseudocode": "输入：head，n\n输出：删除后的头\n\n1. dummy = new ListNode(0)；dummy.next = head\n2. fast = dummy，slow = dummy\n3. i 从 0 循环到 n：fast = fast.next        // 走 n+1 步（从 dummy 出发）\n4. 当 fast 不为空循环：\n     fast = fast.next\n     slow = slow.next\n5. slow.next = slow.next.next\n6. 返回 dummy.next\n\ndummy 让「删头」和「删中间」走同一条代码路径\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public ListNode removeNthFromEnd(ListNode head, int n) {\n        ListNode dummy = new ListNode(0);\n        dummy.next = head;\n\n        ListNode fast = dummy, slow = dummy;\n        // 从 dummy 出发走 n+1 步\n        for (int i = 0; i <= n; i++) fast = fast.next;\n\n        while (fast != null) {\n            fast = fast.next;\n            slow = slow.next;\n        }\n        // 删头时 slow 是 dummy，这段代码同样正确\n        slow.next = slow.next.next;\n\n        return dummy.next;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

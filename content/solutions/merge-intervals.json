@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "反复合并 · 每次都全表重扫",
+      "idea": "最直觉的做法：只要还存在能合并的两个区间，就合并一次，然后重新从头扫描，直到某一轮扫完没有任何合并发生。\n\n什么叫「能合并」？两个区间 [a1,b1] 和 [a2,b2]，如果 a2 <= b1 或 a1 <= b2，说明它们有重叠，可以并成 [min(a1,a2), max(b1,b2)]。\n\n为什么这版慢？最坏情况是 n 个区间首尾相连成一长串，每次只能合并一对，要合并 n-1 轮，每轮扫 n² 对，总量级接近 O(n³)。\n\n但这版有一个重要价值：它把「合并规则」定义得最清楚。写最优解时如果排序后的判断写错了，回来对照这版的「重叠条件」就能定位。\n\n注意坑：合并后要从列表中删掉两个、插入一个，ArrayList 的 remove 是 O(n)，下标会错位，所以每轮合并后必须直接 break 出去重扫。\n\n复杂度 O(n³) 量级，实测 n=10000 就超时。",
+      "pseudocode": "输入：二维数组 intervals，每个元素是 [start, end]\n输出：合并所有重叠区间后的数组\n\n1. 把 intervals 转成可修改的列表 list\n2. 循环（无限循环）：\n     a. merged = false\n     b. i 从 0 循环到 list 长度 -1：\n          j 从 i+1 循环到 list 长度 -1：\n               取 A = list[i]，B = list[j]\n               如果 A.end >= B.start 且 B.end >= A.start（两区间有重叠）：\n                    新区间 = [min(A.start,B.start), max(A.end,B.end)]\n                    删掉下标 j（先删大的，下标不乱）\n                    删掉下标 i\n                    把新区间加进 list\n                    merged = true，跳出两层循环\n     c. 如果 merged 为 false（这一轮没有任何合并）：跳出外层循环\n3. 把 list 转成数组返回\n\n复杂度：时间最坏 O(n³)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int[][] merge(int[][] intervals) {\n        List<int[]> list = new ArrayList<>();\n        for (int[] iv : intervals) list.add(new int[]{iv[0], iv[1]});\n\n        boolean merged = true;\n        while (merged) {\n            merged = false;\n            outer:\n            for (int i = 0; i < list.size(); i++) {\n                for (int j = i + 1; j < list.size(); j++) {\n                    int[] a = list.get(i);\n                    int[] b = list.get(j);\n                    // 有重叠：a 的右端 >= b 的左端，且 b 的右端 >= a 的左端\n                    if (a[1] >= b[0] && b[1] >= a[0]) {\n                        int[] nu = new int[]{Math.min(a[0], b[0]), Math.max(a[1], b[1])};\n                        list.remove(j);   // 先删大下标，避免后面下标前移\n                        list.remove(i);\n                        list.add(nu);\n                        merged = true;\n                        break outer;      // 合并后列表变了，必须重新扫\n                    }\n                }\n            }\n        }\n        return list.toArray(new int[0][]);\n    }\n}",
+      "timeComplexity": "O(n³)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "按左端点排序 + 一次扫描合并",
+      "idea": "暴力版慢在「无序」：任意两个区间都可能重叠，所以必须两两比较。\n\n关键洞察：如果把区间按左端点从小到大排好序，那么「能和我合并的区间」一定紧挨在我右边。为什么？因为排在后面的区间左端点更大，一旦它的左端点超过了我当前的右端点，再往后的左端点只会更大，全都不可能重叠了——可以直接停止比较。\n\n于是算法变成：维护一个「当前正在生长的区间」cur，从第二个区间开始依次看，能接上就延长 cur 的右端，接不上就把 cur 存进答案、换成新区间。\n\n相比暴力版改了什么？把「两两比较 + 反复重扫」变成了「排序 + 单次线性扫描」。排序 O(n log n) 成为瓶颈，整体 O(n log n)。\n\n为什么它已经很好，还要有第三版？其实这版就是本题的标准最优解。第三版是它的「原地写入」变体，省掉额外列表，把空间从 O(n) 降到 O(1)（不计排序和输出）。\n\n复杂度 O(n log n) 时间，O(n) 空间存结果。",
+      "pseudocode": "输入：二维数组 intervals\n输出：合并后的区间数组\n\n1. 把 intervals 按区间左端点从小到大排序\n2. 建一个空的结果列表 ans\n3. 取 cur = intervals[0]（当前正在合并的区间）\n4. i 从 1 循环到 n-1：\n     a. 如果 intervals[i].start <= cur.end：\n          说明重合，把 cur.end 更新为 max(cur.end, intervals[i].end)\n     b. 否则：\n          说明断开，把 cur 加入 ans\n          cur = intervals[i]（开始新的区间）\n5. 循环结束后别忘了把最后一个 cur 加入 ans\n6. 返回 ans 转成的数组\n\n复杂度：时间 O(n log n) 排序主导；空间 O(n) 存答案",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int[][] merge(int[][] intervals) {\n        if (intervals.length == 0) return new int[0][];\n        // 按左端点升序；左端点相同则按右端点升序\n        Arrays.sort(intervals, (a, b) -> a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);\n\n        List<int[]> ans = new ArrayList<>();\n        int[] cur = new int[]{intervals[0][0], intervals[0][1]};\n\n        for (int i = 1; i < intervals.length; i++) {\n            if (intervals[i][0] <= cur[1]) {\n                // 能接上：延长当前区间的右端（取两者更大的）\n                cur[1] = Math.max(cur[1], intervals[i][1]);\n            } else {\n                // 接不上：当前区间定型，开始下一个\n                ans.add(cur);\n                cur = new int[]{intervals[i][0], intervals[i][1]};\n            }\n        }\n        ans.add(cur);   // 最后一个别忘了\n        return ans.toArray(new int[0][]);\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "排序 + 原地写回数组",
+      "idea": "这版思路和上一版完全一样，区别只在「答案往哪放」。\n\n上一版开了一个 ArrayList 存结果，最后再 toArray 复制一遍。其实答案数组长度一定不超过原数组长度，而原数组我们已经排好序、不再需要保留原始顺序了，所以可以直接把合并后的区间写回 intervals 的前 k 个位置。\n\n具体做法：用一个指针 k 表示「已写好的区间个数」。开始时把第一个区间当成当前区间放在位置 0。之后每遇到一个新区间：能接上就只改 intervals[k-1][1]（延长右端）；接不上就 k++，把新区间写到位置 k。\n\n为什么这样安全？因为读位置永远在写位置之后：处理第 i 个原始区间时，它还没被覆盖（i >= k 恒成立）。这是「原地双指针」的经典论证，面试时能讲出来是加分项。\n\n相比上一版改了什么？省掉了 ArrayList 的对象创建和最后的复制，空间从 O(n) 额外降到 O(1) 额外（不算排序的栈空间和最终输出数组）。\n\n最后返回 Arrays.copyOf(intervals, k)，精确截断到实际长度。\n\n复杂度 O(n log n) 时间，O(1) 额外空间。",
+      "pseudocode": "输入：二维数组 intervals\n输出：合并后的区间数组\n\n1. 如果 intervals 为空，直接返回空数组\n2. 按左端点升序排序\n3. k = 1（已经写好的区间个数，第 0 个已经就位）\n4. i 从 1 循环到 n-1：\n     a. 如果 intervals[i].start <= intervals[k-1].end：\n          能接上 → intervals[k-1].end = max(intervals[k-1].end, intervals[i].end)\n     b. 否则：\n          intervals[k] = intervals[i]（新区间写到 k 位置）\n          k = k + 1\n5. 返回 Arrays.copyOf(intervals, k)\n\n关键：i 始终大于等于 k，所以读到的一定是还没被覆盖的原始数据\n\n复杂度：时间 O(n log n)；空间 O(1) 额外（不含排序栈与返回值）",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int[][] merge(int[][] intervals) {\n        if (intervals.length <= 1) return intervals;\n        Arrays.sort(intervals, (a, b) -> a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);\n\n        int k = 1;   // k 表示已写好的区间个数，位置 0 已就位\n        for (int i = 1; i < intervals.length; i++) {\n            if (intervals[i][0] <= intervals[k - 1][1]) {\n                // 能接上，只延长已有区间的右端，k 不动\n                intervals[k - 1][1] = Math.max(intervals[k - 1][1], intervals[i][1]);\n            } else {\n                // 接不上，把新区间搬到 k 位置\n                intervals[k] = intervals[i];\n                k++;\n            }\n        }\n        return Arrays.copyOf(intervals, k);\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

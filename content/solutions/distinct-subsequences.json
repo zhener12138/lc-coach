@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "递归：匹配就分「用」和「不用」两条路",
+      "idea": "数 s 里有多少个不同的子序列等于 t。\n\n递归思路：`dfs(i, j)` 表示「用 s 从 i 开始的字符，能组成 t 从 j 开始的后缀的方案数」。\n\n- 如果 `s[i] == t[j]`，**有两条路**：\n  1. **用**这个字符匹配 → `dfs(i+1, j+1)`；\n  2. **不用**这个字符（跳过，可能后面还有同样的字符）→ `dfs(i+1, j)`。\n  两条路要**相加**，这是计数的关键。\n- 如果不等，只有一条路：`dfs(i+1, j)`。\n\n**为什么这算暴力？** 每次匹配都分叉，最坏 O(2^m)。而 `(i, j)` 只有 `(m+1)(n+1)` 种，大量重复。\n\n**这题和 1143（最长公共子序列）的递归结构很像，但关键差别在于：**\n- LCS 是求**最优值**，所以匹配时取 `1 + dfs(...)`，不匹配时取 `max(...)`；\n- 本题是**计数**，所以匹配时要**把两条路加起来**，不匹配时只有一条路。\n\n**这个「最优用 max、计数用加」的区别，是 DP 里最核心的分类依据。** 判断一道题该用 min/max 还是加法，就是看题目问的是「最好」还是「多少种」。\n\n坑：\n1. 终止条件：`j == n` 返回 1（t 匹配完了，s 剩下的都不用，这算一种方案）；`i == m` 返回 0（s 用完但 t 没完，失败）；\n2. **两个终止条件的先后顺序有讲究**：必须先判 `j == n`（成功），否则 `i` 先用完时会误判；\n3. 结果可能很大，力扣保证在 int 内。",
+      "pseudocode": "输入：主串 s，模式串 t\n输出：子序列方案数\n\n1. return dfs(0, 0)\n\ndfs(i, j)：\n2. 如果 j 等于 t 长度：return 1              // t 已匹配完，成功\n3. 如果 i 等于 s 长度：return 0              // s 用完，失败\n4. 如果 s[i] 等于 t[j]：\n     return dfs(i 加 1, j 加 1) 加 dfs(i 加 1, j)   // 用 或 不用\n5. 否则：return dfs(i 加 1, j)\n\n匹配时分两条路并相加，这是计数的标志\n复杂度：时间 O(2 的 m 次方)；空间 O(m 加 n)",
+      "codeJava": "class Solution {\n    public int numDistinct(String s, String t) {\n        return dfs(s, t, 0, 0);\n    }\n\n    private int dfs(String s, String t, int i, int j) {\n        if (j == t.length()) return 1;\n        if (i == s.length()) return 0;\n        int res = dfs(s, t, i + 1, j);\n        if (s.charAt(i) == t.charAt(j)) {\n            res += dfs(s, t, i + 1, j + 1);\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(2^m)",
+      "spaceComplexity": "O(m+n)"
+    },
+    {
+      "tier": "better",
+      "title": "记忆化：缓存 (i, j)",
+      "idea": "把 `(i, j)` 的结果缓存进 `int[][]`。**这里有个细节：`int` 数组默认是 0，而 0 恰好是合法答案（匹配不上就是 0 种方案）。所以不能靠 0 判断「没算过」。**\n\n两种处理方式：\n1. 用 `Integer[][]`，`null` 表示没算；\n2. 用 `int[][]`，初始填 -1 当哨兵。\n\n**我选 `Integer[][]`，因为语义最直白。** 但要注意：`Integer` 会自动装箱，常数比 `int` 大。**如果追求性能，用 `int[][]` 填 -1，配合 `memo[i][j] != -1` 判断。**\n\n优化后时间 O(m·n)。\n\n**为什么还只是「较好」？** 因为：\n- `Integer[][]` 是二维对象数组，每个元素一个对象引用，内存开销大（m·n 可能到 10^6 级）；\n- 递归有栈开销；\n- **最重要的是：自底向上可以压到一维 `int[]`，而这里的答案不需要二维。**\n\n**这题的答案上界值得注意：** 方案数可能极大（力扣说测试用例答案在 int 范围内，但理论上是指数级）。**如果题目不保证，就必须用 `long` 甚至 `BigInteger`。** 面试时提一句「如果答案可能超 int 我会换成 long」，是加分点。\n\n坑：\n1. 用 `Integer` 判 `null`，或 `int` 填 -1；\n2. 两个终止条件顺序；\n3. 别忘了先判 `j == t.length()`。",
+      "pseudocode": "输入：s、t\n输出：方案数\n\n1. memo = (m 加 1) 乘 (n 加 1) 的 Integer 二维数组\n2. return dfs(0, 0, memo)\n\ndfs(i, j, memo)：\n3. 如果 j 等于 n：return 1\n4. 如果 i 等于 m：return 0\n5. 如果 memo[i][j] 不为 null：return memo[i][j]\n6. res = dfs(i 加 1, j, memo)\n7. 如果 s[i] 等于 t[j]：res 加 dfs(i 加 1, j 加 1, memo)\n8. memo[i][j] = res；return res\n\nInteger 用 null 表示没算过，int 默认 0 会和合法答案冲突\n复杂度：时间 O(m 乘 n)；空间 O(m 乘 n)",
+      "codeJava": "class Solution {\n    public int numDistinct(String s, String t) {\n        Integer[][] memo = new Integer[s.length() + 1][t.length() + 1];\n        return dfs(s, t, 0, 0, memo);\n    }\n\n    private int dfs(String s, String t, int i, int j, Integer[][] memo) {\n        if (j == t.length()) return 1;\n        if (i == s.length()) return 0;\n        if (memo[i][j] != null) return memo[i][j];\n\n        int res = dfs(s, t, i + 1, j, memo);\n        if (s.charAt(i) == t.charAt(j)) {\n            res += dfs(s, t, i + 1, j + 1, memo);\n        }\n        memo[i][j] = res;\n        return res;\n    }\n}",
+      "timeComplexity": "O(m · n)",
+      "spaceComplexity": "O(m · n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "一维滚动 DP，倒序更新",
+      "idea": "自底向上，**`dp[j]` = 「用 s 的当前前缀，组成 t 的前 j 个字符的方案数」。**\n\n转移：\n```\nif (s[i-1] == t[j-1]) dp[j] = dp[j] + dp[j-1];\n// 否则 dp[j] 不变（沿用上一行的值，即「不用 s[i-1]」）\n```\n\n**为什么内层必须倒序？**\n- `dp[j]`（更新前）= `dp[i-1][j]`，代表「不用 s[i-1]」；\n- `dp[j-1]`（更新后）= `dp[i][j-1]`，代表「用了 s[i-1] 后，还要组成 t 的前 j-1 个」。\n\n**如果正序，`dp[j-1]` 就是本行新值，会导致同一个 `s[i-1]` 被重复使用多次**（一个字符只能用一次）。**这就是 0/1 背包必须倒序的根本原因，这里同样适用。**\n\n**边界 `dp[0] = 1`**：用任何 s 前缀组成空串，只有 1 种方案（什么都不选）。**这个 1 是整题的地基。**\n\n**注意 `dp[j]` 在不匹配时不需要置 0**，因为它本身就保留着上一行的值。**这是个容易写错的地方**——很多人习惯性地写 `else dp[j] = 0`，那就把「不用这个字符」的方案全丢了。\n\n**复杂度 O(m·n) 时间、O(n) 空间。** 时间已经是下界（必须检查所有字符对），空间也是。\n\n**面试延伸：如果 s 极长而 t 极短（比如 s 有 10^5 个字符，t 只有 3 个）怎么办？** 可以只维护 t 长度大小的数组，外层扫 s，内层只扫 t——**这正是本方案的自然形态**，所以空间是 O(t 的长度) 而不是 O(s 的长度)。**指出这个不对称性，说明你真的理解了压缩的意义。**\n\n坑：\n1. 内层倒序；\n2. 不匹配时不要置 0；\n3. `dp[0] = 1`；\n4. 答案可能超 int（力扣保证不超）。",
+      "pseudocode": "输入：s、t\n输出：方案数\n\n1. n = t 长度；dp = 长度 n 加 1 的数组；dp[0] = 1\n2. 对 s 里每个字符 c：\n     对 j 从 n 递减到 1：                   // 必须倒序\n        如果 c 等于 t[j 减 1]：\n           dp[j] = dp[j] 加 dp[j 减 1]\n        // 不相等时 dp[j] 保持不变，代表不用这个字符\n3. return dp[n]\n\n倒序防止同一个 s 字符被重复使用\n不匹配时不能置 0，要保留上一行的值\n复杂度：时间 O(m 乘 n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int numDistinct(String s, String t) {\n        int n = t.length();\n        int[] dp = new int[n + 1];\n        dp[0] = 1;\n\n        for (int i = 0; i < s.length(); i++) {\n            char c = s.charAt(i);\n            for (int j = n; j >= 1; j--) {\n                if (c == t.charAt(j - 1)) {\n                    dp[j] += dp[j - 1];\n                }\n            }\n        }\n        return dp[n];\n    }\n}",
+      "timeComplexity": "O(m · n)",
+      "spaceComplexity": "O(n)"
+    }
+  ]
+}

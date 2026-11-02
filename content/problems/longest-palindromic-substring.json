@@ -1,0 +1,49 @@
+{
+  "slug": "longest-palindromic-substring",
+  "frontendId": "5",
+  "titleEn": "Longest Palindromic Substring",
+  "titleCn": "最长回文子串",
+  "difficulty": "Medium",
+  "tags": "双指针,字符串,动态规划,Manacher 算法",
+  "contentHtml": "<p>Given a string <code>s</code>, return <em>the longest</em> <span><em>palindromic</em></span> <span><em>substring</em></span> in <code>s</code>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> s = &quot;babad&quot;\n<strong>Output:</strong> &quot;bab&quot;\n<strong>Explanation:</strong> &quot;aba&quot; is also a valid answer.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> s = &quot;cbbd&quot;\n<strong>Output:</strong> &quot;bb&quot;\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= s.length &lt;= 1000</code></li>\n\t<li><code>s</code> consist of only digits and English letters.</li>\n</ul>",
+  "contentCnHtml": "<p>给你一个字符串 <code>s</code>，找到 <code>s</code> 中最长的 <span>回文</span> <span>子串</span>。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>s = \"babad\"\n<strong>输出：</strong>\"bab\"\n<strong>解释：</strong>\"aba\" 同样是符合题意的答案。\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>s = \"cbbd\"\n<strong>输出：</strong>\"bb\"\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= s.length &lt;= 1000</code></li>\n\t<li><code>s</code> 仅由数字和英文字母组成</li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public String longestPalindrome(String s) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "longest-palindromic-substring",
+      "tier": "brute",
+      "title": "枚举所有子串 · 逐个判回文",
+      "idea": "最直白：把所有子串（起点 left、终点 right）都列出来，对每个子串左右夹逼判断是不是回文，是就更新最长。\n\n为什么必超时？子串 O(n²) 个，每个判断 O(n)，总量级 O(n³)。s 长度 1000 时是 10⁹，力扣上会挂。\n\n判断回文的写法值得单独记：左右指针向中间夹，任一时刻 s[l] != s[r] 就返回 false，走完返回 true。这个模式在「验证回文」「回文链表」里都会复用。\n\n一个常错点：「最长」有多个答案时题目接受任意一个，所以更新条件用 `>` 而不是 `>=`，避免每次都被替换导致性能抖动。\n\n这版的价值在于把「回文 = 左右对称」这个核心性质立住。后面所有优化都从这个性质出发——要么从中心往外扩，要么用 DP 记录「已判定过的子串是不是回文」。\n\n复杂度 O(n³) 时间，O(1) 空间。",
+      "pseudocode": "输入：字符串 s\n输出：最长的回文子串\n\n1. n = s 长度\n2. bestStart = 0，bestLen = 1\n3. left 从 0 循环到 n-1：\n     right 从 left 循环到 n-1：\n       如果 right-left+1 大于 bestLen 且 是回文(s, left, right)：\n          bestStart = left，bestLen = right-left+1\n4. 返回 s 从 bestStart 开始长度 bestLen 的子串\n\n是回文(s, l, r)：\n   当 l 小于 r：如果 s[l] 不等于 s[r] 返回 false；l 加 1，r 减 1\n   返回 true\n\n复杂度：时间 O(n³)；空间 O(1)",
+      "codeJava": "class Solution {\n    public String longestPalindrome(String s) {\n        int n = s.length();\n        if (n < 2) return s;\n\n        int bestStart = 0, bestLen = 1;\n        for (int left = 0; left < n; left++) {\n            for (int right = left; right < n; right++) {\n                if (right - left + 1 > bestLen && isPal(s, left, right)) {\n                    bestStart = left;\n                    bestLen = right - left + 1;\n                }\n            }\n        }\n        return s.substring(bestStart, bestStart + bestLen);\n    }\n\n    private boolean isPal(String s, int l, int r) {\n        while (l < r) {\n            if (s.charAt(l) != s.charAt(r)) return false;\n            l++;\n            r--;\n        }\n        return true;\n    }\n}",
+      "timeComplexity": "O(n³)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "longest-palindromic-substring",
+      "tier": "better",
+      "title": "中心扩展 · 从每个中心往外推",
+      "idea": "换个方向想：与其「枚举子串再判断」，不如「枚举中心再扩张」。回文有个好性质——只要知道了短回文，往外扩一格如果两端字符相同，就是更长的回文。\n\n中心有多少个？奇数长度回文的中心是单个字符（n 个），偶数长度回文的中心是两个字符之间的缝（n-1 个），一共 2n-1 个。对每个中心用两个指针向外扩，扩到不能扩为止，记录最长的。\n\n相比暴力版改了什么？把「判断回文」从 O(n) 降到扩张的 O(半径)，但总量级仍是 O(n²)。真正的收益是**常数小得多**，而且不需要 O(n²) 的表。\n\n为什么它还不是最优？因为每个中心都要独立扩张，重复计算了重叠部分。用 DP 可以记下「[i,j] 是否回文」，做到 O(n²) 时间 O(n²) 空间；用 Manacher 能做到 O(n)。\n\n实现要点：一个 expand(l, r) 辅助方法同时处理奇偶两种情况——奇数传 (i, i)，偶数传 (i, i+1)。判断新区间更长就用它更新答案。\n\n复杂度 O(n²) 时间，O(1) 空间。这是面试中最推荐的写法：好写、好讲、空间 O(1)。",
+      "pseudocode": "输入：字符串 s\n输出：最长回文子串\n\n1. n = s 长度，如果 n 小于 2：返回 s\n2. bestStart = 0，bestLen = 1\n3. i 从 0 循环到 n-1：\n     a. 以 i 为中心（奇数长度）：调用 expand(i, i)\n     b. 以 i 和 i+1 之间为中心（偶数长度）：调用 expand(i, i+1)\n4. 返回结果子串\n\nexpand(l, r) 的定义：\n   当 l 大于等于 0 且 r 小于 n 且 s[l] 等于 s[r] 循环：\n      如果 r-l+1 大于 bestLen：更新 bestStart 和 bestLen\n      l 减 1，r 加 1\n\n共 2n-1 个中心：n 个单字符 + n-1 个缝隙\n复杂度：时间 O(n²)；空间 O(1)",
+      "codeJava": "class Solution {\n    private int bestStart = 0, bestLen = 1;\n\n    public String longestPalindrome(String s) {\n        int n = s.length();\n        if (n < 2) return s;\n\n        for (int i = 0; i < n; i++) {\n            expand(s, i, i);       // 奇数长度，中心是单个字符\n            expand(s, i, i + 1);   // 偶数长度，中心是缝隙\n        }\n        return s.substring(bestStart, bestStart + bestLen);\n    }\n\n    private void expand(String s, int l, int r) {\n        int n = s.length();\n        while (l >= 0 && r < n && s.charAt(l) == s.charAt(r)) {\n            if (r - l + 1 > bestLen) {\n                bestStart = l;\n                bestLen = r - l + 1;\n            }\n            l--;\n            r++;\n        }\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "longest-palindromic-substring",
+      "tier": "optimal",
+      "title": "Manacher · 线性时间求最长回文",
+      "idea": "这是本题的理论最优解：Manacher 算法，O(n) 时间。面试基本不要求手写，但**能讲清思路是加分项**。\n\n第一步：把字符串插成「间隔字符」形式，比如 \"aba\" → \"^#a#b#a#$\"，这样所有回文都变成奇数长度，统一处理。\n\n第二步（核心）：维护一个「当前已探索到的最右回文边界 R」和它的中心 C。当我们在处理位置 i 时，如果 i < R，那么 i 关于 C 的对称点 i' = 2C - i 的回文半径已经被算过了，可以直接借用；只有超出 R 的部分才需要真正向外扩张。这就是它能做到 O(n) 的原因——每个字符最多被扩张一次。\n\n第三步：一路维护最大半径和对应中心，最后反推原始子串的起点和长度。\n\n为什么叫「最优」而不是「实用最优」？因为 O(n²) 的中心扩展（上一版）代码只有 15 行，而 Manacher 有 40 行且下标易错。工程上中心扩展更常见，但要知道 Manacher 的存在和原理。\n\n**面试建议**：先写中心扩展，被追问「能不能 O(n)」时口头描述 Manacher 的思路（对称复用 + 最右边界），不必硬编码。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：字符串 s\n输出：最长回文子串\n\n1. 预处理：构造 t = \"^#\" + s 的每个字符后加 \"#\" + \"$\"\n   例如 s = \"aba\" → t = \"^#a#b#a#$\"\n   这样所有回文长度都变成奇数，可以统一处理\n2. n = t 长度，建半径数组 p[n]\n3. C = 0（当前最右回文的中心），R = 0（最右回文的右边界）\n   maxLen = 0，center = 0\n4. i 从 1 循环到 n-2：\n     a. 如果 i 小于 R：p[i] = min(R - i, p[2*C - i])   // 对称复用\n        否则：p[i] = 0\n     b. 向外扩张：当 t[i+p[i]+1] 等于 t[i-p[i]-1] 循环：p[i] 加 1\n     c. 如果 i + p[i] 大于 R：C = i，R = i + p[i]\n     d. 如果 p[i] 大于 maxLen：maxLen = p[i]，center = i\n5. 原串起点 = (center - maxLen) / 2，长度 = maxLen\n6. 返回对应子串\n\nO(n) 的原因：每个字符最多被扩张一次，其余靠对称复用\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public String longestPalindrome(String s) {\n        if (s == null || s.length() < 1) return \"\";\n\n        // 预处理：插入 # 使所有回文都变成奇数长度\n        StringBuilder sb = new StringBuilder(\"^#\");\n        for (char c : s.toCharArray()) {\n            sb.append(c).append(\"#\");\n        }\n        sb.append(\"$\");\n        String t = sb.toString();\n        int n = t.length();\n\n        int[] p = new int[n];       // p[i] = 以 i 为中心的回文半径\n        int C = 0, R = 0;           // 当前最右回文的中心与右边界\n        int maxLen = 0, center = 0;\n\n        for (int i = 1; i < n - 1; i++) {\n            // 在 R 之内可以借用对称点的半径\n            if (i < R) {\n                p[i] = Math.min(R - i, p[2 * C - i]);\n            }\n            // 只有超出 R 的部分才真正扩张\n            while (t.charAt(i + p[i] + 1) == t.charAt(i - p[i] - 1)) {\n                p[i]++;\n            }\n            // 更新最右边界\n            if (i + p[i] > R) {\n                C = i;\n                R = i + p[i];\n            }\n            if (p[i] > maxLen) {\n                maxLen = p[i];\n                center = i;\n            }\n        }\n\n        int start = (center - maxLen) / 2;\n        return s.substring(start, start + maxLen);\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 3
+    }
+  ]
+}

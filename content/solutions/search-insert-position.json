@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "线性扫描 · 找第一个不小于 target 的位置",
+      "idea": "数组已经有序，问题就是「target 该插到哪个下标才能保持有序」。最直白：从头扫，第一个 `>= target` 的位置就是答案；如果全都比 target 小，那答案就是数组长度（插在末尾）。\n\n为什么这一定对？因为有序性保证了「小于 target 的都在左边，大于等于的都在右边」，第一次遇到 `>= target` 的位置正好把数组切成两半。\n\n为什么不够好？O(n)。题目给了 O(log n) 的强烈暗示（有序数组、要求找位置），面试官问这题就是想看你二分。\n\n为什么还是要写？因为它给出了两个关键事实：\n1. **返回值可以是 n**（target 比所有元素都大），所以二分的上界要开到 n 而不是 n-1；\n2. 「第一个 >= target 的位置」这个定义和 `lower_bound` 完全一致——这个术语在后面所有「左边界」题目里都会复用。\n\n先把定义讲清楚，再写二分，比直接背模板更稳。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：有序数组 nums，目标值 target\n输出：target 应该插入的下标\n\n1. i 从 0 循环到 nums 长度减 1：\n     如果 nums[i] 大于等于 target：return i\n2. 扫完了还没找到：return nums 长度     // 比所有元素都大\n\n答案是「第一个大于等于 target 的位置」，也就是 lower_bound\n注意返回值可能是 n\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int searchInsert(int[] nums, int target) {\n        for (int i = 0; i < nums.length; i++) {\n            if (nums[i] >= target) return i;   // 第一个不小于的位置\n        }\n        return nums.length;   // 全都更小，插在末尾\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "better",
+      "title": "标准二分 · 闭区间 [left, right]",
+      "idea": "把线性扫描换成二分。搜索区间用 `[left, right]` 闭区间，`while (left <= right)`，中点 `mid = left + (right - left) / 2`。\n\n三种情况：\n- `nums[mid] == target`：直接返回 mid；\n- `nums[mid] < target`：target 在右半，`left = mid + 1`；\n- `nums[mid] > target`：target 在左半，`right = mid - 1`。\n\n循环结束时 `left > right`，此时 **left 就是插入位置**。为什么？因为循环停下的那一刻，left 指向「第一个大于 target 的位置」，right 指向「最后一个小于 target 的位置」，两者相邻，插入点正是 left。\n\n为什么这题特别适合练二分？因为它同时考了三件事：\n1. `mid = left + (right - left) / 2` 而不是 `(left + right) / 2`——后者在 left、right 都接近 `Integer.MAX_VALUE` 时会溢出成负数。这是 Java 里二分必须养成的习惯（虽然力扣数据范围不会触发，但面试会问）。\n2. 返回值类型是「下标」，所以循环结束后要 `return left` 而不是 `return -1`。\n3. `left <= right` 用 `<=` 而不是 `<`，因为闭区间上 left == right 时还有一个元素没检查。\n\n相比线性版改了什么？把 O(n) 换成 O(log n)。这是本题的核心考点。\n\n复杂度 O(log n) 时间，O(1) 空间。",
+      "pseudocode": "输入：有序数组 nums，target\n输出：插入下标\n\n1. left = 0，right = nums 长度减 1\n2. 当 left 小于等于 right 循环：\n     mid = left + (right - left) / 2       // 防溢出写法\n     a. nums[mid] 等于 target：return mid\n     b. nums[mid] 小于 target：left = mid + 1\n     c. nums[mid] 大于 target：right = mid - 1\n3. 循环结束 left 大于 right，返回 left\n\n为什么返回 left：left 是第一个大于 target 的位置，就是插入点\n三个易错点：<= 而不是 <；mid 用加法写法防溢出；返回 left 不返回 -1\n复杂度：时间 O(log n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int searchInsert(int[] nums, int target) {\n        int left = 0, right = nums.length - 1;\n\n        while (left <= right) {              // 闭区间，必须用 <=\n            int mid = left + (right - left) / 2;   // 防溢出\n            if (nums[mid] == target) {\n                return mid;\n            } else if (nums[mid] < target) {\n                left = mid + 1;\n            } else {\n                right = mid - 1;\n            }\n        }\n        // 退出时 left 就是第一个大于 target 的位置 = 插入点\n        return left;\n    }\n}",
+      "timeComplexity": "O(log n)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "optimal",
+      "title": "左闭右开 · 直接求下界",
+      "idea": "上一版的二分要靠「等于就返回」来处理命中，这带来了一个隐患：**它求的不是下界**。如果数组里有重复元素（比如 `[1,3,3,3,5]` 找 3），闭区间版会返回中间那个 3，而不是第一个 3。本题不要求，但一旦题目变成「找第一个大于等于 target 的位置」（比如 34 题找左边界），闭区间版就错了。\n\n所以更通用、更值得背成模板的是**左闭右开 + 只收缩不回退**的写法：\n\n```\nleft = 0, right = n      // 注意是 n，不是 n-1\nwhile (left < right) {\n    mid = left + (right - left) / 2;\n    if (nums[mid] < target) left = mid + 1;\n    else right = mid;        // 注意：不是 mid - 1\n}\nreturn left;\n```\n\n为什么这版更优？三个理由：\n1. **不判等**：没有 `==` 分支，逻辑只有两条路，出错概率大幅降低；\n2. **天然求下界**：所有 `>= target` 的位置都收进 `[left, right)`，最终 left 收敛到**第一个**满足条件的位置，重复元素自动正确；\n3. **`return left` 永远是答案**：不需要区分「找到」和「没找到」，因为本题的答案本来就是一个位置而不是「是否存在」。\n\n为什么 `nums[mid] >= target` 时是 `right = mid` 而不是 `mid - 1`？因为 mid 本身可能是答案，不能排除掉。这是「左闭右开」与「闭区间」最本质的差别——闭区间敢写 `mid - 1` 是因为 mid 已经被检查过；这里 mid 还没被确认排除。\n\n这个模板可以直接复制到：34 题（找左右边界）、69 题（x 的平方根）、875 题（爱吃香蕉）、1011 题（运载能力）等所有「二分答案」题。**背这一个模板就够，比背两个模板安全。**\n\n复杂度 O(log n) 时间，O(1) 空间。",
+      "pseudocode": "输入：有序数组 nums，target\n输出：第一个大于等于 target 的下标（即插入位置）\n\n1. left = 0，right = nums 长度        // 左闭右开，右端取 n\n2. 当 left 小于 right 循环：\n     mid = left + (right - left) / 2\n     a. nums[mid] 小于 target：left = mid + 1    // target 在右边\n     b. 否则：right = mid                       // mid 可能是答案，不能减 1\n3. 返回 left\n\n只写两条分支，不判等：天然求下界，重复元素也正确\n关键：right = mid 而不是 mid - 1\n这个模板可直接复用到找左右边界、二分答案等一整类题\n复杂度：时间 O(log n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int searchInsert(int[] nums, int target) {\n        int left = 0, right = nums.length;   // 左闭右开\n\n        while (left < right) {               // 不是 <=\n            int mid = left + (right - left) / 2;\n            if (nums[mid] < target) {\n                left = mid + 1;\n            } else {\n                right = mid;                 // mid 可能是答案，不要减 1\n            }\n        }\n        return left;   // 收敛点就是第一个 >= target 的位置\n    }\n}",
+      "timeComplexity": "O(log n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

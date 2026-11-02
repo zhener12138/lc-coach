@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "HashMap 计数，找出现一次的",
+      "idea": "数组里只有一个数出现一次，其余都出现两次。找那个只出现一次的。\n\n最直接的想法：**用 HashMap 统计频次，再找频次为 1 的。**\n\n**为什么这是暴力？** 因为它用了 O(n) 额外空间，而这道题有一个 O(1) 空间的绝妙解法（异或）。**力扣本题明确要求「线性时间、常数空间」，所以这版不满足要求。**\n\n**但这版必须先写，因为它建立了「用频次找唯一元素」的基线思路。** 有了这个基线，才能体会到异或版的优雅——**你不需要统计每个数出现几次，只需要一个「能自动抵消」的运算。**\n\n**另一个暴力方向是排序：** 排序后相同的数会相邻，检查 `nums[i] != nums[i+1]` 就能找到落单的。**排序是 O(n log n) 时间、O(log n) 空间（快排递归栈）。** 两个暴力方向各有取舍，**这种「多条暴力路径」的思考习惯比记住答案更重要。**\n\n坑：\n1. 遍历 `entrySet` 找 value 为 1 的；\n2. 题目保证一定有答案；\n3. 用 `merge` 或 `getOrDefault` 计数。",
+      "pseudocode": "输入：数组 nums\n输出：只出现一次的那个数\n\n1. map = 空 HashMap\n2. 对 nums 里每个 x：map 里 x 的计数加 1\n3. 对 map 每个条目 (v, c)：如果 c 等于 1：return v\n4. return 负 1（题目保证不会到这里）\n\n用计数找唯一元素，但这用了 O(n) 额外空间\n题目要求常数空间，所以这版不满足要求\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int singleNumber(int[] nums) {\n        Map<Integer, Integer> map = new HashMap<>();\n        for (int x : nums) map.merge(x, 1, Integer::sum);\n        for (Map.Entry<Integer, Integer> e : map.entrySet()) {\n            if (e.getValue() == 1) return e.getKey();\n        }\n        return -1;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "排序后找落单的相邻元素",
+      "idea": "排序后，相同的数会相邻。所以只要**两两成对检查**：`nums[0]==nums[1]`、`nums[2]==nums[3]`……某一对不相等，答案就是那对的第一个。\n\n**注意循环步长是 2 和边界处理：**\n```\nfor (int i = 0; i + 1 < n; i += 2) {\n    if (nums[i] != nums[i + 1]) return nums[i];\n}\nreturn nums[n - 1];  // 落单的在最后\n```\n\n**为什么这版比 HashMap 好？**\n- 空间从 O(n) 降到 O(log n)（快排递归栈）；\n- **不需要额外的数据结构**，直接在原数组上操作。\n\n**为什么还只是「较好」？**\n- 时间 O(n log n)，不是线性的；\n- 空间不是严格的 O(1)（递归栈）；\n- **而且它修改了入参数组** —— 如果调用方还要用原数组，这就是个副作用。\n\n**这版的教学价值在于「排序把问题变成了相邻比较」这个转化。** 很多题都靠这招：**遇到「找重复/找唯一」的问题，先想排序能不能让答案变成相邻元素的关系。** 比如 217 题（存在重复元素）、220 题（存在重复元素 III）都用到了这个思路。\n\n坑：\n1. 步长是 2；\n2. 循环条件是 `i + 1 < n`；\n3. 循环结束后如果没返回，答案在最后一个位置 `nums[n-1]`。",
+      "pseudocode": "输入：nums\n输出：只出现一次的数\n\n1. 对 nums 排序\n2. n = nums 长度\n3. 对 i 从 0 开始，每次加 2，当 i 加 1 小于 n：\n     如果 nums[i] 不等于 nums[i 加 1]：return nums[i]\n4. return nums[n 减 1]                      // 落单的在最后\n\n排序让相同的数相邻，问题变成成对比较\n时间 O(n log n) 且修改了入参，不是最优\n复杂度：时间 O(n log n)；空间 O(log n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int singleNumber(int[] nums) {\n        Arrays.sort(nums);\n        int n = nums.length;\n        for (int i = 0; i + 1 < n; i += 2) {\n            if (nums[i] != nums[i + 1]) return nums[i];\n        }\n        return nums[n - 1];\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(log n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "异或：相同为 0，不损信息，O(1) 空间",
+      "idea": "**异或（XOR）是这题的完美工具，因为它的三条性质正好对应题目需求：**\n\n1. **`a ^ a = 0`** —— 相同抵消（「其余都出现两次」）；\n2. **`a ^ 0 = a`** —— 0 是单位元（落单的不受影响）；\n3. **满足交换律和结合律** —— 结果与顺序无关。\n\n所以把数组里所有数全部异或起来：\n- 每个出现两次的数都成对抵消成 0；\n- 只剩那个出现一次的数留在结果里。\n\n**代码只有三行，但背后的论证必须讲清楚：**\n```\nint res = 0;\nfor (int x : nums) res ^= x;\nreturn res;\n```\n\n**为什么初值必须是 0？** 因为 0 是异或的单位元，`0 ^ a = a`。**如果初值给别的数，就会把那个数混进答案。**\n\n**这个解法的最妙处在于：它不需要知道元素的范围、不需要额外空间、不修改入参、也不依赖数据有序。** 它唯一依赖的是「异或的自反性」这一条数学性质。\n\n**面试延伸（很可能被追问）：如果「其余数都出现三次」呢？** 那就不能直接用异或（三次异或等于自身）。**要按位统计每个二进制位上 1 的个数，对 3 取模。** 这就是 137 题（只出现一次的数字 II）：\n```\nint[] cnt = new int[32];\nfor (int x : nums) for (int b = 0; b < 32; b++) cnt[b] += (x >> b) & 1;\nint res = 0;\nfor (int b = 0; b < 32; b++) if (cnt[b] % 3 != 0) res |= 1 << b;\n```\n\n**从「两次用异或」到「三次用按位取模」，这条线索说明：位运算解法的本质是「构造一个能抵消 k 次的运算」。** 记住这条思想，整类题都能应对。\n\n坑：\n1. `res` 初值 0；\n2. 异或是 `^`，不是 `|` 或 `&`；\n3. 负数也能正常工作（Java 的 int 是补码，异或按位进行）。",
+      "pseudocode": "输入：nums\n输出：只出现一次的数\n\n1. res = 0                                // 0 是异或的单位元\n2. 对 nums 里每个 x：res = res 异或 x\n3. return res\n\na 异或 a 等于 0，成对的全部抵消；a 异或 0 等于 a，落单的留下\n异或满足交换律结合律，所以与顺序无关\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int singleNumber(int[] nums) {\n        int res = 0;\n        for (int x : nums) res ^= x;\n        return res;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "slug": "climbing-stairs",
+  "frontendId": "70",
+  "titleEn": "Climbing Stairs",
+  "titleCn": "爬楼梯",
+  "difficulty": "Easy",
+  "tags": "记忆化,数学,动态规划",
+  "contentHtml": "<p>You are climbing a staircase. It takes <code>n</code> steps to reach the top.</p>\n\n<p>Each time you can either climb <code>1</code> or <code>2</code> steps. In how many distinct ways can you climb to the top?</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> n = 2\n<strong>Output:</strong> 2\n<strong>Explanation:</strong> There are two ways to climb to the top.\n1. 1 step + 1 step\n2. 2 steps\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> n = 3\n<strong>Output:</strong> 3\n<strong>Explanation:</strong> There are three ways to climb to the top.\n1. 1 step + 1 step + 1 step\n2. 1 step + 2 steps\n3. 2 steps + 1 step\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= n &lt;= 45</code></li>\n</ul>",
+  "contentCnHtml": "<p>假设你正在爬楼梯。需要 <code>n</code>&nbsp;阶你才能到达楼顶。</p>\n\n<p>每次你可以爬 <code>1</code> 或 <code>2</code> 个台阶。你有多少种不同的方法可以爬到楼顶呢？</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>n = 2\n<strong>输出：</strong>2\n<strong>解释：</strong>有两种方法可以爬到楼顶。\n1. 1 阶 + 1 阶\n2. 2 阶</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>n = 3\n<strong>输出：</strong>3\n<strong>解释：</strong>有三种方法可以爬到楼顶。\n1. 1 阶 + 1 阶 + 1 阶\n2. 1 阶 + 2 阶\n3. 2 阶 + 1 阶\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= n &lt;= 45</code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int climbStairs(int n) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "climbing-stairs",
+      "tier": "brute",
+      "title": "纯递归，把每一步都展开",
+      "idea": "爬到第 n 阶的最后一步只有两种可能：从第 n-1 阶迈一步，或从第 n-2 阶迈两步。所以 f(n) = f(n-1) + f(n-2)，边界是 f(1)=1、f(2)=2。\n\n这就是斐波那契数列平移一项。递归写出来只要三行，但它会把同一棵子树反复算：算 f(5) 要 f(4) 和 f(3)，算 f(4) 又要 f(3) 和 f(2)——f(3) 被算了两遍。展开后总调用次数是 2 的 n 次方级别。\n\nn=45 时约 35 亿次调用，必然超时。所以这一版**唯一的价值是让你看清递推关系**，看清之后就该立刻优化。\n\n为什么很多人第一反应写不出这题？因为把它想成「排列组合题」了，去枚举「走几步 1、走几步 2」。那也能做（组合数求和），但比递推复杂得多。**看到「最后一步有几种选择」时，优先想递推，不要想枚举。**\n\n坑：n 是正整数，n=1 和 n=2 是边界，别漏。",
+      "pseudocode": "输入：台阶数 n\n输出：走法总数\n\n1. 如果 n 小于等于 2：return n\n2. return f(n 减 1) 加 f(n 减 2)\n\nf(k)：\n3. 如果 k 小于等于 2：return k\n4. return f(k 减 1) 加 f(k 减 2)\n\n最后一步只有两种选择，这就是递推关系的来源\n但同一子树被反复计算，总调用是指数级\n复杂度：时间 O(2 的 n 次方)；空间 O(n) 递归栈",
+      "codeJava": "class Solution {\n    public int climbStairs(int n) {\n        return f(n);\n    }\n\n    private int f(int k) {\n        if (k <= 2) return k;\n        return f(k - 1) + f(k - 2);\n    }\n}",
+      "timeComplexity": "O(2ⁿ)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "climbing-stairs",
+      "tier": "better",
+      "title": "记忆化：把算过的存下来",
+      "idea": "上一版的浪费全在重复计算。既然 f(k) 的结果只取决于 k，那就算一次存起来，下次直接查表。\n\n这就是「记忆化搜索」（自顶向下 DP）。写法是在递归入口先查表，表里有就返回，没有就算完再写回。用长度为 n+1 的数组，初值填 0 表示「还没算过」（因为合法答案都大于 0，0 可以安全当哨兵）。\n\n**这一步的意义不只是一处优化。** 它揭示了 DP 的本质：**递推 + 缓存 = DP**。你甚至不需要先想清楚「状态怎么定义、转移方程怎么写、遍历顺序是什么」这套正式流程，只要写出暴力递归，再看它重复算了什么，把重复的结果存下来，就已经是 DP 了。\n\n**为什么它还不算最优？** 两个原因：\n- 递归有栈开销，n 很大时会栈溢出（力扣本题 n≤45 不会，但这是个结构性隐患）；\n- 空间用了 O(n) 的数组，而实际上每个状态只依赖前两个状态。\n\n坑：\n1. 数组要开 n+1，下标直接用 k；\n2. 哨兵值 0 要和真实答案区分开；\n3. n 小于等于 2 的边界依然要先处理。",
+      "pseudocode": "输入：台阶数 n\n输出：走法总数\n\n1. memo = 长度 n 加 1 的数组，全填 0\n2. return f(n, memo)\n\nf(k, memo)：\n3. 如果 k 小于等于 2：return k\n4. 如果 memo[k] 不等于 0：return memo[k]        // 命中缓存\n5. memo[k] = f(k 减 1, memo) 加 f(k 减 2, memo)\n6. return memo[k]\n\n把重复计算的结果存下来，指数级立刻降到线性\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int climbStairs(int n) {\n        int[] memo = new int[n + 1];\n        return f(n, memo);\n    }\n\n    private int f(int k, int[] memo) {\n        if (k <= 2) return k;\n        if (memo[k] != 0) return memo[k];\n        memo[k] = f(k - 1, memo) + f(k - 2, memo);\n        return memo[k];\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "climbing-stairs",
+      "tier": "optimal",
+      "title": "两个变量滚动，空间 O(1)",
+      "idea": "观察转移方程 f(k) = f(k-1) + f(k-2)：**算 f(k) 只需要前两个值**，更早的结果再也用不到了。所以没必要存整个数组，两个变量滚动即可。\n\n用一个具体的例子走一遍（n=5）：\n- 初始 a=1（相当于 f(1)），b=2（相当于 f(2)）；\n- 循环 i 从 3 到 n：`c = a + b; a = b; b = c;`\n- 第 3 轮结束 b=3（f(3)），第 4 轮 b=5（f(4)），第 5 轮 b=8（f(5)）。\n\n**赋值顺序是唯一容易错的地方。** 必须先算 `c`，再 `a = b`，最后 `b = c`。如果写成 `a = b; b = a + b;`，那 `a` 已经被改掉了，`b` 拿到的是 `2b` 而不是 `a+b`——这是初学者最常犯的错误，本质上是因为 `a` 的新旧值在同一段代码里被混用。\n\n**为什么这是最优？** 时间 O(n) 是下界（你必须至少算到第 n 项），空间 O(1) 已经是常数，没有更小的可能了。\n\n**这个「滚动变量」的技巧适用于所有「只依赖前 k 项」的 DP**，比如打家劫舍、最大子数组和、股票的持有/不持有状态。看到转移方程右边只有固定的几个下标，就该想到它。\n\n坑：n 小于等于 2 时直接返回 n，别进循环。",
+      "pseudocode": "输入：台阶数 n\n输出：走法总数\n\n1. 如果 n 小于等于 2：return n\n2. a = 1；b = 2                        // a 是 f(1)，b 是 f(2)\n3. 对 i 从 3 到 n：\n     c = a 加 b\n     a = b\n     b = c\n4. return b\n\n赋值顺序必须 c 先算、再 a = b、最后 b = c\n写反就变成 b 等于两倍 b\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int climbStairs(int n) {\n        if (n <= 2) return n;\n        int a = 1;\n        int b = 2;\n        for (int i = 3; i <= n; i++) {\n            int c = a + b;\n            a = b;\n            b = c;\n        }\n        return b;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

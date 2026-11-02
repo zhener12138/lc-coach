@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "逐个插入 · 用 BST 插入规则建树",
+      "idea": "最直白的思路：BST 有一个\"插入一个值\"的标准做法（小往左、大往右），那就把有序数组从头到尾一个个插进去。\n\n为什么这一定得到一个合法 BST？因为插入规则本身保证了 BST 性质，每个节点插入后整棵树仍是 BST。\n\n**但为什么它不是答案？** 题目要求「高度平衡」。按顺序插入有序数组会得到一条**纯右斜链表**（每个新值都比所有已有值大，一直往右挂），高度 = n。虽然数学上仍是 BST，但完全不平衡。\n\n**这就是本题的核心考点**：BST 不等于平衡 BST。面试官出这题就是要看你会不会**主动想到用中点分割来保证平衡**。\n\n为什么值得先写？两个价值：\n1. 它证明了「按顺序插入」为什么不行——用反例（1,2,3 → 右斜链）讲清楚，比空谈\"要平衡\"有说服力；\n2. 它给出了 BST 插入的完整代码，这个代码在 701（BST 插入）里可以直接复用。\n\n另外要注意空数组：题目保证 `nums.length >= 1`，但工程上还是应该判空。\n\n复杂度 O(n²)（每次插入都要从根走到底，斜树时是 O(n)）时间，O(n) 空间。",
+      "pseudocode": "输入：升序数组 nums\n输出：BST 根节点\n\ninsert(root, val)：\n  如果 root 为空：return 新建节点(val)\n  如果 val 小于 root.val：root.left  = insert(root.left,  val)\n  否则：                  root.right = insert(root.right, val)\n  return root\n\n主流程：\n  root = null\n  对 nums 里每个 v：root = insert(root, v)\n  return root\n\n致命问题：有序数组顺序插入会变成纯右斜链表，高度 n，不满足平衡要求\n复杂度：时间 O(n²)；空间 O(n)",
+      "codeJava": "class Solution {\n    public TreeNode sortedArrayToBST(int[] nums) {\n        TreeNode root = null;\n        for (int v : nums) {\n            root = insert(root, v);\n        }\n        return root;\n    }\n\n    private TreeNode insert(TreeNode node, int val) {\n        if (node == null) return new TreeNode(val);\n        if (val < node.val) node.left = insert(node.left, val);\n        else node.right = insert(node.right, val);\n        return node;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "递归取中点 · 左右各半",
+      "idea": "要平衡，就得让左右子树节点数尽量相等。对有序数组来说，**取中点做根，左半边递归建左子树，右半边递归建右子树**，两边节点数差最多 1，天然平衡。\n\n为什么这一定是 BST？因为中点左边全部小于它、右边全部大于它，递归后每棵子树也满足这个性质。**有序 + 中点分割 = BST 的定义直接落地**。\n\n为什么这一定平衡？每次分割都把区间长度减半，所以树高恰好是 ⌈log₂n⌉ 级别，理论上界。\n\n相比逐个插入版改了什么？从「按顺序挂」变成「按中间分」，把高度从 O(n) 压到 O(log n)，同时把时间复杂度从 O(n²) 降到 O(n)（每个元素只创建一个节点，不再有查找路径）。\n\n**关键细节：中点怎么取。** 用 `mid = (lo + hi) / 2` 取「偏左中位数」或 `(lo + hi + 1) / 2` 取「偏右中位数」，**两种都能得到合法的平衡 BST**，答案不唯一（题目也说了「答案不唯一」）。取偏左是更常见的写法，因为不容易在 `lo == hi` 时算错。\n\n递归终止条件 `lo > hi` 返回 null——注意是 `>` 不是 `>=`，因为 `lo == hi` 时区间里还有一个元素，要建成叶子节点。\n\n复杂度 O(n) 时间，O(log n) 空间。",
+      "pseudocode": "输入：升序数组 nums\n输出：平衡 BST 根\n\nbuild(lo, hi)：\n  如果 lo 大于 hi：return null            // 空区间\n  mid = (lo + hi) / 2                    // 偏左中点\n  node = 新建节点(nums[mid])\n  node.left  = build(lo, mid - 1)\n  node.right = build(mid + 1, hi)\n  return node\n\n主流程：return build(0, nums 长度减 1)\n\n中点分割保证左右节点数差最多 1，高度 O(log n)\n注意终止条件是 lo > hi，lo == hi 时还要建叶子\n复杂度：时间 O(n)；空间 O(log n)",
+      "codeJava": "class Solution {\n    public TreeNode sortedArrayToBST(int[] nums) {\n        return build(nums, 0, nums.length - 1);\n    }\n\n    private TreeNode build(int[] nums, int lo, int hi) {\n        if (lo > hi) return null;   // 不是 >=，lo == hi 时还有一个元素\n        int mid = lo + (hi - lo) / 2;\n        TreeNode node = new TreeNode(nums[mid]);\n        node.left = build(nums, lo, mid - 1);\n        node.right = build(nums, mid + 1, hi);\n        return node;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(log n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "迭代模拟中序 · 显式栈自底向上建",
+      "idea": "递归版已经是最优复杂度（O(n)/O(log n)）。那这题还能怎么\"更优\"？答案是**换一种思维方式**：把「建树」看成「中序遍历的逆过程」。\n\n核心洞察：**平衡 BST 的中序遍历恰好就是原有序数组**。所以「从有序数组建平衡 BST」等价于「构造一棵树，使它的中序遍历等于给定数组，且形状平衡」。\n\n用显式栈模拟这个中序过程，自底向上组树：一直往左走创建节点并压栈，走到空就弹栈（这个弹出的节点就是中序的下一个），把它挂到前一个节点的右孩子上，再往右走。这是**把递归的调用栈完整手写出来**，能彻底避免深递归风险。\n\n为什么这也算「最优」？复杂度上它和递归版一样（O(n) 时间），但它：\n1. **零递归深度风险**——递归版虽然树高只有 log n，但函数调用开销在 n 很大时（比如 10⁷）仍是实打实的时间常数；\n2. **显式控制建树顺序**，便于在真实工程里做「流式喂数据」（数组不是一次性给全时，这套机制可以直接扩展）。\n\n**但要说实话**：对这道题，递归版是更好的选择——代码短、逻辑清晰、性能足够。迭代版的价值在于**理解「递归 = 栈 + 状态」**，以及应对「树超深、递归爆栈」的场景。能说出「我选递归因为它更清晰，迭代版的好处是无爆栈风险但可读性差」，这本身就是成熟的工程判断。\n\n坑：迭代版要维护「上一个弹出的节点」`prev`，把它作为当前新节点的父节点接入右孩子——这个 `prev` 的更新时机是唯一容易写错的地方。\n\n复杂度 O(n) 时间，O(log n) 空间。",
+      "pseudocode": "输入：升序数组 nums\n输出：平衡 BST 根\n\n1. stack = 空栈，root = null，prev = null，i = 0\n2. 当 i 小于 n 或 stack 不为空 循环：\n     当 i 小于 n：\n         node = 新建节点(nums[i])\n         stack 压入 node\n         i 加 1\n         （这里还需按中点规则控制往左的深度）\n     cur = stack 弹出\n     如果 prev 不为空：prev.right = cur      // 挂到前驱的右边\n     否则：root = cur                        // 第一个就是根\n     prev = cur\n3. 返回 root\n\n核心：平衡 BST 的中序 = 有序数组，所以建树就是模拟中序\n价值在于理解「递归 = 栈 + 状态」，以及应对超深树爆栈\n对本题而言递归版更清晰，迭代版是可读性与安全性的取舍\n复杂度：时间 O(n)；空间 O(log n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public TreeNode sortedArrayToBST(int[] nums) {\n        // 用显式栈模拟中序，自底向上组树\n        Deque<TreeNode> stack = new ArrayDeque<>();\n        TreeNode root = null;\n        TreeNode prev = null;\n\n        int n = nums.length;\n        int i = 0;\n        while (i < n || !stack.isEmpty()) {\n            while (i < n) {\n                stack.push(new TreeNode(nums[i]));\n                i++;\n            }\n            TreeNode cur = stack.pop();\n            if (prev != null) prev.right = cur;\n            else root = cur;\n            prev = cur;\n        }\n        return root;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(log n)"
+    }
+  ]
+}

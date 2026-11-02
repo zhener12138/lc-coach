@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "回溯枚举每个数的加减号",
+      "idea": "给每个数选一个符号（正或负），使总和等于 target，问有多少种方案。最直接的想法：**递归到每个下标，分别尝试加和减两个分支。**\n\n**这题的递归结构非常标准：`dfs(i, rest)` 表示「处理到第 i 个数，还需要凑出 rest」。** 到末尾时 `rest == 0` 就计数加一。\n\n**为什么这算暴力？** 因为 n 个数就是 2 的 n 次方条路径，n=20 时是 100 万次，勉强能过；但力扣本题 n 最大 20，长度 20 的方案数确实可达 2^20。**更重要的是，这里存在大量重叠子问题**——不同的加减组合可能在中途得到相同的 `(i, rest)`，后面的计算完全一样。\n\n**这题最有价值的观察是「转化」：**\n设加号的数之和为 P，减号的数之和为 N，总和 S = P + N，target = P - N。\n两式相加得 `P = (S + target) / 2`。\n\n**于是「给每个数选正负使和为 target」等价于「从数组里选一个子集，使其和为 (S+target)/2」。** 这就是 416 题（分割等和子集）的计数版本！**一个符号问题被转成了 0/1 背包计数问题。**\n\n**这个转化是本题的核心考点，也是面试的分水岭。** 不会转化就只能写指数级回溯；会转化就能用 DP 做到 O(n·S)。\n\n**转化后要先做两个合法性检查：**\n1. `S + target` 必须是偶数（否则 `(S+target)/2` 不是整数，无解）；\n2. `P = (S+target)/2` 必须在 `[0, S]` 内，且 `target` 的绝对值不能超过 S（否则无解）。\n\n坑：\n1. `rest` 可能为负，但数组元素非负，所以负值可以提前剪枝返回 0；\n2. 到末尾判 `rest == 0`；\n3. 不要忘记 n=0 的边界（空数组，target=0 时有一种方案）。",
+      "pseudocode": "输入：数组 nums，目标 target\n输出：方案数\n\n1. return dfs(0, target)\n\ndfs(i, rest)：\n2. 如果 i 等于 nums 长度：return (rest 等于 0) 则 1 否则 0\n3. 加号分支：a = dfs(i 加 1, rest 减 nums[i])\n4. 减号分支：b = dfs(i 加 1, rest 加 nums[i])\n5. return a 加 b\n\n每个数两个分支，共 2 的 n 次方条路径\n中途会大量重复计算相同的 (i, rest) 状态\n复杂度：时间 O(2 的 n 次方)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int findTargetSumWays(int[] nums, int target) {\n        return dfs(nums, 0, target);\n    }\n\n    private int dfs(int[] nums, int i, int rest) {\n        if (i == nums.length) {\n            return rest == 0 ? 1 : 0;\n        }\n        int add = dfs(nums, i + 1, rest - nums[i]);\n        int sub = dfs(nums, i + 1, rest + nums[i]);\n        return add + sub;\n    }\n}",
+      "timeComplexity": "O(2ⁿ)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "记忆化：缓存 (下标, 剩余值)",
+      "idea": "上一版的重叠很明显：`(i, rest)` 这个二元组会以不同路径被反复到达。所以用 `Map<String, Integer>` 或二维数组缓存。\n\n**为什么用 Map 而不是二维数组？** 因为 `rest` 的范围是 `[-S, S]`（S 是数组总和），可能为负，数组下标不能为负。用 `HashMap` 加字符串 key（`i + 逗号 + rest`）最省事，或者用 `Map<Integer, Map<Integer, Integer>>` 嵌套。\n\n**优化后复杂度是 O(n · S)**，因为 `i` 有 n 种、`rest` 有 2S+1 种。\n\n**但它还是「较好」而不是「最优」，原因在空间和常数：**\n- 哈希表的常数很大，每个状态要装箱、算哈希；\n- `String` key 的拼接和哈希尤其昂贵；\n- 状态数 `n · 2S` 比正解的 `n · S` 大了一倍（因为 rest 有正负两半）。\n\n**正解利用上一版提到的转化，把「带符号求和」变成「子集和」，状态范围从 [-S, S] 缩到 [0, S]，并且可以用原生数组而不是哈希表。** 这就是从「较好」到「最优」的实际差距——**不是算法复杂度级别的差距，是常数和工程实现的差距，但在面试里足以拉开评价。**\n\n坑：\n1. key 要用 `i` 和 `rest` 两个维度；\n2. 缓存要在计算**之后**存，且存在分支里（不要漏）；\n3. `rest` 可能为负，不要用数组。",
+      "pseudocode": "输入：nums，target\n输出：方案数\n\n1. memo = 空 Map（key 是 下标 加 分隔符 加 rest）\n2. return dfs(0, target, memo)\n\ndfs(i, rest, memo)：\n3. 如果 i 等于 n：return (rest 等于 0) 则 1 否则 0\n4. key = i 拼上逗号拼上 rest\n5. 如果 memo 含 key：return memo 取 key\n6. ans = dfs(i 加 1, rest 减 nums[i]) 加 dfs(i 加 1, rest 加 nums[i])\n7. memo 放入 (key, ans)；return ans\n\n缓存 (i, rest) 二元组，复杂度降到 O(n 乘 S)\n但 rest 有正负两半，状态数比正解多一倍，且哈希常数大\n复杂度：时间 O(n 乘 S)；空间 O(n 乘 S)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int findTargetSumWays(int[] nums, int target) {\n        return dfs(nums, 0, target, new HashMap<>());\n    }\n\n    private int dfs(int[] nums, int i, int rest, Map<String, Integer> memo) {\n        if (i == nums.length) {\n            return rest == 0 ? 1 : 0;\n        }\n        String key = i + \",\" + rest;\n        Integer cached = memo.get(key);\n        if (cached != null) return cached;\n\n        int ans = dfs(nums, i + 1, rest - nums[i], memo)\n                + dfs(nums, i + 1, rest + nums[i], memo);\n        memo.put(key, ans);\n        return ans;\n    }\n}",
+      "timeComplexity": "O(n · S)",
+      "spaceComplexity": "O(n · S)"
+    },
+    {
+      "tier": "optimal",
+      "title": "转化为子集和，0/1 背包计数 DP",
+      "idea": "这是本题的正解，核心是那次**数学转化**：\n\n设加号部分和为 P，减号部分和为 N。\n- `P + N = S`（S 是数组总和）\n- `P - N = target`\n\n相加得 `2P = S + target`，即 **`P = (S + target) / 2`**。\n\n**于是问题变成：从数组里选一个子集，使和恰好为 `(S+target)/2`，有多少种选法。** 这就是标准的 0/1 背包计数。\n\n**先做合法性检查（漏了会数组越界或算错）：**\n1. `(S + target)` 为奇数 → 无解（P 必须是整数）；\n2. `(S + target) / 2` 小于 0 → 无解（P 非负）；\n3. `(S + target) / 2` 大于 S → 无解（P 不可能超过总和），等价于 `|target| > S`。\n\n**DP 定义：`dp[j]` = 凑出和为 j 的方案数。** 转移：\n```\ndp[j] += dp[j - num]\n```\n**内层必须倒序**，因为 0/1 背包每个数只能用一次；正序就变成完全背包（每个数能用无限次）。**这个方向和 518 题正好相反，两题对照记忆最有效。**\n\n**边界 `dp[0] = 1`**：凑出 0 有 1 种方式（什么都不选）。**这个 1 如果不写，整张表全 0。**\n\n**复杂度 O(n · P)**，其中 P = (S+target)/2 ≤ S。n ≤ 20、S ≤ 1000 时最多 2 万次操作。\n\n**为什么这是最优？**\n- 转化把状态空间砍半（不再需要负下标）；\n- 用原生 `int[]` 而不是哈希表，常数小一个数量级；\n- 空间压到一维 O(P)。\n\n**面试时的讲法顺序很重要：** 先说转化（这是洞察），再说合法性检查（这是严谨），最后写 DP（这是实现）。**只写 DP 不讲转化，看起来像背题；讲了转化，才像是在解题。**\n\n坑：\n1. 三个合法性检查一个都不能漏；\n2. 内层倒序；\n3. `dp[0] = 1`；\n4. 结果不超过 int（力扣保证）。",
+      "pseudocode": "输入：nums，target\n输出：方案数\n\n1. sum = nums 所有元素之和\n2. 如果 (sum 加 target) 是奇数：return 0\n3. P = (sum 加 target) 除以 2\n4. 如果 P 小于 0 或 P 大于 sum：return 0\n5. dp = 长度 P 加 1 的数组；dp[0] = 1\n6. 对 nums 里每个 num：\n     对 j 从 P 递减到 num：               // 0/1 背包必须倒序\n        dp[j] = dp[j] 加 dp[j 减 num]\n7. return dp[P]\n\n加号和 P 减号和 N 满足 P 加 N 等于 sum、P 减 N 等于 target\n推出 P 等于 (sum 加 target) 除以 2，问题变成子集和计数\n复杂度：时间 O(n 乘 P)；空间 O(P)",
+      "codeJava": "class Solution {\n    public int findTargetSumWays(int[] nums, int target) {\n        int sum = 0;\n        for (int num : nums) sum += num;\n\n        int diff = sum + target;\n        if (diff % 2 != 0) return 0;\n        int p = diff / 2;\n        if (p < 0 || p > sum) return 0;\n\n        int[] dp = new int[p + 1];\n        dp[0] = 1;\n        for (int num : nums) {\n            for (int j = p; j >= num; j--) {\n                dp[j] += dp[j - num];\n            }\n        }\n        return dp[p];\n    }\n}",
+      "timeComplexity": "O(n · P)",
+      "spaceComplexity": "O(P)"
+    }
+  ]
+}

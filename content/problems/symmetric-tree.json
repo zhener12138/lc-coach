@@ -1,0 +1,49 @@
+{
+  "slug": "symmetric-tree",
+  "frontendId": "101",
+  "titleEn": "Symmetric Tree",
+  "titleCn": "对称二叉树",
+  "difficulty": "Easy",
+  "tags": "树,深度优先搜索,广度优先搜索,二叉树",
+  "contentHtml": "<p>Given the <code>root</code> of a binary tree, <em>check whether it is a mirror of itself</em> (i.e., symmetric around its center).</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2021/02/19/symtree1.jpg\" />\n<pre>\n<strong>Input:</strong> root = [1,2,2,3,4,4,3]\n<strong>Output:</strong> true\n</pre>\n\n<p><strong>Example 2:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2021/02/19/symtree2.jpg\" />\n<pre>\n<strong>Input:</strong> root = [1,2,2,null,3,null,3]\n<strong>Output:</strong> false\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li>The number of nodes in the tree is in the range <code>[1, 1000]</code>.</li>\n\t<li><code>-100 &lt;= Node.val &lt;= 100</code></li>\n</ul>\n\n<p>&nbsp;</p>\n<strong>Follow up:</strong> Could you solve it both recursively and iteratively?",
+  "contentCnHtml": "<p>给你一个二叉树的根节点 <code>root</code> ， 检查它是否轴对称。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n<img alt=\"\" src=\"https://pic.leetcode.cn/1698026966-JDYPDU-image.png\" />\n<pre>\n<strong>输入：</strong>root = [1,2,2,3,4,4,3]\n<strong>输出：</strong>true\n</pre>\n\n<p><strong>示例 2：</strong></p>\n<img alt=\"\" src=\"https://pic.leetcode.cn/1698027008-nPFLbM-image.png\" />\n<pre>\n<strong>输入：</strong>root = [1,2,2,null,3,null,3]\n<strong>输出：</strong>false\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li>树中节点数目在范围 <code>[1, 1000]</code> 内</li>\n\t<li><code>-100 &lt;= Node.val &lt;= 100</code></li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>进阶：</strong>你可以运用递归和迭代两种方法解决这个问题吗？</p>",
+  "javaTemplate": "/**\n * Definition for a binary tree node.\n * public class TreeNode {\n *     int val;\n *     TreeNode left;\n *     TreeNode right;\n *     TreeNode() {}\n *     TreeNode(int val) { this.val = val; }\n *     TreeNode(int val, TreeNode left, TreeNode right) {\n *         this.val = val;\n *         this.left = left;\n *         this.right = right;\n *     }\n * }\n */\nclass Solution {\n    public boolean isSymmetric(TreeNode root) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "symmetric-tree",
+      "tier": "brute",
+      "title": "每层取出全部值再做数组回文判断",
+      "idea": "对称树最直观的判据是：**每一层的节点值，从左到右读和从右到左读应该一样**（回文）。所以用 BFS 逐层收集值，每层判一次回文，全过就是对称。\n\n为什么这一定对？因为二叉树的轴对称就是「以根为竖轴镜像」，镜像在每一层表现为回文序列。\n\n**但这版有一个致命的正确性问题**：按层取值会丢掉「结构信息」。经典反例是 `[1,2,2,2,null,2]`——按层看每层都是回文，但树并不对称。原因在于 null 的处理：如果把 null 也当\"值\"参与回文判断，就容易和不含 null 的情况混淆；如果不记录 null，两个不同形状的树可能得到相同的层序列。\n\n所以这版的正确做法是**必须把 null 也收集进序列**（用一个特殊标记，比如 `Integer.MIN_VALUE` 或单独的哨兵），这样结构信息才被保留。做了这一步它才是对的，但代码会变得很啰嗦。\n\n为什么值得先写？因为它把一个关键陷阱摆到明面上：**对称性既依赖值也依赖结构，只比值和只比形状都不够**。想清楚这一点，才能真正理解后面递归版为什么要「成对比较」。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：root\n输出：是否轴对称\n\n1. 如果 root 为空：return true\n2. queue 放入 root\n3. 当 queue 不为空 循环：\n     size = queue 长度\n     level = 空列表\n     重复 size 次：\n        node = queue 弹出\n        如果 node 为空：level 追加 null 标记，continue   // 必须记录 null\n        否则：level 追加 node.val，queue 分别放入 node.left 和 node.right\n     判断 level 是否回文：用两个指针从两端向中间比\n     如果不是回文：return false\n4. return true\n\n致命点：不记录 null 会丢结构信息，不同形状的树可能层序列相同\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public boolean isSymmetric(TreeNode root) {\n        if (root == null) return true;\n\n        // 必须用允许 null 的队列：这里要把空孩子也放进队列占位\n        Deque<TreeNode> queue = new LinkedList<>();\n        queue.offer(root);\n\n        while (!queue.isEmpty()) {\n            int size = queue.size();\n            List<Integer> level = new ArrayList<>();\n            for (int i = 0; i < size; i++) {\n                TreeNode node = queue.poll();\n                if (node == null) {\n                    level.add(null);   // 必须记录 null 保留结构信息\n                    continue;\n                }\n                level.add(node.val);\n                queue.offer(node.left);\n                queue.offer(node.right);\n            }\n            // 判本层回文\n            int l = 0, r = level.size() - 1;\n            while (l < r) {\n                Integer a = level.get(l), b = level.get(r);\n                if (a == null && b == null) { l++; r--; continue; }\n                if (a == null || b == null || !a.equals(b)) return false;\n                l++; r--;\n            }\n        }\n        return true;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "symmetric-tree",
+      "tier": "better",
+      "title": "镜像递归 · 成对比较两棵子树",
+      "idea": "放弃「按层比对」，改成**成对比较**：树对称 ⟺ 根节点的左子树和右子树互为镜像。\n\n于是写一个 `mirror(a, b)` 判断两棵树是否互为镜像，规则恰好是把「同向」换成「反向」：\n- 都为空 → 镜像 ✅\n- 只有一个为空 → 不镜像 ❌\n- 值不相等 → 不镜像 ❌\n- 否则递归检查 `mirror(a.left, b.right)` 和 `mirror(a.right, b.left)`\n\n**最后那两行交叉比较是全部关键**：a 的左边要对 b 的右边，a 的右边要对 b 的左边。如果写成 `mirror(a.left, b.left)`，那就变成了「判断两棵树是否完全相同」，答案必错。这是本题第一号坑。\n\n为什么它一定对？因为「镜像」的定义本来就是交叉的——左右互换。递归恰好把定义翻译了一遍。\n\n相比按层版改了什么？把「收集整层再判回文」换成「递归成对下钻」，空间从 O(最宽层) 降到 O(h)，而且**完全不用处理 null 标记**——空节点在递归入口就被统一处理掉了。这正是递归在结构类问题上天然占优的原因。\n\n主函数只需一行：`return root == null || mirror(root.left, root.right);`\n\n坑：\n1. 交叉比较不能写成同向；\n2. 判空顺序：先判 `a == null && b == null` 返回 true，再判 `a == null || b == null` 返回 false，两个 if 的顺序不能颠倒（颠倒后两个都空也会返回 false）；\n3. 值比较用 `!=` 而非 `equals`（这里是 int，用 == 更规范）。\n\n复杂度 O(n) 时间，O(h) 空间。",
+      "pseudocode": "输入：root\n输出：是否对称\n\nmirror(a, b)：判断两棵树是否互为镜像\n  a. 如果 a 和 b 都为空：return true\n  b. 如果 a 或 b 有一个为空：return false\n  c. 如果 a.val 不等于 b.val：return false\n  d. return mirror(a.left, b.right) 且 mirror(a.right, b.left)   // 交叉！\n\n主流程：return root 为空 或 mirror(root.left, root.right)\n\n坑：第 d 步必须交叉，写同向就变成判「完全相同」\n坑：前两个 if 的顺序不能颠倒\n复杂度：时间 O(n)；空间 O(h)",
+      "codeJava": "class Solution {\n    public boolean isSymmetric(TreeNode root) {\n        return root == null || mirror(root.left, root.right);\n    }\n\n    private boolean mirror(TreeNode a, TreeNode b) {\n        if (a == null && b == null) return true;    // 顺序不能颠倒\n        if (a == null || b == null) return false;\n        if (a.val != b.val) return false;\n        // 交叉比较：a 的左边对 b 的右边\n        return mirror(a.left, b.right) && mirror(a.right, b.left);\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(h)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "symmetric-tree",
+      "tier": "optimal",
+      "title": "迭代队列成对处理 · 无递归风险",
+      "idea": "递归版已经是 O(n)/O(h) 的最优复杂度，但它仍有栈溢出风险（虽然本题数据规模不会触发，但工程上要考虑）。这一版用队列把递归改成迭代，**把「成对比较」这个核心语义完整保留**。\n\n做法：队列里存的是**成对的节点** `(a, b)`。每轮弹出两个：\n1. 都空 → 继续；\n2. 一个空 → 返回 false；\n3. 值不等 → 返回 false；\n4. 否则按镜像顺序入队四对：`(a.left, b.right)` 和 `(a.right, b.left)`。\n\n为什么这一定对？因为它逐层展开了递归的调用顺序，**「交叉入队」这一句就是递归版 `mirror(a.left, b.right) && mirror(a.right, b.left)` 的直接翻译**。能一眼看出这个对应关系，说明你真正理解了递归与栈的等价性。\n\n为什么这算「最优」？在复杂度已经触底时，它的优势是：\n- **零栈溢出风险**（堆内存远大于线程栈）；\n- 没有函数调用开销，常数更小；\n- 每轮只处理两个节点，**可以提前返回**——发现不对称立刻退出，而递归版要靠 `&&` 短路才能做到同样效果。\n\n**Java 实现的一个陷阱**：`ArrayDeque` 不允许 null，所以不能把可能为 null 的子节点直接 offer。解决办法是用 `LinkedList` 作队列（允许 null），或者用「存节点对」的方式先把 null 判掉再入队。这里选前者，代码最短。\n\n坑：入队顺序必须是交叉的 `(a.left, b.right)` 和 `(a.right, b.left)`；用 `LinkedList` 而非 `ArrayDeque`。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：root\n输出：是否对称\n\n1. 如果 root 为空：return true\n2. queue（允许 null 的队列）依次放入 root.left、root.right\n3. 当 queue 长度 大于等于 2 循环：\n     a = queue 弹出\n     b = queue 弹出\n     a. 如果 a 和 b 都为空：continue\n     b. 如果 a 或 b 有一个为空：return false\n     c. 如果 a.val 不等于 b.val：return false\n     d. 交叉入队：\n          queue 放入 a.left\n          queue 放入 b.right\n          queue 放入 a.right\n          queue 放入 b.left\n4. return true\n\n交叉入队就是递归版 mirror(a.left, b.right) && mirror(a.right, b.left) 的翻译\n坑：必须用允许 null 的队列（LinkedList），ArrayDeque 会抛 NPE\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public boolean isSymmetric(TreeNode root) {\n        if (root == null) return true;\n\n        // LinkedList 允许 null，ArrayDeque 不允许\n        Deque<TreeNode> queue = new LinkedList<>();\n        queue.offer(root.left);\n        queue.offer(root.right);\n\n        while (queue.size() >= 2) {\n            TreeNode a = queue.poll();\n            TreeNode b = queue.poll();\n\n            if (a == null && b == null) continue;\n            if (a == null || b == null) return false;\n            if (a.val != b.val) return false;\n\n            // 交叉入队，对应递归的 mirror(a.left, b.right) && mirror(a.right, b.left)\n            queue.offer(a.left);\n            queue.offer(b.right);\n            queue.offer(a.right);\n            queue.offer(b.left);\n        }\n        return true;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 3
+    }
+  ]
+}

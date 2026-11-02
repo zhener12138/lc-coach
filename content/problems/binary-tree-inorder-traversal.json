@@ -1,0 +1,49 @@
+{
+  "slug": "binary-tree-inorder-traversal",
+  "frontendId": "94",
+  "titleEn": "Binary Tree Inorder Traversal",
+  "titleCn": "二叉树的中序遍历",
+  "difficulty": "Easy",
+  "tags": "栈,树,深度优先搜索,二叉树",
+  "contentHtml": "<p>Given the <code>root</code> of a binary tree, return <em>the inorder traversal of its nodes&#39; values</em>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>root = [1,null,2,3]</span></p>\n\n<p><strong>Output:</strong> <span>[1,3,2]</span></p>\n\n<p><strong>Explanation:</strong></p>\n\n<p><img alt=\"\" src=\"https://assets.leetcode.com/uploads/2024/08/29/screenshot-2024-08-29-202743.png\" /></p>\n</div>\n\n<p><strong>Example 2:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>root = [1,2,3,4,5,null,8,null,null,6,7,9]</span></p>\n\n<p><strong>Output:</strong> <span>[4,2,6,5,7,1,3,9,8]</span></p>\n\n<p><strong>Explanation:</strong></p>\n\n<p><img alt=\"\" src=\"https://assets.leetcode.com/uploads/2024/08/29/tree_2.png\" /></p>\n</div>\n\n<p><strong>Example 3:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>root = []</span></p>\n\n<p><strong>Output:</strong> <span>[]</span></p>\n</div>\n\n<p><strong>Example 4:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>root = [1]</span></p>\n\n<p><strong>Output:</strong> <span>[1]</span></p>\n</div>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li>The number of nodes in the tree is in the range <code>[0, 100]</code>.</li>\n\t<li><code>-100 &lt;= Node.val &lt;= 100</code></li>\n</ul>\n\n<p>&nbsp;</p>\n<strong>Follow up:</strong> Recursive solution is trivial, could you do it iteratively?",
+  "contentCnHtml": "<p>给定一个二叉树的根节点 <code>root</code> ，返回 <em>它的 <strong>中序</strong>&nbsp;遍历</em> 。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/09/15/inorder_1.jpg\" />\n<pre>\n<strong>输入：</strong>root = [1,null,2,3]\n<strong>输出：</strong>[1,3,2]\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>root = []\n<strong>输出：</strong>[]\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>root = [1]\n<strong>输出：</strong>[1]\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li>树中节点数目在范围 <code>[0, 100]</code> 内</li>\n\t<li><code>-100 &lt;= Node.val &lt;= 100</code></li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><strong>进阶:</strong>&nbsp;递归算法很简单，你可以通过迭代算法完成吗？</p>",
+  "javaTemplate": "/**\n * Definition for a binary tree node.\n * public class TreeNode {\n *     int val;\n *     TreeNode left;\n *     TreeNode right;\n *     TreeNode() {}\n *     TreeNode(int val) { this.val = val; }\n *     TreeNode(int val, TreeNode left, TreeNode right) {\n *         this.val = val;\n *         this.left = left;\n *         this.right = right;\n *     }\n * }\n */\nclass Solution {\n    public List<Integer> inorderTraversal(TreeNode root) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "binary-tree-inorder-traversal",
+      "tier": "brute",
+      "title": "递归中序遍历 · 左-根-右",
+      "idea": "中序遍历的定义就是「左子树 → 根节点 → 右子树」。递归是最贴合定义、最不容易出错的实现方式：写一个 dfs(node)，先递归左，再把 node.val 加进结果，再递归右。\n\n为什么这版算「暴力」？它的时间复杂度其实是 O(n)（每个节点访问一次），已经是最优。放在这里是因为：递归有 O(h) 的调用栈空间，树退化成链表时 h = n，**深度 10⁵ 的树会栈溢出**（Java 默认栈约 512KB～1MB，够不了这么深）。面试官问「能不能不用递归」，就是在等你给迭代版。\n\n为什么必须先写它？因为它是**理解一切树的遍历的锚点**。前序（根-左-右）、后序（左-右-根）只是把三行的顺序换一下。**先把这三行的相对顺序记住，树的题会简单一半**：\n- 前序：加值 → 左 → 右（用于复制树、序列化）\n- 中序：左 → 加值 → 右（BST 的中序是升序，这是 98/230 题的基石）\n- 后序：左 → 右 → 加值（用于自底向上统计，如求深度、直径、路径和）\n\n坑：题目 TreeNode 的字段是 `val / left / right`；空树要返回空列表不是 null；用 `List<Integer>` 而不是数组（长度不定）。\n\n复杂度 O(n) 时间，O(h) 栈空间。",
+      "pseudocode": "输入：二叉树根节点 root\n输出：中序遍历的节点值列表\n\nres = 空列表\n\ndfs(node)：\n  如果 node 为空：return\n  dfs(node.left)        // 左\n  res 追加 node.val      // 根\n  dfs(node.right)       // 右\n\n主流程：dfs(root)，返回 res\n\n三种遍历只差三行的顺序：\n  前序：加值 → 左 → 右；中序：左 → 加值 → 右；后序：左 → 右 → 加值\n复杂度：时间 O(n)；空间 O(h)，退化树时 O(n) 会栈溢出",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<Integer> inorderTraversal(TreeNode root) {\n        List<Integer> res = new ArrayList<>();\n        dfs(root, res);\n        return res;\n    }\n\n    private void dfs(TreeNode node, List<Integer> res) {\n        if (node == null) return;\n        dfs(node.left, res);      // 左\n        res.add(node.val);        // 根\n        dfs(node.right, res);     // 右\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(h)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "binary-tree-inorder-traversal",
+      "tier": "better",
+      "title": "显式栈迭代 · 一路向左压栈",
+      "idea": "把递归改成迭代，最经典的做法是**自己用栈模拟调用栈**。中序遍历的迭代有一个非常整齐的节奏：\n\n1. 从当前节点出发，**一路向左**，把沿途所有节点压栈，直到 null；\n2. 弹出栈顶——这就是当前最左的节点，加入结果；\n3. 转向它的**右子树**，重复第 1 步。\n\n为什么这个节奏等于中序？因为「一路向左压栈」把「左」先处理完；「弹出并加值」处理「根」；「转向右子树」处理「右」。三步正好对应左-根-右。\n\n为什么它比递归好？空间从「系统栈帧」变成「显式栈」，虽然量级也是 O(h)，但**不会栈溢出**（堆内存远大于线程栈）。而且显式栈是理解 Morris 遍历的必经台阶。\n\n相比递归版改了什么？消除了函数调用开销和栈溢出风险。时间仍是 O(n)。\n\n坑：循环条件必须是 `while (cur != null || !stack.isEmpty())`——用 `&&` 会提前退出（cur 为 null 但栈里还有节点时还不能停）。这是迭代遍历最容易写错的地方。\n\n复杂度 O(n) 时间，O(h) 空间。",
+      "pseudocode": "输入：root\n输出：中序列表\n\n1. res = 空列表，stack = 空栈，cur = root\n2. 当 cur 不为空 或 stack 不为空 循环：\n     当 cur 不为空：\n        stack 压入 cur\n        cur = cur.left          // 一路向左\n     cur = stack 弹出\n     res 追加 cur.val            // 此时左子树已处理完\n     cur = cur.right             // 转向右子树\n3. 返回 res\n\n坑：循环条件用「或」不用「与」，否则会提前退出\n复杂度：时间 O(n)；空间 O(h)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<Integer> inorderTraversal(TreeNode root) {\n        List<Integer> res = new ArrayList<>();\n        Deque<TreeNode> stack = new ArrayDeque<>();\n        TreeNode cur = root;\n\n        // 必须用 || ：cur 空了但栈里还有节点时不能停\n        while (cur != null || !stack.isEmpty()) {\n            while (cur != null) {\n                stack.push(cur);\n                cur = cur.left;      // 一路向左\n            }\n            cur = stack.pop();\n            res.add(cur.val);        // 左处理完了，处理根\n            cur = cur.right;         // 转向右子树\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(h)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "binary-tree-inorder-traversal",
+      "tier": "optimal",
+      "title": "Morris 遍历 · O(1) 空间不改树",
+      "idea": "这是本题最惊艳的解法，面试里能写出来是强加分项。核心问题：不用栈、不用递归，怎么记住「回去的路」？\n\nMorris 的答案利用**树本身的空指针**建临时线索：对当前节点 cur，如果它有左子树，就找到左子树中「最右的节点」（叫它 predecessor，它是中序里 cur 的前驱）：\n- 如果 `predecessor.right == null`：把它指向 cur（建立线索），然后 `cur = cur.left`；\n- 如果 `predecessor.right == cur`：说明线索是之前建的，现在回来了——把线索断开（恢复原树），然后**访问 cur**，`cur = cur.right`。\n\n如果 cur 没有左子树：直接访问 cur，`cur = cur.right`。\n\n为什么这能实现中序？因为「建线索」时我们往下走（相当于进左子树），「断线索」时左子树已经遍历完，正是访问 cur 的时机——**左-根-右的顺序被自然地编码进了线索的建立与拆除**。\n\n为什么空间是 O(1)？因为线索借用的是已有的空 right 指针，不需要额外结构。\n\n**为什么这是「最优」？** 时间仍是 O(n)（每个节点的边最多被走两次），但空间从 O(h) 降到 O(1)——这是理论上限。而且它**遍历完会把树完全恢复原状**，没有任何副作用。\n\n代价：代码复杂、容易写错，而且实际工程里几乎用不上（O(h) 的栈根本不是瓶颈）。所以正确态度是：**理解思想、能默写，但日常优先用迭代栈版**。\n\n坑（三个）：\n1. 找 predecessor 时必须从 `cur.left` 出发往右走，且循环条件是 `p.right != null && p.right != cur`（两个都要）；\n2. 断线索后要先访问 cur 再往右，顺序不能反；\n3. 无左子树的分支单独处理，不要合并进上面的逻辑。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：root\n输出：中序列表\n\n1. res = 空列表，cur = root\n2. 当 cur 不为空 循环：\n     a. 如果 cur.left 为空：\n          res 追加 cur.val        // 没有左子树，直接访问\n          cur = cur.right\n     b. 否则：\n          p = cur.left\n          当 p.right 不为空 且 p.right 不等于 cur：p = p.right   // 找前驱\n          如果 p.right 为空：\n              p.right = cur        // 建线索\n              cur = cur.left\n          否则：                  // p.right 等于 cur，说明线索生效了\n              p.right = null       // 断开线索，恢复原树\n              res 追加 cur.val      // 左子树已完成，访问根\n              cur = cur.right\n3. 返回 res\n\n时间 O(n)，空间 O(1)，且遍历后树完全恢复原状\n坑：找前驱的两个条件都要写；断线索后先访问再往右\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<Integer> inorderTraversal(TreeNode root) {\n        List<Integer> res = new ArrayList<>();\n        TreeNode cur = root;\n\n        while (cur != null) {\n            if (cur.left == null) {\n                res.add(cur.val);       // 没有左子树，直接访问\n                cur = cur.right;\n            } else {\n                // 找左子树里最右的节点（中序前驱）\n                TreeNode p = cur.left;\n                while (p.right != null && p.right != cur) {\n                    p = p.right;\n                }\n                if (p.right == null) {\n                    p.right = cur;      // 建线索\n                    cur = cur.left;\n                } else {\n                    p.right = null;     // 断开线索，恢复原树\n                    res.add(cur.val);   // 左子树已遍历完，访问根\n                    cur = cur.right;\n                }\n            }\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

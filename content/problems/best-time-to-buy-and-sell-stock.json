@@ -1,0 +1,49 @@
+{
+  "slug": "best-time-to-buy-and-sell-stock",
+  "frontendId": "121",
+  "titleEn": "Best Time to Buy and Sell Stock",
+  "titleCn": "买卖股票的最佳时机",
+  "difficulty": "Easy",
+  "tags": "数组,动态规划",
+  "contentHtml": "<p>You are given an array <code>prices</code> where <code>prices[i]</code> is the price of a given stock on the <code>i<sup>th</sup></code> day.</p>\n\n<p>You want to maximize your profit by choosing a <strong>single day</strong> to buy one stock and choosing a <strong>different day in the future</strong> to sell that stock.</p>\n\n<p>Return <em>the maximum profit you can achieve from this transaction</em>. If you cannot achieve any profit, return <code>0</code>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> prices = [7,1,5,3,6,4]\n<strong>Output:</strong> 5\n<strong>Explanation:</strong> Buy on day 2 (price = 1) and sell on day 5 (price = 6), profit = 6-1 = 5.\nNote that buying on day 2 and selling on day 1 is not allowed because you must buy before you sell.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> prices = [7,6,4,3,1]\n<strong>Output:</strong> 0\n<strong>Explanation:</strong> In this case, no transactions are done and the max profit = 0.\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= prices.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>0 &lt;= prices[i] &lt;= 10<sup>4</sup></code></li>\n</ul>",
+  "contentCnHtml": "<p>给定一个数组 <code>prices</code> ，它的第 <code>i</code> 个元素 <code>prices[i]</code> 表示一支给定股票第 <code>i</code> 天的价格。</p>\n\n<p>你只能选择 <strong>某一天</strong> 买入这只股票，并选择在 <strong>未来的某一个不同的日子</strong> 卖出该股票。设计一个算法来计算你所能获取的最大利润。</p>\n\n<p>返回你可以从这笔交易中获取的最大利润。如果你不能获取任何利润，返回 <code>0</code> 。</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>[7,1,5,3,6,4]\n<strong>输出：</strong>5\n<strong>解释：</strong>在第 2 天（股票价格 = 1）的时候买入，在第 5 天（股票价格 = 6）的时候卖出，最大利润 = 6-1 = 5 。\n     注意利润不能是 7-1 = 6, 因为卖出价格需要大于买入价格；同时，你不能在买入前卖出股票。\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>prices = [7,6,4,3,1]\n<strong>输出：</strong>0\n<strong>解释：</strong>在这种情况下, 没有交易完成, 所以最大利润为 0。\n</pre>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 <= prices.length <= 10<sup>5</sup></code></li>\n\t<li><code>0 <= prices[i] <= 10<sup>4</sup></code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int maxProfit(int[] prices) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "best-time-to-buy-and-sell-stock",
+      "tier": "brute",
+      "title": "双重循环 · 枚举每一对买卖日",
+      "idea": "最直白的想法：既然只能买卖一次，那就把「哪天买」和「哪天卖」的所有组合都试一遍，卖出日必须在买入日之后，记录最大差值。\n\n为什么这版会超时？n 天里挑两个有序的日子，组合数是 n(n-1)/2。n = 10⁵ 时是 50 亿次，必然超时。\n\n但这版的价值在于：它逼你把「不合法的情况」想清楚。很多人第一次写会漏掉 j > i 这个约束，于是把「今天卖、昨天买」也算进收益里，出来一个假的负数。\n\n还有一个细节：如果全程下跌，答案应该是 0（不交易），而不是负数。所以初始 maxProfit 设 0。\n\n复杂度 O(n²)，面试时先说这版再优化，能体现推导过程。",
+      "pseudocode": "输入：整数数组 prices，prices[i] 是第 i 天的股价\n输出：一次买卖能获得的最大利润，赚不到就返回 0\n\n1. maxProfit 初始化为 0\n2. n = prices 长度\n3. i 从 0 循环到 n-2（买入日）：\n     a. j 从 i+1 循环到 n-1（卖出日，必须晚于买入日）：\n          profit = prices[j] - prices[i]\n          如果 profit 大于 maxProfit：maxProfit = profit\n4. 返回 maxProfit\n\n复杂度：时间 O(n²) 两层循环；空间 O(1)",
+      "codeJava": "class Solution {\n    public int maxProfit(int[] prices) {\n        int maxProfit = 0;              // 赚不到钱就返回 0，不能是负数\n        int n = prices.length;\n        for (int i = 0; i < n - 1; i++) {\n            for (int j = i + 1; j < n; j++) {   // j 必须大于 i，先买后卖\n                int profit = prices[j] - prices[i];\n                if (profit > maxProfit) {\n                    maxProfit = profit;\n                }\n            }\n        }\n        return maxProfit;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "best-time-to-buy-and-sell-stock",
+      "tier": "better",
+      "title": "后缀最大值 · 从右往左预处理",
+      "idea": "换个视角：如果我在第 i 天买入，最理想的卖出价是 i 之后所有日子里最高的那个价。\n\n所以先把「每一天之后的最大价格」预处理出来存进 suffixMax，再一次遍历，对每天 i 用 suffixMax[i+1] - prices[i] 算潜在利润。\n\n这一步把暴力版里重复扫描的后半段压成了一次 O(n) 预处理，总复杂度降到 O(n)。这是典型的「空间换时间」：多花 n 个格子，省掉一层循环。\n\n相比暴力版改了什么？暴力版对每个买入日都重新扫一遍未来，做了大量重复劳动；这里每个位置的最大值只算一次。\n\n为什么它不是最优？因为它多开了 O(n) 数组。我们真正需要的只是「到目前为止见过的最低价」，两个变量就够——这就引出最优解。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：整数数组 prices\n输出：一次买卖的最大利润\n\n1. n = prices 长度\n2. 建一个长度 n 的数组 suffixMax\n3. suffixMax[n-1] = prices[n-1]\n4. i 从 n-2 递减到 0：\n     suffixMax[i] = max(prices[i], suffixMax[i+1])   // i 到末尾的最高价\n5. maxProfit = 0\n6. i 从 0 循环到 n-2：\n     profit = suffixMax[i+1] - prices[i]             // 第 i 天买，之后最高价卖\n     如果 profit 大于 maxProfit：maxProfit = profit\n7. 返回 maxProfit\n\n复杂度：时间 O(n) 两次遍历；空间 O(n) 存后缀最大值",
+      "codeJava": "class Solution {\n    public int maxProfit(int[] prices) {\n        int n = prices.length;\n        if (n < 2) return 0;\n\n        // suffixMax[i] 表示第 i 天到末尾的最高价\n        int[] suffixMax = new int[n];\n        suffixMax[n - 1] = prices[n - 1];\n        for (int i = n - 2; i >= 0; i--) {\n            suffixMax[i] = Math.max(prices[i], suffixMax[i + 1]);\n        }\n\n        int maxProfit = 0;\n        for (int i = 0; i < n - 1; i++) {\n            int profit = suffixMax[i + 1] - prices[i];\n            if (profit > maxProfit) maxProfit = profit;\n        }\n        return maxProfit;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "best-time-to-buy-and-sell-stock",
+      "tier": "optimal",
+      "title": "一次遍历 · 边扫边维护最低价",
+      "idea": "这是本题的标准答案，也是「一次遍历」类题目的母题。\n\n核心洞察：只需边走边记两件事——「到今天为止见过的最低价」和「到目前为止的最大利润」。走到第 i 天时，如果今天卖，最好的买点一定是历史最低价，于是潜在利润就是 prices[i] - minPrice。\n\n为什么这样就够，不需要知道最低价出现在哪一天？因为题目只要求「先买后卖」，而 minPrice 是从前面扫过来的，天然满足「买入日在卖出日之前」。顺序遍历本身就把时序约束编码进去了。\n\n相比后缀数组版改了什么？把「预处理未来最大值」换成「在线维护历史最小值」。视角从往后看翻成往前看，O(n) 的空间压成 2 个变量。\n\n注意顺序：先用当天价算利润（此时 minPrice 是历史值），再更新 minPrice。在变体题里写反会出错。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：整数数组 prices\n输出：一次买卖的最大利润\n\n1. minPrice = 正无穷                   // 到目前为止见过的最低价\n2. maxProfit = 0                       // 到目前为止的最大利润\n3. 对 prices 里的每个价格 p：\n     a. profit = p - minPrice          // 先算：今天卖，历史最低价买\n     b. 如果 profit 大于 maxProfit：maxProfit = profit\n     c. minPrice = min(minPrice, p)    // 再更新最低价\n4. 返回 maxProfit\n\n复杂度：时间 O(n) 一次遍历；空间 O(1) 两个变量",
+      "codeJava": "class Solution {\n    public int maxProfit(int[] prices) {\n        int minPrice = Integer.MAX_VALUE;   // 历史最低价\n        int maxProfit = 0;                  // 历史最大利润\n\n        for (int p : prices) {\n            // 先算：假设今天卖出，用历史最低价买入能赚多少\n            if (p - minPrice > maxProfit) {\n                maxProfit = p - minPrice;\n            }\n            // 再更新历史最低价，保证它来自今天或更早\n            if (p < minPrice) {\n                minPrice = p;\n            }\n        }\n        return maxProfit;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

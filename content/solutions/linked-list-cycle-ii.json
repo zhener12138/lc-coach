@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "哈希表找第一个重复节点",
+      "idea": "和第 141 题的哈希版一脉相承：边走边把节点存进 HashSet，**第一次发现某个节点已经在集合里**，那个节点就是环的入口。\n\n为什么是它？因为从头开始走，第一次重复访问的节点，一定是「从链表外进入环的那一步」——环上其它节点都要在它之后才被第二次访问。\n\n为什么它不是最优？空间 O(n)。而且这题有一个非常漂亮的数学解法（快慢指针 + 二次相遇），能把空间压到 O(1)。\n\n这版的价值：给「环入口」下一个清晰定义——**从 head 出发第一次重复出现的节点**。把这个定义记牢，后面推导数学关系时不会迷路。\n\n坑：不能用 `set.add(p)` 的返回值做「加入」和「判断」两件事时搞混顺序。正确写法是 `if (!set.add(p)) return p;`——add 返回 false 表示已存在，此时返回当前节点。（顺带：如果无环则走到 null，返回 null。）\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：链表头 head\n输出：环的入口节点，无环返回 null\n\n1. seen = 空 HashSet\n2. p = head\n3. 当 p 不为空循环：\n     a. 如果 p 已经在 seen 里：返回 p     // 第一次重复 = 环入口\n     b. 把 p 加入 seen\n     c. p = p.next\n4. 返回 null\n\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\npublic class Solution {\n    public ListNode detectCycle(ListNode head) {\n        Set<ListNode> seen = new HashSet<>();\n        ListNode p = head;\n        while (p != null) {\n            // add 返回 false 说明之前见过，这就是环的入口\n            if (!seen.add(p)) return p;\n            p = p.next;\n        }\n        return null;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "快慢指针相遇 · 再从头同步走",
+      "idea": "这是本系列最著名的算法，先给结论：**先用快慢指针相遇，然后把一个指针放回 head，两指针都每次走 1 步，再次相遇的位置就是环入口**。\n\n下面把证明讲清楚，这是面试必问。设：head 到环入口距离 a，入口到相遇点距离 b，相遇点到入口（沿环继续走）距离 c，环长 L = b + c。\n\n- 相遇时慢指针走了 a + b；\n- 快指针走了 a + b + nL（多绕了 n 圈）；\n- 快指针速度是慢的 2 倍 → 2(a + b) = a + b + nL → **a + b = nL**，即 a = nL - b = (n-1)L + c。\n\n关键结论：**a ≡ c (mod L)**。也就是说，从 head 走 a 步到达入口，从相遇点走 c 步也到达入口——两者对环的位置完全同步。所以让一个指针回到 head、两指针同速前进，走 a 步后必然在入口相遇。\n\n实现要点：\n1. 第一阶段用第 141 题的判环逻辑，相遇即跳出；无环返回 null；\n2. 第二阶段：ptr1 = head，ptr2 = 相遇点，同时每次走 1 步，相等即返回。\n\n相比哈希版改了什么？不存任何节点，空间从 O(n) 降到 O(1)，而且额外只用一次遍历。这是本题标准答案。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：链表头 head\n输出：环入口，无环返回 null\n\n第一阶段：判环并找相遇点\n1. slow = head，fast = head\n2. 当 fast 不为空 且 fast.next 不为空 循环：\n     a. slow = slow.next\n     b. fast = fast.next.next\n     c. 如果 slow 等于 fast：跳出循环（找到相遇点）\n3. 如果 fast 为空 或 fast.next 为空：返回 null（无环）\n\n第二阶段：找入口\n4. ptr1 = head，ptr2 = slow（相遇点）\n5. 当 ptr1 不等于 ptr2 循环：\n     ptr1 = ptr1.next\n     ptr2 = ptr2.next\n6. 返回 ptr1\n\n为什么对：设 head 到入口为 a，入口到相遇点为 b，环长 L，\n  2(a+b) = a+b+nL  →  a = (n-1)L + c  →  a 与 c 对环同步\n  所以一个从 head 走 a 步、一个从相遇点走 c 步，同时到入口\n\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "public class Solution {\n    public ListNode detectCycle(ListNode head) {\n        ListNode slow = head, fast = head;\n\n        // 第一阶段：判环，找到相遇点\n        while (fast != null && fast.next != null) {\n            slow = slow.next;\n            fast = fast.next.next;\n            if (slow == fast) break;\n        }\n        // fast 走到头说明无环\n        if (fast == null || fast.next == null) return null;\n\n        // 第二阶段：一个回到 head，两个同速走，相遇处即入口\n        ListNode p1 = head, p2 = slow;\n        while (p1 != p2) {\n            p1 = p1.next;\n            p2 = p2.next;\n        }\n        return p1;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "optimal",
+      "title": "数学推导 + 常数优化版",
+      "idea": "上一版已经是本题的标准最优解。这一版做两件事：把数学推导写得更完整，并做几处常数优化。\n\n**完整推导再走一遍**：\n- 慢指针速度 1、快指针速度 2，从 head 同点出发。\n- 假设 head 到环入口长度 a，入口到相遇点长度 b，相遇点再走回入口长度 c，环长 L = b + c。\n- 相遇时：慢走 a + b；快走 a + b + nL（多绕 n 圈）。\n- 速度 2 倍 ⇒ 2(a + b) = a + b + nL ⇒ a + b = nL ⇒ a = nL - b = (n-1)L + c。\n- 结论：从 head 前进 a 步到入口；从相遇点前进 c 步也到入口，且 a 比 c 多绕了整数圈，位置等价。\n\n**常数优化**：\n1. 第一阶段循环里，把「相遇判断」放在移动之后立即 break，避免多跑一轮。\n2. 第二阶段其实可以复用 head 变量做 p1，少一个局部变量（可读性略降，可不用）。\n3. 若 head 为 null 或只有一个节点且无环，第一阶段会立即退出，第二阶段也能正确返回 null，不需要特判——但加上 head == null 的快速返回更清晰。\n\n为什么它和上一版并列最优？复杂度完全一致，这版的价值在**讲解完整性**——面试时能把 a ≡ c 的推导一次讲透，比写出代码更能拿分。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：链表头 head\n输出：环入口，无环返回 null\n\n1. 如果 head 为空 或 head.next 为空：返回 null\n2. slow = head，fast = head，met = null\n3. 当 fast 不为空 且 fast.next 不为空 循环：\n     slow = slow.next\n     fast = fast.next.next\n     如果 slow 等于 fast：met = slow，跳出\n4. 如果 met 为空：返回 null\n5. 让 p 从 head 出发，q 从 met 出发\n   当 p 不等于 q：p = p.next，q = q.next\n6. 返回 p\n\n推导：a = (n-1)L + c，说明 head 到入口 和 相遇点到入口 对环同相位\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "public class Solution {\n    public ListNode detectCycle(ListNode head) {\n        if (head == null || head.next == null) return null;\n\n        ListNode slow = head, fast = head, met = null;\n        while (fast != null && fast.next != null) {\n            slow = slow.next;\n            fast = fast.next.next;\n            if (slow == fast) {\n                met = slow;\n                break;\n            }\n        }\n        if (met == null) return null;   // 无环\n\n        // a = (n-1)L + c：head 与相遇点对环同相位，同速走必在入口相遇\n        ListNode p = head, q = met;\n        while (p != q) {\n            p = p.next;\n            q = q.next;\n        }\n        return p;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

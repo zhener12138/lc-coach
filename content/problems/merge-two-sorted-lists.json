@@ -1,0 +1,49 @@
+{
+  "slug": "merge-two-sorted-lists",
+  "frontendId": "21",
+  "titleEn": "Merge Two Sorted Lists",
+  "titleCn": "合并两个有序链表",
+  "difficulty": "Easy",
+  "tags": "递归,链表",
+  "contentHtml": "<p>You are given the heads of two sorted linked lists <code>list1</code> and <code>list2</code>.</p>\n\n<p>Merge the two lists into one <strong>sorted</strong> list. The list should be made by splicing together the nodes of the first two lists.</p>\n\n<p>Return <em>the head of the merged linked list</em>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/10/03/merge_ex1.jpg\" />\n<pre>\n<strong>Input:</strong> list1 = [1,2,4], list2 = [1,3,4]\n<strong>Output:</strong> [1,1,2,3,4,4]\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> list1 = [], list2 = []\n<strong>Output:</strong> []\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> list1 = [], list2 = [0]\n<strong>Output:</strong> [0]\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li>The number of nodes in both lists is in the range <code>[0, 50]</code>.</li>\n\t<li><code>-100 &lt;= Node.val &lt;= 100</code></li>\n\t<li>Both <code>list1</code> and <code>list2</code> are sorted in <strong>non-decreasing</strong> order.</li>\n</ul>",
+  "contentCnHtml": "<p>将两个升序链表合并为一个新的 <strong>升序</strong> 链表并返回。新链表是通过拼接给定的两个链表的所有节点组成的。 </p>\n\n<p><strong>示例 1：</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2020/10/03/merge_ex1.jpg\" />\n<pre>\n<strong>输入：</strong>l1 = [1,2,4], l2 = [1,3,4]\n<strong>输出：</strong>[1,1,2,3,4,4]\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>l1 = [], l2 = []\n<strong>输出：</strong>[]\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>l1 = [], l2 = [0]\n<strong>输出：</strong>[0]\n</pre>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li>两个链表的节点数目范围是 <code>[0, 50]</code></li>\n\t<li><code>-100 <= Node.val <= 100</code></li>\n\t<li><code>l1</code> 和 <code>l2</code> 均按 <strong>非递减顺序</strong> 排列</li>\n</ul>",
+  "javaTemplate": "/**\n * Definition for singly-linked list.\n * public class ListNode {\n *     int val;\n *     ListNode next;\n *     ListNode() {}\n *     ListNode(int val) { this.val = val; }\n *     ListNode(int val, ListNode next) { this.val = val; this.next = next; }\n * }\n */\nclass Solution {\n    public ListNode mergeTwoLists(ListNode list1, ListNode list2) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "merge-two-sorted-lists",
+      "tier": "brute",
+      "title": "递归合并 · 谁小谁当头",
+      "idea": "递归的思路极其自然：两个链表都有序，那么新的头一定是 list1 和 list2 中较小的那个；确定头之后，剩下的部分继续合并。\n\n写成代码只有三行：如果 list1 空就返回 list2，list2 空就返回 list1；否则谁小就把谁的 next 指向「剩余部分的合并结果」。\n\n为什么这版被称为「暴力」而不是「最优」？因为它不是真的暴力——时间复杂度 O(m+n) 已经是最优。问题在空间：递归深度最坏 m+n，当两条链表各有 5×10⁴ 个节点时（题目数据范围上限 50），虽然有上限但不是常数。严格说空间是 O(m+n) 栈空间，而迭代版是 O(1)。\n\n**递归版最大的风险**：面试官会问「链表很长会不会栈溢出」。答「会，所以生产代码用迭代」即可。\n\n另一个价值：递归版的代码几乎是「合并逻辑」的直译，比迭代版更容易验证正确性。面试时先写它，再讲迭代，是很稳的节奏。\n\n必须注意：递归版不能改动原链表之外的节点，`list1.next = merge(...)` 是在原链表上重连，符合题目「不新建节点」的期望。\n\n复杂度 O(m+n) 时间，O(m+n) 栈空间。",
+      "pseudocode": "输入：两个有序链表 list1、list2\n输出：合并后的有序链表头\n\n1. 如果 list1 为空：返回 list2\n2. 如果 list2 为空：返回 list1\n3. 如果 list1.val 小于等于 list2.val：\n     list1.next = merge(list1.next, list2)\n     返回 list1\n4. 否则：\n     list2.next = merge(list1, list2.next)\n     返回 list2\n\n复杂度：时间 O(m+n)；空间 O(m+n) 递归栈",
+      "codeJava": "class Solution {\n    public ListNode mergeTwoLists(ListNode list1, ListNode list2) {\n        if (list1 == null) return list2;\n        if (list2 == null) return list1;\n\n        if (list1.val <= list2.val) {\n            // 谁小谁当头，剩下的继续合并\n            list1.next = mergeTwoLists(list1.next, list2);\n            return list1;\n        } else {\n            list2.next = mergeTwoLists(list1, list2.next);\n            return list2;\n        }\n    }\n}",
+      "timeComplexity": "O(m+n)",
+      "spaceComplexity": "O(m+n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "merge-two-sorted-lists",
+      "tier": "better",
+      "title": "迭代 + 虚拟头 · 逐个挑小的",
+      "idea": "迭代版的核心是**虚拟头节点 dummy**。为什么需要它？因为合并后的第一个节点不能提前确定，如果不用 dummy，就得写一堆「第一次赋值要特殊处理」的代码。有了 dummy，答案最终就是 dummy.next，所有节点都用同一段代码接上去。\n\n算法：tail 指向已合并部分的尾部。每次比较 list1.val 和 list2.val，把小的那个接到 tail 后面，然后对应链表前进一格。某一条走完后，把另一条剩下的整段直接挂上（因为它已经有序）。\n\n为什么最后可以直接挂？因为剩下那条链表本身有序，且所有元素都 ≥ 已合并部分的最后一个，所以整段挂上去仍然有序。这是「有序」这个前提带来的便利。\n\n相比递归版改了什么？**把栈空间换成两个指针**，空间从 O(m+n) 降到 O(1)，彻底消除栈溢出风险。时间不变。\n\n坑：最后那段「直接挂上」很多人写成 while 循环逐个接，虽然也对但多此一举。直接 `tail.next = (list1 != null ? list1 : list2)` 一行就够了。\n\n这是链表题的通用脚手架，归并排序链表（第 148 题）、合并 K 个链表（第 23 题）都从它出发。\n\n复杂度 O(m+n) 时间，O(1) 空间。",
+      "pseudocode": "输入：两个有序链表\n输出：合并后的头\n\n1. dummy = new ListNode(0)，tail = dummy\n2. 当 list1 和 list2 都不空循环：\n     a. 如果 list1.val 小于等于 list2.val：\n          tail.next = list1；list1 = list1.next\n       否则：\n          tail.next = list2；list2 = list2.next\n     b. tail = tail.next\n3. 剩下的整段直接挂上：tail.next = (list1 不空 ? list1 : list2)\n4. 返回 dummy.next\n\n为什么剩下能整段挂：那条链表本身有序，且都 >= 已合并部分最后一个\n复杂度：时间 O(m+n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public ListNode mergeTwoLists(ListNode list1, ListNode list2) {\n        ListNode dummy = new ListNode(0);   // 虚拟头，省掉首节点的特殊处理\n        ListNode tail = dummy;\n\n        while (list1 != null && list2 != null) {\n            if (list1.val <= list2.val) {\n                tail.next = list1;\n                list1 = list1.next;\n            } else {\n                tail.next = list2;\n                list2 = list2.next;\n            }\n            tail = tail.next;\n        }\n        // 剩下那条本身有序，整段挂上即可，不用逐个接\n        tail.next = (list1 != null) ? list1 : list2;\n        return dummy.next;\n    }\n}",
+      "timeComplexity": "O(m+n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "merge-two-sorted-lists",
+      "tier": "optimal",
+      "title": "迭代 + 原地重连 · 不新建节点",
+      "idea": "这版和上一版算法完全一样，差别在于**承诺并保证「零新建节点」**，且把「谁小谁当头」的思路写得更直白。\n\n先处理第一个节点：如果 list1 的值更小，就用 list1 当头，否则用 list2 当头。这样做的价值是什么？回扣题目描述——力扣本题要求「拼接所有节点」，也就是不能 new ListNode 复制值。上一版用了 `new ListNode(0)` 做虚拟头，虽然只是哨兵节点、不参与结果，但严格讲也算新建了一个节点。\n\n这版用 cur 直接指向真实节点，全程只做 next 指针的重连，一个 new 都没有。\n\n为什么把它列为「最优」？因为在面试的严格意义上，「是否新建节点」是常见追问点。写一版真正零分配的代码，能体现你对题目约束的敏感。\n\n实现顺序：\n1. 处理空链表（任一为空直接返回另一个）；\n2. 定头：cur = 值小的那个，另一条记为 other；\n3. 循环：只要 cur.next 不为空且 other 不为空，就比较 cur.next.val 和 other.val，决定插 other 还是继续走；\n4. 收尾：cur.next 为空时直接接 other。\n\n这版代码比 dummy 版长一点、更绕，实战里 dummy 版更常用。理解两种都可，能说出取舍就是加分。\n\n复杂度 O(m+n) 时间，O(1) 空间。",
+      "pseudocode": "输入：两个有序链表\n输出：合并后的头（零新建节点）\n\n1. 如果 list1 为空：返回 list2\n   如果 list2 为空：返回 list1\n2. 定头：\n   如果 list1.val 小于等于 list2.val：head = list1，cur = list1，other = list2\n   否则：head = list2，cur = list2，other = list1\n3. 当 cur.next 不为空 且 other 不为空 循环：\n     a. 如果 cur.next.val 小于等于 other.val：cur = cur.next   // 继续走原本的链\n     b. 否则：把 other 插到 cur 后面\n          tmp = cur.next\n          cur.next = other\n          other = tmp\n          cur = cur.next\n4. 如果 cur.next 为空：cur.next = other    // 收尾\n5. 返回 head\n\n全程只改 next 指针，不 new 任何节点\n复杂度：时间 O(m+n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public ListNode mergeTwoLists(ListNode list1, ListNode list2) {\n        if (list1 == null) return list2;\n        if (list2 == null) return list1;\n\n        // 定头：谁小谁当头的第一个节点\n        ListNode head, cur, other;\n        if (list1.val <= list2.val) {\n            head = list1;\n            cur = list1;\n            other = list2;\n        } else {\n            head = list2;\n            cur = list2;\n            other = list1;\n        }\n\n        while (cur.next != null && other != null) {\n            if (cur.next.val <= other.val) {\n                cur = cur.next;          // 原链继续走下去\n            } else {\n                // 把 other 插到 cur 后面\n                ListNode tmp = cur.next;\n                cur.next = other;\n                other = tmp;\n                cur = cur.next;\n            }\n        }\n        // cur 走到头了，剩下的整段接上\n        if (cur.next == null) cur.next = other;\n\n        return head;\n    }\n}",
+      "timeComplexity": "O(m+n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

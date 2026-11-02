@@ -1,0 +1,49 @@
+{
+  "slug": "valid-parentheses",
+  "frontendId": "20",
+  "titleEn": "Valid Parentheses",
+  "titleCn": "有效的括号",
+  "difficulty": "Easy",
+  "tags": "栈,字符串,括号序列",
+  "contentHtml": "<p>Given a string <code>s</code> containing just the characters <code>&#39;(&#39;</code>, <code>&#39;)&#39;</code>, <code>&#39;{&#39;</code>, <code>&#39;}&#39;</code>, <code>&#39;[&#39;</code> and <code>&#39;]&#39;</code>, determine if the input string is valid.</p>\n\n<p>An input string is valid if:</p>\n\n<ol>\n\t<li>Open brackets must be closed by the same type of brackets.</li>\n\t<li>Open brackets must be closed in the correct order.</li>\n\t<li>Every close bracket has a corresponding open bracket of the same type.</li>\n</ol>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>s = &quot;()&quot;</span></p>\n\n<p><strong>Output:</strong> <span>true</span></p>\n</div>\n\n<p><strong>Example 2:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>s = &quot;()[]{}&quot;</span></p>\n\n<p><strong>Output:</strong> <span>true</span></p>\n</div>\n\n<p><strong>Example 3:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>s = &quot;(]&quot;</span></p>\n\n<p><strong>Output:</strong> <span>false</span></p>\n</div>\n\n<p><strong>Example 4:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>s = &quot;([])&quot;</span></p>\n\n<p><strong>Output:</strong> <span>true</span></p>\n</div>\n\n<p><strong>Example 5:</strong></p>\n\n<div>\n<p><strong>Input:</strong> <span>s = &quot;([)]&quot;</span></p>\n\n<p><strong>Output:</strong> <span>false</span></p>\n</div>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= s.length &lt;= 10<sup>4</sup></code></li>\n\t<li><code>s</code> consists of parentheses only <code>&#39;()[]{}&#39;</code>.</li>\n</ul>",
+  "contentCnHtml": "<p>给定一个只包括 <code>'('</code>，<code>')'</code>，<code>'{'</code>，<code>'}'</code>，<code>'['</code>，<code>']'</code>&nbsp;的字符串 <code>s</code> ，判断字符串是否有效。</p>\n\n<p>有效字符串需满足：</p>\n\n<ol>\n\t<li>左括号必须用相同类型的右括号闭合。</li>\n\t<li>左括号必须以正确的顺序闭合。</li>\n\t<li>每个右括号都有一个对应的相同类型的左括号。</li>\n</ol>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<div>\n<p><span><b>输入：</b>s = \"()\"</span></p>\n\n<p><span><b>输出：</b>true</span></p>\n</div>\n\n<p><strong>示例 2：</strong></p>\n\n<div>\n<p><span><b>输入：</b>s = \"()[]{}\"</span></p>\n\n<p><span><b>输出：</b>true</span></p>\n</div>\n\n<p><strong>示例 3：</strong></p>\n\n<div>\n<p><span><b>输入：</b>s = \"(]\"</span></p>\n\n<p><span><b>输出：</b>false</span></p>\n</div>\n\n<p><strong>示例 4：</strong></p>\n\n<div>\n<p><span><b>输入：</b>s = \"([])\"</span></p>\n\n<p><span><b>输出：</b>true</span></p>\n</div>\n\n<p><strong>示例 5：</strong></p>\n\n<div>\n<p><span><b>输入：</b>s = \"([)]\"</span></p>\n\n<p><span><b>输出：</b>false</span></p>\n</div>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= s.length &lt;= 10<sup>4</sup></code></li>\n\t<li><code>s</code> 仅由括号 <code>'()[]{}'</code> 组成</li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public boolean isValid(String s) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "valid-parentheses",
+      "tier": "brute",
+      "title": "反复删成对括号 · 删到不动为止",
+      "idea": "换个角度看这道题：一个合法括号串，本质上就是能通过「不断删除相邻的 ()、[]、{}」被完全删空。所以最直白的做法是——每轮扫一遍，把所有相邻成对的括号删掉，如果有删除就再来一轮；直到某一轮什么都没删掉。此时如果串为空就是合法，否则不合法。\n\n为什么这版一定能得到正确答案？因为任何合法括号串都必然存在至少一对「最内层」的相邻括号，删掉它不改变合法性；反复删一定能把合法的串删空。而对于不合法的串，删到不能再删时一定还剩下东西（比如 \"](\" 或 \"(()\"）。\n\n为什么它不是好答案？每轮都要重新拼字符串，时间复杂度 O(n²)，空间也是 O(n)。n = 10⁴ 时会被判慢。\n\n不过这版的价值很实在：它给了「合法」一个**可执行的等价定义**——能删空。这个定义在面试里讲出来，比直接背栈的结论更有说服力。栈的解法本质上就是「模拟这个删除过程，但把 O(n) 的字符串拼接换成 O(1) 的栈顶比较」。\n\n坑：删除时要严格判断左括号和右括号配对，不能只看「两个相邻非字母」。\n\n复杂度 O(n²) 时间，O(n) 空间。",
+      "pseudocode": "输入：只含 ()[]{}  的字符串 s\n输出：是否合法\n\n1. 当字符串发生变化循环：\n     a. changed = false\n     b. newS = \"\"\n     c. i = 0\n        当 i 小于 s 长度：\n           如果 i+1 小于长度 且 s[i] 与 s[i+1] 构成一对合法括号：\n              跳过这两个字符，changed = true，i 加 2\n           否则：把 s[i] 追加到 newS，i 加 1\n     d. s = newS\n     e. 如果 changed 为 false：跳出\n2. 返回 s 是否为空\n\n合法括号串 = 能被反复删除相邻成对括号删空\n复杂度：时间 O(n²)；空间 O(n)",
+      "codeJava": "class Solution {\n    public boolean isValid(String s) {\n        boolean changed = true;\n        while (changed) {\n            changed = false;\n            StringBuilder sb = new StringBuilder();\n            int i = 0;\n            while (i < s.length()) {\n                if (i + 1 < s.length() && isPair(s.charAt(i), s.charAt(i + 1))) {\n                    i += 2;       // 删掉这一对\n                    changed = true;\n                } else {\n                    sb.append(s.charAt(i));\n                    i++;\n                }\n            }\n            s = sb.toString();\n        }\n        return s.isEmpty();\n    }\n\n    private boolean isPair(char a, char b) {\n        return (a == '(' && b == ')')\n            || (a == '[' && b == ']')\n            || (a == '{' && b == '}');\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "valid-parentheses",
+      "tier": "better",
+      "title": "栈 · 左括号入栈，右括号配对弹出",
+      "idea": "这是本题的标准解法，也是「栈」这个数据结构最经典的应用场景。\n\n核心观察：括号匹配具有**后进先出**的性质——最后一个打开的括号，必须最先被关闭。所以用一个栈：遇到左括号就入栈；遇到右括号就看栈顶是不是对应的左括号，是就弹出，不是（或栈空）就立刻判定不合法。全部扫完后，栈必须为空才算合法。\n\n为什么「栈空时遇到右括号」要直接返回 false？因为这说明有一个右括号没有对应的左括号，比如 \")(\" 的第一个字符。这个判断极容易漏，漏了会抛 `EmptyStackException` 或越界。\n\n为什么「扫完栈非空」也不合法？因为还有左括号没被关闭，比如 \"(()\"。\n\n相比反复删除版改了什么？把「反复扫描 + 字符串重建」换成「一次扫描 + O(1) 栈操作」，时间从 O(n²) 降到 O(n)。\n\n实现细节：Java 里 `Deque<Character> stack = new ArrayDeque<>()` 比 `Stack` 快（Stack 有 synchronized 开销）。配对可以用 if-else 链，也可以用一个辅助方法。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：括号字符串 s\n输出：是否合法\n\n1. 建空栈 stack\n2. 对 s 里每个字符 c：\n     a. 如果 c 是左括号（( [ {）：把 c 压栈\n     b. 否则（c 是右括号）：\n          如果栈为空：返回 false        // 右括号多于左括号\n          top = 弹栈\n          如果 top 与 c 不配对：返回 false\n3. 扫完后返回 栈是否为空            // 非空说明左括号多了\n\n两个必须有的分支：栈空遇右括号 / 扫完栈非空\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public boolean isValid(String s) {\n        Deque<Character> stack = new ArrayDeque<>();   // 比 Stack 快\n\n        for (char c : s.toCharArray()) {\n            if (c == '(' || c == '[' || c == '{') {\n                stack.push(c);\n            } else {\n                // 栈空却遇到右括号：右括号多了\n                if (stack.isEmpty()) return false;\n                char top = stack.pop();\n                if (!match(top, c)) return false;\n            }\n        }\n        // 扫完还有剩余：左括号多了\n        return stack.isEmpty();\n    }\n\n    private boolean match(char l, char r) {\n        return (l == '(' && r == ')')\n            || (l == '[' && r == ']')\n            || (l == '{' && r == '}');\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "valid-parentheses",
+      "tier": "optimal",
+      "title": "栈 + 右括号反推 · 省掉配对分支",
+      "idea": "上一版每次都要调 match() 做三次比较。这版用一个漂亮的小技巧：**遇到右括号时，直接把它期望的左括号压栈**；遇到左括号时，也不用区分类型，入栈时把它转成对应的右括号……不对，那样就乱了。\n\n正确的小技巧是反过来：**遇到左括号，把它对应的右括号压栈**；遇到右括号时，直接比较栈顶是否等于它本身。这样省掉了三路 if 配对判断，代码更短、更快。\n\n举例：输入「(]」时，遇到左圆括号压入右圆括号；再遇到右方括号，比较栈顶（右圆括号）不等于右方括号，返回 false。正确。\n\n另外两个常数优化：\n1. **长度必须是偶数**——奇数长度一定不合法，开头就返回 false，省掉整趟扫描；\n2. 用 `char[]` + 手动栈指针代替 `ArrayDeque`，避免装箱成 Character。这是 Java 里做这道题最快的写法（力扣上能跑到 1ms）。\n\n为什么这算「最优」？复杂度仍是 O(n)，但常数显著更小：无装箱、无三路比较、奇偶快速返回。在面试里说出「长度必须是偶数」和「用数组模拟栈避免装箱」这两点，能明显加分。\n\n坑：手动栈时 `top` 指针的初值是 0（指向下一个空位），入栈是 `stack[top++] = c`，判空是 `top == 0`，出栈是 `stack[--top]`。三个都要对。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：括号字符串 s\n输出：是否合法\n\n1. 如果 s 长度是奇数：返回 false      // 快速排除\n2. stack = new char[s 长度]，top = 0\n3. 对 s 里每个字符 c：\n     a. 如果 c 是 ( ：stack[top++] = ')'\n     b. 如果 c 是 [ ：stack[top++] = ']'\n     c. 如果 c 是 { ：stack[top++] = '}'\n     d. 否则（右括号）：\n          如果 top 等于 0：返回 false\n          如果 stack[--top] 不等于 c：返回 false\n4. 返回 top 是否等于 0\n\n技巧：入栈时直接存「期望的右括号」，出栈时只需一次比较\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public boolean isValid(String s) {\n        int n = s.length();\n        if (n % 2 == 1) return false;   // 奇数长度一定不合法，快速返回\n\n        char[] stack = new char[n];     // 手动栈，避免 Character 装箱\n        int top = 0;\n\n        for (int i = 0; i < n; i++) {\n            char c = s.charAt(i);\n            if (c == '(') stack[top++] = ')';        // 直接存「期望的右括号」\n            else if (c == '[') stack[top++] = ']';\n            else if (c == '{') stack[top++] = '}';\n            else {\n                // 右括号：栈空或栈顶不匹配都不合法\n                if (top == 0 || stack[--top] != c) return false;\n            }\n        }\n        return top == 0;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 3
+    }
+  ]
+}

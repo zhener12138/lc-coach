@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "split + 过滤空串 + 倒序拼接",
+      "idea": "题目要求把单词顺序倒过来，且单词之间只留一个空格。最直白的做法：用 split(\" \") 把字符串切开，过滤掉空串（因为原串可能有连续空格），再从后往前拼起来。\n\n为什么必须过滤空串？\"a  b\" 这样两个空格，split(\" \") 会产生 [\"a\", \"\", \"b\"]，中间那个空串会让结果多出一个空格。用 ArrayList 收非空串最稳妥，或者用 \"\\\\s+\" 正则直接切。\n\n为什么这版会被判定不够好？题目进阶要求 O(1) 额外空间，而 split 会创建一个 String 数组、每个单词又是一个新 String 对象，空间是 O(n)。面试时如果只写这版，会被追问「能不能原地做」。\n\n不过这版在工程上是最常用的——可读性最好，不容易出错。面试建议：先说这版拿到分，再讲原地双指针版显示深度。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：字符串 s，可能含前导、尾随、连续空格\n输出：单词顺序反转、单空格分隔的字符串\n\n1. 用 \" \" 切开 s，得到数组 parts\n2. 建一个空列表 words\n3. 对 parts 里每个 p：\n     如果 p 不为空：把 p 加进 words\n4. 建 StringBuilder sb\n5. i 从 words 长度-1 递减到 0：\n     把 words[i] 追加到 sb\n     如果不是最后一个：追加一个空格\n6. 返回 sb.toString()\n\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public String reverseWords(String s) {\n        String[] parts = s.split(\" \");\n        java.util.List<String> words = new java.util.ArrayList<>();\n        for (String p : parts) {\n            if (!p.isEmpty()) words.add(p);   // 过滤连续空格产生的空串\n        }\n\n        StringBuilder sb = new StringBuilder();\n        for (int i = words.size() - 1; i >= 0; i--) {\n            sb.append(words.get(i));\n            if (i > 0) sb.append(' ');      // 单词之间单空格，末尾不加\n        }\n        return sb.toString();\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "正则切分 + String.join",
+      "idea": "上一版要手动过滤空串，啰嗦。用正则 \"\\\\s+\" 直接切分，连续空格会被当成一个分隔符，自动跳过空串，代码能短一半。\n\n另外 Java 的 String.join 可以把列表按指定分隔符拼接，配合 Collections.reverse 就完成了「倒序 + 拼接」两件事，可读性极高。\n\n还有一个小坑：s 可能有前导空格，此时 split 结果的第一个元素是空串。用 \"\\\\s+\" 切时，`\" a b\".split(\"\\\\s+\")` 会得到 [\"\", \"a\", \"b\"]，仍然有空串！所以要么先 trim()，要么用 strip()，这一步不能省。\n\n相比上一版改了什么？用正则一次处理掉连续空格，用 String.join 一次完成拼接，代码量和出错面都大幅缩小。但空间复杂度没变，仍然是 O(n)。\n\n面试时这版是「工整答案」，写了不会错。再追问空间就上原地双指针。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：字符串 s\n输出：反转单词顺序后的字符串\n\n1. t = s.trim()                    // 先去掉首尾空格，否则切出来会有空串\n2. parts = t 按正则 \\\\s+ 切分      // 连续空格当一个分隔符\n3. 把 parts 转成 List words\n4. Collections.reverse(words)\n5. 返回 String.join(\" \", words)\n\n注意：不 trim 的话 \" a b\" 切出来第一个元素是空串\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public String reverseWords(String s) {\n        // 先 trim 去掉首尾空格，否则切分结果可能带空串\n        String t = s.trim();\n        // \\s+ 把任意长度的空白当成一个分隔符，自动跳过连续空格\n        String[] parts = t.split(\"\\\\s+\");\n\n        List<String> words = new ArrayList<>(Arrays.asList(parts));\n        Collections.reverse(words);\n        return String.join(\" \", words);   // 单词之间单空格\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "整体反转 + 逐个单词反转",
+      "idea": "这是题目进阶要求的 O(1) 额外空间解法，思路和「旋转数组的三次反转」完全同源。\n\n三步走：\n1. 整体反转字符串 → \"the sky is blue\" 变成 \"eulb si yks eht\"；\n2. 把每个单词内部反转回来 → \"blue is sky the\"；\n3. 清理多余空格（前导、尾随、单词间多空格）。\n\n为什么第 2 步做完正好对？整体反转把单词顺序倒过来了，但每个单词的字母也倒了；每个单词内部再倒一次，字母就正过来了。**倒两次 = 顺序反转、内容不变**，和「三次反转旋转数组」是同一个道理。\n\n第 3 步的「原地去空格」是这道题真正的难点，也是面试发挥点。做法是双指针：read 遍历原串，write 记录写入位置。遇到非空格字符就写进去；如果写入的不是第一个单词，且当前位置需要空格，就补一个空格。写完后把数组长度截到 write。\n\n因为 Java 的 String 不可变，必须先用 toCharArray 转成可写数组，最后再 new String(chars, 0, write)。严格来说这不是 O(1) 额外空间（数组本身 O(n)），但相对「新建若干 String 对象」已经是更省的做法。面试时说清这个细节反而加分。\n\n复杂度 O(n) 时间，O(n) 空间（字符数组本身）。",
+      "pseudocode": "输入：字符串 s\n输出：反转单词顺序后的字符串\n\n1. chars = s.toCharArray()\n2. 整体反转 chars（双指针从两端向中间交换）\n3. 逐个单词内部反转：\n     i 从 0 开始：\n       当 i 小于长度 且 chars[i] 是空格：i 加 1\n       start = i\n       当 i 小于长度 且 chars[i] 不是空格：i 加 1\n       反转 chars 在 [start, i-1] 区间\n4. 原地清理多余空格：\n     write = 0，read = 0\n     当 read 小于长度 循环：\n       当 read 小于长度 且 chars[read] 是空格：read 加 1\n       如果 read 等于长度：跳出\n       如果 write 大于 0：chars[write] = 空格，write 加 1\n       当 read 小于长度 且 chars[read] 不是空格：\n          chars[write] = chars[read]\n          write 加 1，read 加 1\n5. 返回 new String(chars, 0, write)\n\n复杂度：时间 O(n)；空间 O(n) 字符数组",
+      "codeJava": "class Solution {\n    public String reverseWords(String s) {\n        char[] c = s.toCharArray();\n        int n = c.length;\n\n        // 1. 整体反转\n        reverse(c, 0, n - 1);\n\n        // 2. 每个单词内部再反转回来\n        int i = 0;\n        while (i < n) {\n            while (i < n && c[i] == ' ') i++;\n            int start = i;\n            while (i < n && c[i] != ' ') i++;\n            reverse(c, start, i - 1);\n        }\n\n        // 3. 原地去空格：read 读原数组，write 写压缩后的位置\n        int write = 0, read = 0;\n        while (read < n) {\n            while (read < n && c[read] == ' ') read++;\n            if (read == n) break;\n            if (write > 0) c[write++] = ' ';   // 单词之间补一个空格\n            while (read < n && c[read] != ' ') {\n                c[write++] = c[read++];\n            }\n        }\n        return new String(c, 0, write);\n    }\n\n    private void reverse(char[] c, int l, int r) {\n        while (l < r) {\n            char t = c[l];\n            c[l] = c[r];\n            c[r] = t;\n            l++;\n            r--;\n        }\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    }
+  ]
+}

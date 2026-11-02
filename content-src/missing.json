@@ -1,0 +1,800 @@
+[
+ {
+  "slug": "3sum",
+  "id": "15",
+  "cn": "三数之和",
+  "d": "Medium",
+  "t": "数组,双指针,排序"
+ },
+ {
+  "slug": "best-time-to-buy-and-sell-stock",
+  "id": "121",
+  "cn": "买卖股票的最佳时机",
+  "d": "Easy",
+  "t": "数组,动态规划"
+ },
+ {
+  "slug": "best-time-to-buy-and-sell-stock-ii",
+  "id": "122",
+  "cn": "买卖股票的最佳时机 II",
+  "d": "Medium",
+  "t": "贪心,数组,动态规划"
+ },
+ {
+  "slug": "best-time-to-buy-and-sell-stock-iii",
+  "id": "123",
+  "cn": "买卖股票的最佳时机 III",
+  "d": "Hard",
+  "t": "数组,动态规划"
+ },
+ {
+  "slug": "binary-tree-inorder-traversal",
+  "id": "94",
+  "cn": "二叉树的中序遍历",
+  "d": "Easy",
+  "t": "栈,树,深度优先搜索,二叉树"
+ },
+ {
+  "slug": "binary-tree-level-order-traversal",
+  "id": "102",
+  "cn": "二叉树的层序遍历",
+  "d": "Medium",
+  "t": "树,广度优先搜索,二叉树"
+ },
+ {
+  "slug": "binary-tree-maximum-path-sum",
+  "id": "124",
+  "cn": "二叉树中的最大路径和",
+  "d": "Hard",
+  "t": "树,深度优先搜索,动态规划,二叉树,树形 DP"
+ },
+ {
+  "slug": "binary-tree-right-side-view",
+  "id": "199",
+  "cn": "二叉树的右视图",
+  "d": "Medium",
+  "t": "树,深度优先搜索,广度优先搜索,二叉树"
+ },
+ {
+  "slug": "climbing-stairs",
+  "id": "70",
+  "cn": "爬楼梯",
+  "d": "Easy",
+  "t": "记忆化,数学,动态规划"
+ },
+ {
+  "slug": "clone-graph",
+  "id": "133",
+  "cn": "克隆图",
+  "d": "Medium",
+  "t": "深度优先搜索,广度优先搜索,图,哈希表"
+ },
+ {
+  "slug": "coin-change",
+  "id": "322",
+  "cn": "零钱兑换",
+  "d": "Medium",
+  "t": "广度优先搜索,数组,动态规划,背包问题,完全背包"
+ },
+ {
+  "slug": "coin-change-ii",
+  "id": "518",
+  "cn": "零钱兑换 II",
+  "d": "Medium",
+  "t": "数组,动态规划,背包问题,完全背包"
+ },
+ {
+  "slug": "combination-sum",
+  "id": "39",
+  "cn": "组合总和",
+  "d": "Medium",
+  "t": "数组,回溯"
+ },
+ {
+  "slug": "construct-binary-tree-from-preorder-and-inorder-traversal",
+  "id": "105",
+  "cn": "从前序与中序遍历序列构造二叉树",
+  "d": "Medium",
+  "t": "树,数组,哈希表,分治,二叉树"
+ },
+ {
+  "slug": "container-with-most-water",
+  "id": "11",
+  "cn": "盛最多水的容器",
+  "d": "Medium",
+  "t": "贪心,数组,双指针"
+ },
+ {
+  "slug": "convert-sorted-array-to-binary-search-tree",
+  "id": "108",
+  "cn": "将有序数组转换为二叉搜索树",
+  "d": "Easy",
+  "t": "树,二叉搜索树,数组,分治,二叉树"
+ },
+ {
+  "slug": "count-primes",
+  "id": "204",
+  "cn": "计数质数",
+  "d": "Medium",
+  "t": "数组,数学,枚举,数论,素性测试,筛法,素数筛法"
+ },
+ {
+  "slug": "counting-bits",
+  "id": "338",
+  "cn": "比特位计数",
+  "d": "Easy",
+  "t": "位运算,动态规划"
+ },
+ {
+  "slug": "course-schedule",
+  "id": "207",
+  "cn": "课程表",
+  "d": "Medium",
+  "t": "深度优先搜索,广度优先搜索,图,拓扑排序,有向无环图"
+ },
+ {
+  "slug": "course-schedule-ii",
+  "id": "210",
+  "cn": "课程表 II",
+  "d": "Medium",
+  "t": "深度优先搜索,广度优先搜索,图,拓扑排序"
+ },
+ {
+  "slug": "daily-temperatures",
+  "id": "739",
+  "cn": "每日温度",
+  "d": "Medium",
+  "t": "栈,数组,单调栈"
+ },
+ {
+  "slug": "decode-string",
+  "id": "394",
+  "cn": "字符串解码",
+  "d": "Medium",
+  "t": "栈,递归,字符串"
+ },
+ {
+  "slug": "diameter-of-binary-tree",
+  "id": "543",
+  "cn": "二叉树的直径",
+  "d": "Easy",
+  "t": "树,深度优先搜索,二叉树,树形 DP"
+ },
+ {
+  "slug": "distinct-subsequences",
+  "id": "115",
+  "cn": "不同的子序列",
+  "d": "Hard",
+  "t": "字符串,动态规划"
+ },
+ {
+  "slug": "edit-distance",
+  "id": "72",
+  "cn": "编辑距离",
+  "d": "Medium",
+  "t": "字符串,动态规划"
+ },
+ {
+  "slug": "find-all-anagrams-in-a-string",
+  "id": "438",
+  "cn": "找到字符串中所有字母异位词",
+  "d": "Medium",
+  "t": "哈希表,字符串,滑动窗口"
+ },
+ {
+  "slug": "find-first-and-last-position-of-element-in-sorted-array",
+  "id": "34",
+  "cn": "在排序数组中查找元素的第一个和最后一个位置",
+  "d": "Medium",
+  "t": "数组,二分查找"
+ },
+ {
+  "slug": "find-median-from-data-stream",
+  "id": "295",
+  "cn": "数据流的中位数",
+  "d": "Hard",
+  "t": "设计,双指针,数据流,排序,堆（优先队列）"
+ },
+ {
+  "slug": "find-minimum-in-rotated-sorted-array",
+  "id": "153",
+  "cn": "寻找旋转排序数组中的最小值",
+  "d": "Medium",
+  "t": "数组,二分查找"
+ },
+ {
+  "slug": "flatten-binary-tree-to-linked-list",
+  "id": "114",
+  "cn": "二叉树展开为链表",
+  "d": "Medium",
+  "t": "栈,树,深度优先搜索,链表,二叉树"
+ },
+ {
+  "slug": "generate-parentheses",
+  "id": "22",
+  "cn": "括号生成",
+  "d": "Medium",
+  "t": "字符串,动态规划,回溯,括号序列"
+ },
+ {
+  "slug": "hamming-distance",
+  "id": "461",
+  "cn": "汉明距离",
+  "d": "Easy",
+  "t": "位运算"
+ },
+ {
+  "slug": "house-robber",
+  "id": "198",
+  "cn": "打家劫舍",
+  "d": "Medium",
+  "t": "数组,动态规划"
+ },
+ {
+  "slug": "house-robber-iii",
+  "id": "337",
+  "cn": "打家劫舍 III",
+  "d": "Medium",
+  "t": "树,深度优先搜索,动态规划,二叉树,树形 DP"
+ },
+ {
+  "slug": "implement-queue-using-stacks",
+  "id": "232",
+  "cn": "用栈实现队列",
+  "d": "Easy",
+  "t": "栈,设计,队列"
+ },
+ {
+  "slug": "implement-trie-prefix-tree",
+  "id": "208",
+  "cn": "实现 Trie (前缀树)",
+  "d": "Medium",
+  "t": "设计,字典树,哈希表,字符串"
+ },
+ {
+  "slug": "interleaving-string",
+  "id": "97",
+  "cn": "交错字符串",
+  "d": "Medium",
+  "t": "字符串,动态规划"
+ },
+ {
+  "slug": "intersection-of-two-linked-lists",
+  "id": "160",
+  "cn": "相交链表",
+  "d": "Easy",
+  "t": "哈希表,链表,双指针"
+ },
+ {
+  "slug": "invert-binary-tree",
+  "id": "226",
+  "cn": "翻转二叉树",
+  "d": "Easy",
+  "t": "树,深度优先搜索,广度优先搜索,二叉树"
+ },
+ {
+  "slug": "kth-largest-element-in-an-array",
+  "id": "215",
+  "cn": "数组中的第K个最大元素",
+  "d": "Medium",
+  "t": "数组,分治,快速选择,排序,堆（优先队列）"
+ },
+ {
+  "slug": "kth-smallest-element-in-a-bst",
+  "id": "230",
+  "cn": "二叉搜索树中第 K 小的元素",
+  "d": "Medium",
+  "t": "树,深度优先搜索,二叉搜索树,二叉树"
+ },
+ {
+  "slug": "largest-rectangle-in-histogram",
+  "id": "84",
+  "cn": "柱状图中最大的矩形",
+  "d": "Hard",
+  "t": "栈,数组,单调栈,区间最值查询"
+ },
+ {
+  "slug": "last-stone-weight",
+  "id": "1046",
+  "cn": "最后一块石头的重量",
+  "d": "Easy",
+  "t": "数组,堆（优先队列）"
+ },
+ {
+  "slug": "letter-combinations-of-a-phone-number",
+  "id": "17",
+  "cn": "电话号码的字母组合",
+  "d": "Medium",
+  "t": "哈希表,字符串,回溯"
+ },
+ {
+  "slug": "linked-list-cycle",
+  "id": "141",
+  "cn": "环形链表",
+  "d": "Easy",
+  "t": "哈希表,链表,双指针,Floyd 判圈算法"
+ },
+ {
+  "slug": "linked-list-cycle-ii",
+  "id": "142",
+  "cn": "环形链表 II",
+  "d": "Medium",
+  "t": "哈希表,链表,双指针,Floyd 判圈算法"
+ },
+ {
+  "slug": "longest-common-subsequence",
+  "id": "1143",
+  "cn": "最长公共子序列",
+  "d": "Medium",
+  "t": "字符串,动态规划,最长公共子序列"
+ },
+ {
+  "slug": "longest-increasing-subsequence",
+  "id": "300",
+  "cn": "最长递增子序列",
+  "d": "Medium",
+  "t": "数组,二分查找,动态规划,最长上升子序列"
+ },
+ {
+  "slug": "longest-palindromic-substring",
+  "id": "5",
+  "cn": "最长回文子串",
+  "d": "Medium",
+  "t": "双指针,字符串,动态规划,Manacher 算法"
+ },
+ {
+  "slug": "longest-substring-without-repeating-characters",
+  "id": "3",
+  "cn": "无重复字符的最长子串",
+  "d": "Medium",
+  "t": "哈希表,字符串,滑动窗口"
+ },
+ {
+  "slug": "longest-valid-parentheses",
+  "id": "32",
+  "cn": "最长有效括号",
+  "d": "Hard",
+  "t": "栈,字符串,动态规划,括号序列"
+ },
+ {
+  "slug": "lowest-common-ancestor-of-a-binary-tree",
+  "id": "236",
+  "cn": "二叉树的最近公共祖先",
+  "d": "Medium",
+  "t": "树,深度优先搜索,二叉树,最近公共祖先,Binary Lifting"
+ },
+ {
+  "slug": "lru-cache",
+  "id": "146",
+  "cn": "LRU 缓存",
+  "d": "Medium",
+  "t": "设计,哈希表,链表,双向链表"
+ },
+ {
+  "slug": "majority-element",
+  "id": "169",
+  "cn": "多数元素",
+  "d": "Easy",
+  "t": "数组,哈希表,分治,计数,排序,摩尔投票算法"
+ },
+ {
+  "slug": "maximal-square",
+  "id": "221",
+  "cn": "最大正方形",
+  "d": "Medium",
+  "t": "数组,动态规划,矩阵"
+ },
+ {
+  "slug": "maximum-depth-of-binary-tree",
+  "id": "104",
+  "cn": "二叉树的最大深度",
+  "d": "Easy",
+  "t": "树,深度优先搜索,广度优先搜索,二叉树"
+ },
+ {
+  "slug": "maximum-product-subarray",
+  "id": "152",
+  "cn": "乘积最大子数组",
+  "d": "Medium",
+  "t": "数组,动态规划"
+ },
+ {
+  "slug": "median-of-two-sorted-arrays",
+  "id": "4",
+  "cn": "寻找两个正序数组的中位数",
+  "d": "Hard",
+  "t": "数组,二分查找,分治"
+ },
+ {
+  "slug": "merge-intervals",
+  "id": "56",
+  "cn": "合并区间",
+  "d": "Medium",
+  "t": "数组,排序,快速排序"
+ },
+ {
+  "slug": "merge-k-sorted-lists",
+  "id": "23",
+  "cn": "合并 K 个升序链表",
+  "d": "Hard",
+  "t": "链表,分治,堆（优先队列）,归并排序,锦标赛排序"
+ },
+ {
+  "slug": "merge-two-sorted-lists",
+  "id": "21",
+  "cn": "合并两个有序链表",
+  "d": "Easy",
+  "t": "递归,链表"
+ },
+ {
+  "slug": "min-stack",
+  "id": "155",
+  "cn": "最小栈",
+  "d": "Medium",
+  "t": "栈,设计"
+ },
+ {
+  "slug": "minimum-path-sum",
+  "id": "64",
+  "cn": "最小路径和",
+  "d": "Medium",
+  "t": "数组,动态规划,矩阵"
+ },
+ {
+  "slug": "minimum-size-subarray-sum",
+  "id": "209",
+  "cn": "长度最小的子数组",
+  "d": "Medium",
+  "t": "数组,二分查找,前缀和,滑动窗口"
+ },
+ {
+  "slug": "minimum-window-substring",
+  "id": "76",
+  "cn": "最小覆盖子串",
+  "d": "Hard",
+  "t": "哈希表,字符串,滑动窗口"
+ },
+ {
+  "slug": "n-queens",
+  "id": "51",
+  "cn": "N 皇后",
+  "d": "Hard",
+  "t": "数组,回溯,X 算法"
+ },
+ {
+  "slug": "network-delay-time",
+  "id": "743",
+  "cn": "网络延迟时间",
+  "d": "Medium",
+  "t": "深度优先搜索,广度优先搜索,图,最短路,Dijkstra 算法,堆（优先队列）"
+ },
+ {
+  "slug": "number-of-islands",
+  "id": "200",
+  "cn": "岛屿数量",
+  "d": "Medium",
+  "t": "深度优先搜索,广度优先搜索,并查集,数组,矩阵"
+ },
+ {
+  "slug": "number-of-provinces",
+  "id": "547",
+  "cn": "省份数量",
+  "d": "Medium",
+  "t": "深度优先搜索,广度优先搜索,并查集,图"
+ },
+ {
+  "slug": "open-the-lock",
+  "id": "752",
+  "cn": "打开转盘锁",
+  "d": "Medium",
+  "t": "广度优先搜索,数组,哈希表,字符串,双向搜索"
+ },
+ {
+  "slug": "pacific-atlantic-water-flow",
+  "id": "417",
+  "cn": "太平洋大西洋水流问题",
+  "d": "Medium",
+  "t": "深度优先搜索,广度优先搜索,数组,矩阵"
+ },
+ {
+  "slug": "palindrome-number",
+  "id": "9",
+  "cn": "回文数",
+  "d": "Easy",
+  "t": "数学"
+ },
+ {
+  "slug": "palindrome-partitioning",
+  "id": "131",
+  "cn": "分割回文串",
+  "d": "Medium",
+  "t": "字符串,动态规划,回溯"
+ },
+ {
+  "slug": "palindromic-substrings",
+  "id": "647",
+  "cn": "回文子串",
+  "d": "Medium",
+  "t": "双指针,字符串,动态规划"
+ },
+ {
+  "slug": "partition-equal-subset-sum",
+  "id": "416",
+  "cn": "分割等和子集",
+  "d": "Medium",
+  "t": "数组,动态规划,背包问题,0-1 背包"
+ },
+ {
+  "slug": "pascals-triangle",
+  "id": "118",
+  "cn": "杨辉三角",
+  "d": "Easy",
+  "t": "数组,动态规划"
+ },
+ {
+  "slug": "path-sum-iii",
+  "id": "437",
+  "cn": "路径总和 III",
+  "d": "Medium",
+  "t": "树,深度优先搜索,二叉树"
+ },
+ {
+  "slug": "perfect-squares",
+  "id": "279",
+  "cn": "完全平方数",
+  "d": "Medium",
+  "t": "广度优先搜索,数学,动态规划,背包问题,完全背包"
+ },
+ {
+  "slug": "permutations",
+  "id": "46",
+  "cn": "全排列",
+  "d": "Medium",
+  "t": "数组,回溯"
+ },
+ {
+  "slug": "powx-n",
+  "id": "50",
+  "cn": "Pow(x, n)",
+  "d": "Medium",
+  "t": "递归,数学"
+ },
+ {
+  "slug": "redundant-connection",
+  "id": "684",
+  "cn": "冗余连接",
+  "d": "Medium",
+  "t": "深度优先搜索,广度优先搜索,并查集,图"
+ },
+ {
+  "slug": "remove-nth-node-from-end-of-list",
+  "id": "19",
+  "cn": "删除链表的倒数第 N 个结点",
+  "d": "Medium",
+  "t": "链表,双指针"
+ },
+ {
+  "slug": "reverse-integer",
+  "id": "7",
+  "cn": "整数反转",
+  "d": "Medium",
+  "t": "数学"
+ },
+ {
+  "slug": "reverse-linked-list",
+  "id": "206",
+  "cn": "反转链表",
+  "d": "Easy",
+  "t": "递归,链表"
+ },
+ {
+  "slug": "reverse-linked-list-ii",
+  "id": "92",
+  "cn": "反转链表 II",
+  "d": "Medium",
+  "t": "链表"
+ },
+ {
+  "slug": "reverse-nodes-in-k-group",
+  "id": "25",
+  "cn": "K 个一组翻转链表",
+  "d": "Hard",
+  "t": "递归,链表"
+ },
+ {
+  "slug": "reverse-string",
+  "id": "344",
+  "cn": "反转字符串",
+  "d": "Easy",
+  "t": "双指针,字符串"
+ },
+ {
+  "slug": "reverse-words-in-a-string",
+  "id": "151",
+  "cn": "反转字符串中的单词",
+  "d": "Medium",
+  "t": "双指针,字符串"
+ },
+ {
+  "slug": "rotate-array",
+  "id": "189",
+  "cn": "轮转数组",
+  "d": "Medium",
+  "t": "数组,数学,双指针"
+ },
+ {
+  "slug": "rotate-image",
+  "id": "48",
+  "cn": "旋转图像",
+  "d": "Medium",
+  "t": "数组,数学,矩阵"
+ },
+ {
+  "slug": "rotting-oranges",
+  "id": "994",
+  "cn": "腐烂的橘子",
+  "d": "Medium",
+  "t": "广度优先搜索,数组,矩阵"
+ },
+ {
+  "slug": "search-in-rotated-sorted-array",
+  "id": "33",
+  "cn": "搜索旋转排序数组",
+  "d": "Medium",
+  "t": "数组,二分查找"
+ },
+ {
+  "slug": "search-insert-position",
+  "id": "35",
+  "cn": "搜索插入位置",
+  "d": "Easy",
+  "t": "数组,二分查找"
+ },
+ {
+  "slug": "set-matrix-zeroes",
+  "id": "73",
+  "cn": "矩阵置零",
+  "d": "Medium",
+  "t": "数组,哈希表,矩阵"
+ },
+ {
+  "slug": "single-number",
+  "id": "136",
+  "cn": "只出现一次的数字",
+  "d": "Easy",
+  "t": "位运算,数组"
+ },
+ {
+  "slug": "single-number-ii",
+  "id": "137",
+  "cn": "只出现一次的数字 II",
+  "d": "Medium",
+  "t": "位运算,数组"
+ },
+ {
+  "slug": "sliding-window-maximum",
+  "id": "239",
+  "cn": "滑动窗口最大值",
+  "d": "Hard",
+  "t": "队列,数组,滑动窗口,单调队列,堆（优先队列）,区间最值查询"
+ },
+ {
+  "slug": "sort-list",
+  "id": "148",
+  "cn": "排序链表",
+  "d": "Medium",
+  "t": "链表,双指针,分治,排序,归并排序"
+ },
+ {
+  "slug": "spiral-matrix",
+  "id": "54",
+  "cn": "螺旋矩阵",
+  "d": "Medium",
+  "t": "数组,矩阵,模拟"
+ },
+ {
+  "slug": "sqrtx",
+  "id": "69",
+  "cn": "x 的平方根 ",
+  "d": "Easy",
+  "t": "数学,二分查找,牛顿迭代法"
+ },
+ {
+  "slug": "subarray-sum-equals-k",
+  "id": "560",
+  "cn": "和为 K 的子数组",
+  "d": "Medium",
+  "t": "数组,哈希表,前缀和"
+ },
+ {
+  "slug": "subsets",
+  "id": "78",
+  "cn": "子集",
+  "d": "Medium",
+  "t": "位运算,数组,回溯"
+ },
+ {
+  "slug": "surrounded-regions",
+  "id": "130",
+  "cn": "被围绕的区域",
+  "d": "Medium",
+  "t": "深度优先搜索,广度优先搜索,并查集,数组,矩阵"
+ },
+ {
+  "slug": "swap-nodes-in-pairs",
+  "id": "24",
+  "cn": "两两交换链表中的节点",
+  "d": "Medium",
+  "t": "递归,链表"
+ },
+ {
+  "slug": "symmetric-tree",
+  "id": "101",
+  "cn": "对称二叉树",
+  "d": "Easy",
+  "t": "树,深度优先搜索,广度优先搜索,二叉树"
+ },
+ {
+  "slug": "target-sum",
+  "id": "494",
+  "cn": "目标和",
+  "d": "Medium",
+  "t": "数组,动态规划,回溯,背包问题,0-1 背包"
+ },
+ {
+  "slug": "top-k-frequent-elements",
+  "id": "347",
+  "cn": "前 K 个高频元素",
+  "d": "Medium",
+  "t": "数组,哈希表,分治,桶排序,计数,快速选择,排序,堆（优先队列）"
+ },
+ {
+  "slug": "trapping-rain-water",
+  "id": "42",
+  "cn": "接雨水",
+  "d": "Hard",
+  "t": "栈,数组,双指针,动态规划,单调栈"
+ },
+ {
+  "slug": "unique-paths",
+  "id": "62",
+  "cn": "不同路径",
+  "d": "Medium",
+  "t": "数学,动态规划,组合数学"
+ },
+ {
+  "slug": "valid-parentheses",
+  "id": "20",
+  "cn": "有效的括号",
+  "d": "Easy",
+  "t": "栈,字符串,括号序列"
+ },
+ {
+  "slug": "validate-binary-search-tree",
+  "id": "98",
+  "cn": "验证二叉搜索树",
+  "d": "Medium",
+  "t": "树,深度优先搜索,二叉搜索树,二叉树"
+ },
+ {
+  "slug": "word-break",
+  "id": "139",
+  "cn": "单词拆分",
+  "d": "Medium",
+  "t": "字典树,记忆化,数组,哈希表,字符串,动态规划,Brute-Force Search"
+ },
+ {
+  "slug": "word-ladder",
+  "id": "127",
+  "cn": "单词接龙",
+  "d": "Hard",
+  "t": "广度优先搜索,哈希表,字符串,双向搜索"
+ },
+ {
+  "slug": "word-search",
+  "id": "79",
+  "cn": "单词搜索",
+  "d": "Medium",
+  "t": "深度优先搜索,数组,字符串,回溯,矩阵"
+ }
+]

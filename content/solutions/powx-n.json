@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "循环乘 n 次（含负数指数处理）",
+      "idea": "实现 `x` 的 `n` 次幂。最直接的想法：循环乘 n 次。\n\n**但这题有两个必须处理的陷阱，比算法本身更重要：**\n\n**陷阱一：n 可能是负数。** `x^(-n) = 1 / x^n`。所以要先取绝对值，最后取倒数。**但 `n = Integer.MIN_VALUE` 时 `-n` 会溢出**（MIN_VALUE 取负还是 MIN_VALUE，因为补码范围不对称）。**必须先把 n 转成 `long`。** 这是本题最著名的坑。\n\n**陷阱二：n = 0 返回 1。** 包括 `0^0 = 1`（数学上有争议，但编程约定是 1）。\n\n**为什么这算暴力？** O(|n|)，n 可达 2^31，**绝对超时**。力扣本题 n 范围是 `[-2^31, 2^31 - 1]`，线性循环要跑 20 亿次。\n\n**但这一版必须写，因为它把两个边界陷阱暴露出来。** 记住：**写快速幂之前，先把「负数 + MIN_VALUE」处理对，否则后面再快也是错的。**\n\n坑：\n1. **n 转 long 再取负**；\n2. n = 0 返回 1；\n3. `x = 0, n < 0` 数学上无意义（力扣保证不会给）。",
+      "pseudocode": "输入：底数 x，指数 n\n输出：x 的 n 次幂\n\n1. 如果 n 小于 0：return 1 除以 (x 的 (负 n) 次幂)\n2. res = 1\n3. 对 i 从 1 到 n：res = res 乘 x\n4. return res\n\n负数指数要先取倒数，但 n 等于最小整数时取负会溢出，必须用 long\n线性循环 O(|n|)，n 可达二十亿会超时\n复杂度：时间 O(|n|)；空间 O(1)",
+      "codeJava": "class Solution {\n    public double myPow(double x, int n) {\n        long N = n;\n        if (N < 0) return 1.0 / powLinear(x, -N);\n        return powLinear(x, N);\n    }\n\n    private double powLinear(double x, long n) {\n        double res = 1.0;\n        for (long i = 0; i < n; i++) res *= x;\n        return res;\n    }\n}",
+      "timeComplexity": "O(|n|)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "better",
+      "title": "递归快速幂：每次把指数减半",
+      "idea": "核心思想：**`x^n = (x^(n/2))^2`。** 每次把指数减半，所以只需要 O(log n) 次乘法。\n\n**递归写法（最简单）：**\n```\nif (n == 0) return 1.0;\ndouble half = pow(x, n / 2);\nif (n % 2 == 0) return half * half;\nreturn half * half * x;   // 奇数多乘一个 x\n```\n\n**为什么只递归一次而不是两次？** 因为 `half = pow(x, n/2)` 只算一次，然后平方。**如果写成 `pow(x, n/2) * pow(x, n/2)` 就是两次递归，退化成 O(n)。** 这是分治里最常见的性能陷阱。\n\n**为什么要单独处理奇数？** 因为 `n/2` 向下取整，`n=5` 时 `5/2=2`，`(x^2)^2 = x^4`，还差一个 `x`。**所以奇数要补乘一次。**\n\n**Java 的 `n % 2` 对负数返回 -1 而不是 1**，所以**要在递归入口就把负数处理掉**（转成正指数）。否则 `n % 2 == 1` 的判断对负奇数失效。\n\n**为什么还只是「较好」？** 因为递归深度是 O(log n)（约 31 层），虽然不爆栈，但**有函数调用开销**，而且用了 O(log n) 的栈空间。**迭代版能做到 O(1) 空间。**\n\n坑：\n1. **n 先转 long 再取负**；\n2. 负数转正后再递归；\n3. `half` 只算一次，**不要写两遍递归**；\n4. 奇数时多乘一次 `x`。",
+      "pseudocode": "输入：x，n\n输出：x 的 n 次幂\n\n1. N = n 转成 long\n2. 如果 N 小于 0：return 1 除以 fastPow(x, 负 N)\n3. return fastPow(x, N)\n\nfastPow(x, n)：\n4. 如果 n 等于 0：return 1.0\n5. half = fastPow(x, n 除以 2)            // 只递归一次\n6. 如果 n 是偶数：return half 乘 half\n7. 否则：return half 乘 half 乘 x\n\n每次指数减半，只需 O(log n) 次乘法\nhalf 必须只算一次，写两次递归就退化成 O(n)\n复杂度：时间 O(log n)；空间 O(log n)",
+      "codeJava": "class Solution {\n    public double myPow(double x, int n) {\n        long N = n;\n        if (N < 0) return 1.0 / fastPow(x, -N);\n        return fastPow(x, N);\n    }\n\n    private double fastPow(double x, long n) {\n        if (n == 0) return 1.0;\n        double half = fastPow(x, n / 2);\n        if (n % 2 == 0) return half * half;\n        return half * half * x;\n    }\n}",
+      "timeComplexity": "O(log n)",
+      "spaceComplexity": "O(log n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "迭代快速幂：二进制拆分，O(1) 空间",
+      "idea": "把指数 `n` 看成二进制，**每一位对应一个「平方」的动作，位为 1 就乘进结果。**\n\n```\nwhile (n > 0) {\n    if ((n & 1) == 1) res *= base;   // 这一位是 1，把当前 base 乘进结果\n    base *= base;                     // base 平方，对应下一位\n    n >>= 1;                          // 指数右移一位\n}\n```\n\n**为什么这等于快速幂？** 因为 `x^n` 可以按二进制展开：\n`x^13 = x^(1101₂) = x^8 · x^4 · x^1`\n\n**循环里 `base` 依次是 `x^1, x^2, x^4, x^8...`**，每次平方。**位为 1 时就把它乘进 `res`。** 这正好把「指数减半」翻译成了「指数右移」。\n\n**为什么这是最优？**\n- 时间 O(log n)：循环次数等于 n 的二进制位数，约 31 次；\n- 空间 O(1)：没有递归栈。\n\n**这个「二进制拆分」的思想覆盖面极广：**\n- 快速幂取模（LeetCode 372 题）；\n- 矩阵快速幂（求斐波那契第 n 项，O(log n)）；\n- 快速乘（防溢出的乘法）；\n- **任何满足结合律的运算，都能用这个套路加速到 O(log n)。**\n\n**面试时如果被追问「为什么不用递归」，就答：** 递归有 O(log n) 栈空间和函数调用开销，迭代版空间 O(1)、常数更小。**同时指出两者时间复杂度相同，选择是工程取舍。**\n\n坑：\n1. **`long n` 而不是 `int`**（防 MIN_VALUE 溢出）；\n2. `res` 初值 1.0（不是 x）；\n3. **`base *= base` 要在 `if` 外面**，每次循环都要平方；\n4. `n >>= 1` 用 long 的移位，安全。",
+      "pseudocode": "输入：x，n\n输出：x 的 n 次幂\n\n1. N = n 转成 long；res = 1.0；base = x\n2. 如果 N 小于 0：base = 1 除以 x；N = 负 N\n3. 当 N 大于 0 循环：\n     如果 (N 位与 1) 等于 1：res = res 乘 base\n     base = base 乘 base                  // 平方，对应二进制下一位\n     N = N 右移 1 位\n4. return res\n\n指数二进制展开，base 依次是 x、x 平方、x 四次方，位为 1 就乘进结果\n所有满足结合律的运算都能用这个套路加速到 O(log n)\n复杂度：时间 O(log n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public double myPow(double x, int n) {\n        long N = n;\n        double res = 1.0;\n        double base = x;\n        if (N < 0) {\n            base = 1.0 / x;\n            N = -N;\n        }\n\n        while (N > 0) {\n            if ((N & 1) == 1) res *= base;\n            base *= base;\n            N >>= 1;\n        }\n        return res;\n    }\n}",
+      "timeComplexity": "O(log n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

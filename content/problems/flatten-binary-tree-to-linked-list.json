@@ -1,0 +1,49 @@
+{
+  "slug": "flatten-binary-tree-to-linked-list",
+  "frontendId": "114",
+  "titleEn": "Flatten Binary Tree to Linked List",
+  "titleCn": "二叉树展开为链表",
+  "difficulty": "Medium",
+  "tags": "栈,树,深度优先搜索,链表,二叉树",
+  "contentHtml": "<p>Given the <code>root</code> of a binary tree, flatten the tree into a &quot;linked list&quot;:</p>\n\n<ul>\n\t<li>The &quot;linked list&quot; should use the same <code>TreeNode</code> class where the <code>right</code> child pointer points to the next node in the list and the <code>left</code> child pointer is always <code>null</code>.</li>\n\t<li>The &quot;linked list&quot; should be in the same order as a <a href=\"https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR\" target=\"_blank\"><strong>pre-order</strong><strong> traversal</strong></a> of the binary tree.</li>\n</ul>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2021/01/14/flaten.jpg\" />\n<pre>\n<strong>Input:</strong> root = [1,2,5,3,4,null,6]\n<strong>Output:</strong> [1,null,2,null,3,null,4,null,5,null,6]\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> root = []\n<strong>Output:</strong> []\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> root = [0]\n<strong>Output:</strong> [0]\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li>The number of nodes in the tree is in the range <code>[0, 2000]</code>.</li>\n\t<li><code>-100 &lt;= Node.val &lt;= 100</code></li>\n</ul>\n\n<p>&nbsp;</p>\n<strong>Follow up:</strong> Can you flatten the tree in-place (with <code>O(1)</code> extra space)?",
+  "contentCnHtml": "<p>给你二叉树的根结点 <code>root</code> ，请你将它展开为一个单链表：</p>\n\n<ul>\n\t<li>展开后的单链表应该同样使用 <code>TreeNode</code> ，其中 <code>right</code> 子指针指向链表中下一个结点，而左子指针始终为 <code>null</code> 。</li>\n\t<li>展开后的单链表应该与二叉树 <a href=\"https://baike.baidu.com/item/%E5%85%88%E5%BA%8F%E9%81%8D%E5%8E%86/6442839?fr=aladdin\" target=\"_blank\"><strong>先序遍历</strong></a> 顺序相同。</li>\n</ul>\n\n<p><strong>示例 1：</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2021/01/14/flaten.jpg\" />\n<pre>\n<strong>输入：</strong>root = [1,2,5,3,4,null,6]\n<strong>输出：</strong>[1,null,2,null,3,null,4,null,5,null,6]\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>root = []\n<strong>输出：</strong>[]\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>root = [0]\n<strong>输出：</strong>[0]\n</pre>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li>树中结点数在范围 <code>[0, 2000]</code> 内</li>\n\t<li><code>-100 <= Node.val <= 100</code></li>\n</ul>\n\n<p><strong>进阶：</strong>你可以使用原地算法（<code>O(1)</code> 额外空间）展开这棵树吗？</p>",
+  "javaTemplate": "/**\n * Definition for a binary tree node.\n * public class TreeNode {\n *     int val;\n *     TreeNode left;\n *     TreeNode right;\n *     TreeNode() {}\n *     TreeNode(int val) { this.val = val; }\n *     TreeNode(int val, TreeNode left, TreeNode right) {\n *         this.val = val;\n *         this.left = left;\n *         this.right = right;\n *     }\n * }\n */\nclass Solution {\n    public void flatten(TreeNode root) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "flatten-binary-tree-to-linked-list",
+      "tier": "brute",
+      "title": "前序遍历收集 · 按顺序重连右指针",
+      "idea": "题目要求把树「原地」展开成一条只走右指针的链，且顺序必须是**前序遍历顺序**。那就最直接：先做一次前序遍历把所有节点按顺序装进列表，然后再从头到尾把 `right` 指针串起来、`left` 全部置空。\n\n为什么这一定对？因为展开后的链序列就是前序序列，这是题目的定义。先拿到正确顺序，再重建结构，两步都无歧义。\n\n为什么不够好？它需要 O(n) 的额外空间存整个列表，而题目其实允许原地做。这是本题被列为中等的原因——谁都能想到这个解法，但「原地」两个字是真正的难点。\n\n为什么值得先写？两个价值：\n1. 它把「展开后的顺序 = 前序」这个**语义锚点**钉死了。后面两个原地解法都是在不破坏这个顺序的前提下省空间，没有这个锚点就会写乱；\n2. 它是唯一在「树节点结构复杂、原地改写风险高」时可靠的保底方案——工程里如果允许额外内存，用这个反而更安全。\n\n坑：重连时必须**先把所有 left 置空**，否则会出现左指针成环的情况——力扣判题器会报「循环结构」而不是答案错误，很难排查。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：root\n输出：无（原地修改）\n\n1. list = 空列表\n2. preorder(node)：\n     如果 node 为空：return\n     list 追加 node\n     preorder(node.left)\n     preorder(node.right)\n3. preorder(root)\n4. 对 list 里每个 i 从 0 到 长度减 2：\n     list[i].left  = null            // 必须置空，否则左指针成环\n     list[i].right = list[i + 1]\n5. 如果 list 不为空：\n     list 最后一个节点.left  = null\n     list 最后一个节点.right = null\n\n关键：展开后的顺序 = 前序遍历顺序\n坑：left 必须置空，否则判题器报循环结构\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public void flatten(TreeNode root) {\n        List<TreeNode> list = new ArrayList<>();\n        preorder(root, list);\n\n        for (int i = 0; i < list.size() - 1; i++) {\n            TreeNode node = list.get(i);\n            node.left = null;              // 必须置空，否则成环\n            node.right = list.get(i + 1);\n        }\n        if (!list.isEmpty()) {\n            TreeNode last = list.get(list.size() - 1);\n            last.left = null;\n            last.right = null;\n        }\n    }\n\n    private void preorder(TreeNode node, List<TreeNode> list) {\n        if (node == null) return;\n        list.add(node);\n        preorder(node.left, list);\n        preorder(node.right, list);\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "flatten-binary-tree-to-linked-list",
+      "tier": "better",
+      "title": "后序递归 · 返回链尾指针",
+      "idea": "想省掉列表，就得在递归中直接拼接。关键难点是：把左子树展开成链之后，**必须知道这条链的尾巴在哪**，才能把右子树挂上去。如果每次都用 `while` 一路找尾巴，最坏会退化成 O(n²)（斜树时每个节点都扫一遍）。\n\n解法：让递归函数**返回本子树展开后的尾节点**。于是：\n1. 先把左右子树分别展开（后序，因为展开完才知道尾巴）；\n2. 记住 `left` 和 `right`；\n3. `root.left = null; root.right = left;`\n4. 把右子树挂到左链的尾部：`leftTail.right = right;`\n5. 返回本子树的尾巴：右子树非空则返回 `rightTail`，否则返回 `leftTail`，都没有则返回 `root` 自己。\n\n为什么这一定对？因为展开操作对所有节点是同一件事，后序能保证子树先变成合法链，父节点只需做一次「拼接」。\n\n相比列表版改了什么？把 O(n) 的辅助空间降到 O(h)（只有递归栈），时间还是 O(n)。\n\n坑：\n1. 第 5 步的返回值必须严格按「右尾 > 左尾 > 自己」的优先级判断，写错会挂错链；\n2. `root.left = null` 要在取完 `left` 变量之后，否则拿不到；\n3. 递归版有 O(h) 栈空间，斜树时 h = n，仍有爆栈风险（下一版解决）。\n\n复杂度 O(n) 时间，O(h) 空间。",
+      "pseudocode": "输入：root\n输出：无（原地修改）\n\nflatten 主流程：\n  如果 root 不为空：flattenTree(root)\n\nflattenTree(node)：返回本子树展开后的尾节点\n  如果 node 为空：return null\n  leftTail  = flattenTree(node.left)\n  rightTail = flattenTree(node.right)\n  left  = node.left\n  right = node.right\n  如果 left 不为空：\n     node.left  = null\n     node.right = left\n     leftTail.right = right      // 右子树接到左链尾巴\n  如果 rightTail 不为空：return rightTail\n  如果 leftTail  不为空：return leftTail\n  return node\n\n返回尾指针，避免每次 while 找尾造成 O(n²)\n坑：返回值优先级是 右尾 > 左尾 > 自己\n复杂度：时间 O(n)；空间 O(h)",
+      "codeJava": "class Solution {\n    public void flatten(TreeNode root) {\n        if (root != null) flattenTree(root);\n    }\n\n    // 返回本子树展开成链之后的尾节点\n    private TreeNode flattenTree(TreeNode node) {\n        if (node == null) return null;\n\n        TreeNode leftTail = flattenTree(node.left);\n        TreeNode rightTail = flattenTree(node.right);\n\n        TreeNode left = node.left;\n        TreeNode right = node.right;\n\n        if (left != null) {\n            node.left = null;\n            node.right = left;\n            leftTail.right = right;   // 右子树接到左链尾部\n        }\n\n        if (rightTail != null) return rightTail;\n        if (leftTail != null) return leftTail;\n        return node;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(h)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "flatten-binary-tree-to-linked-list",
+      "tier": "optimal",
+      "title": "迭代就地改写 · 把右子树挂到左子树最右端",
+      "idea": "这版是本题的真正答案：**O(1) 额外空间，零递归**。\n\n核心观察：对任意节点 `cur`，如果它有左子树，那么展开后「左子树的所有节点」必须全部排在「右子树」前面，而左子树展开后的最后一个节点（**左子树的最右节点**）就是接缝。所以：\n1. 找到 `cur.left` 的最右节点 `pre`；\n2. 把 `cur.right` 整段挂到 `pre.right` 上；\n3. 把 `cur.left` 挪到 `cur.right`，`cur.left = null`；\n4. `cur = cur.right` 继续。\n\n为什么这一定对？因为这四步做完后，从 `cur` 出发的右链顺序恰好变成「cur → 左子树全体（前序） → 右子树全体」，正是前序。**每处理一个节点，就把它的左子树「插队」到右子树前面**。\n\n为什么这算最优？\n- **空间 O(1)**：没有递归栈、没有列表，只用了几个指针变量。这是本题的天花板；\n- 时间仍是 O(n)：注意内层 `while` 看起来可能重复扫描，但每条边只会被「找最右」访问一次——这是摊还分析，不是 O(n²)。**这个摊还证明要能讲出来**，否则面试官会以为你写了个 O(n²)。\n\n相比递归版改了什么？把 O(h) 的递归栈彻底消掉，斜树时也不会爆栈。\n\n坑：\n1. 内层 while 的终止条件是 `pre.right != null`（不是 `pre != null`）；\n2. 顺序不能乱：必须先找到 `pre`，再挂 `cur.right`，最后才改 `cur.right`；\n3. 每个节点处理完必须 `cur.left = null`，否则成环。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：root\n输出：无（原地修改）\n\n1. cur = root\n2. 当 cur 不为空 循环：\n     如果 cur.left 为空：\n        cur = cur.right            // 已经只有右链，直接前进\n        继续下一轮\n     pre = cur.left\n     当 pre.right 不为空：pre = pre.right    // 找左子树最右节点\n     pre.right = cur.right                  // 右子树整段挂到接缝\n     cur.right = cur.left                   // 左子树插队到右边\n     cur.left  = null                       // 必须置空\n     cur = cur.right\n3. 结束\n\n本质：每处理一个节点，把左子树插队到右子树前面\n内层 while 是摊还 O(1)，总时间仍是 O(n)\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public void flatten(TreeNode root) {\n        TreeNode cur = root;\n        while (cur != null) {\n            if (cur.left == null) {\n                cur = cur.right;      // 只有右链，直接前进\n                continue;\n            }\n            // 找左子树的最右节点，它就是接缝\n            TreeNode pre = cur.left;\n            while (pre.right != null) pre = pre.right;\n\n            pre.right = cur.right;    // 右子树整段挂到接缝后面\n            cur.right = cur.left;     // 左子树插队到右边\n            cur.left = null;          // 必须置空，否则成环\n\n            cur = cur.right;\n        }\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

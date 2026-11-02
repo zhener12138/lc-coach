@@ -1,0 +1,30 @@
+server:
+  port: 8099
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/lccoach;MODE=MySQL;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: never
+  jackson:
+    default-property-inclusion: non_null
+  web:
+    resources:
+      # 磁盘 static/ 优先，jar 内 classpath 兜底
+      # 作用：改 static/*.js|css|html 后刷新浏览器即生效，不用重新打包重启
+      static-locations: file:./static/,classpath:/static/
+      cache:
+        period: 0
+
+logging:
+  level:
+    root: WARN
+    com.lc: INFO

@@ -1,0 +1,49 @@
+{
+  "slug": "house-robber",
+  "frontendId": "198",
+  "titleEn": "House Robber",
+  "titleCn": "打家劫舍",
+  "difficulty": "Medium",
+  "tags": "数组,动态规划",
+  "contentHtml": "<p>You are a professional robber planning to rob houses along a street. Each house has a certain amount of money stashed, the only constraint stopping you from robbing each of them is that adjacent houses have security systems connected and <b>it will automatically contact the police if two adjacent houses were broken into on the same night</b>.</p>\n\n<p>Given an integer array <code>nums</code> representing the amount of money of each house, return <em>the maximum amount of money you can rob tonight <b>without alerting the police</b></em>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [1,2,3,1]\n<strong>Output:</strong> 4\n<strong>Explanation:</strong> Rob house 1 (money = 1) and then rob house 3 (money = 3).\nTotal amount you can rob = 1 + 3 = 4.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [2,7,9,3,1]\n<strong>Output:</strong> 12\n<strong>Explanation:</strong> Rob house 1 (money = 2), rob house 3 (money = 9) and rob house 5 (money = 1).\nTotal amount you can rob = 2 + 9 + 1 = 12.\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 100</code></li>\n\t<li><code>0 &lt;= nums[i] &lt;= 400</code></li>\n</ul>",
+  "contentCnHtml": "<p>你是一个专业的小偷，计划偷窃沿街的房屋。每间房内都藏有一定的现金，影响你偷窃的唯一制约因素就是相邻的房屋装有相互连通的防盗系统，<strong>如果两间相邻的房屋在同一晚上被小偷闯入，系统会自动报警</strong>。</p>\n\n<p>给定一个代表每个房屋存放金额的非负整数数组，计算你<strong> 不触动警报装置的情况下 </strong>，一夜之内能够偷窃到的最高金额。</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>[1,2,3,1]\n<strong>输出：</strong>4\n<strong>解释：</strong>偷窃 1 号房屋 (金额 = 1) ，然后偷窃 3 号房屋 (金额 = 3)。\n     偷窃到的最高金额 = 1 + 3 = 4 。</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>[2,7,9,3,1]\n<strong>输出：</strong>12\n<strong>解释：</strong>偷窃 1 号房屋 (金额 = 2), 偷窃 3 号房屋 (金额 = 9)，接着偷窃 5 号房屋 (金额 = 1)。\n     偷窃到的最高金额 = 2 + 9 + 1 = 12 。\n</pre>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 <= nums.length <= 100</code></li>\n\t<li><code>0 <= nums[i] <= 400</code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int rob(int[] nums) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "house-robber",
+      "tier": "brute",
+      "title": "递归枚举偷或不偷",
+      "idea": "每间房都有两种选择：偷，或者不偷。**相邻不能同时偷**，所以偷了第 i 间，下一间只能从 i+2 开始考虑。\n\n写成递归：`f(i)` 表示「从第 i 间开始能偷到的最大值」，那么 `f(i) = max(f(i+1), nums[i] + f(i+2))`。前一项是不偷这间，后一项是偷这间然后跳过下一间。\n\n**这个「选或不选」的二叉展开是最本质的模型。** 你第一次面对这种题时，能想到这棵树就已经赢了一半——因为所有的优化都只是在剪这棵树。\n\n但直接递归会指数爆炸：`f(i)` 被 `f(i-1)` 和 `f(i-2)` 同时调用，同一子树重复展开。n=30 时就已经卡住了。\n\n**为什么很多人写错？** 常见错误是写成 `f(i) = max(f(i-1), nums[i] + f(i-1))`——没有把「偷了就要跳一间」体现出来。**关键点是偷了之后隔一间，不是隔一个值。**\n\n坑：\n1. 边界是 `i >= n` 时返回 0；\n2. `nums[i] + f(i+2)` 里的 i+2 不能写成 i+1；\n3. 数组可能有 0 元素，但要处理 n=0。",
+      "pseudocode": "输入：每间房的钱 nums\n输出：能偷到的最大金额\n\n1. return f(0)\n\nf(i)：从第 i 间开始能偷到的最大金额\n2. 如果 i 大于等于 nums 长度：return 0\n3. 不偷这间 = f(i 加 1)\n4. 偷这间 = nums 取 i 加 f(i 加 2)      // 偷了要隔一间\n5. return max(不偷, 偷)\n\n「偷了要隔一间」是最容易写错的地方，是 i 加 2 不是 i 加 1\n复杂度：时间 O(2 的 n 次方)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int rob(int[] nums) {\n        return f(nums, 0);\n    }\n\n    private int f(int[] nums, int i) {\n        if (i >= nums.length) return 0;\n        int skip = f(nums, i + 1);\n        int take = nums[i] + f(nums, i + 2);\n        return Math.max(skip, take);\n    }\n}",
+      "timeComplexity": "O(2ⁿ)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "house-robber",
+      "tier": "better",
+      "title": "记忆化再升级成数组递推",
+      "idea": "上一版的重复计算很明显：`f(i)` 只取决于 `i`，存下来就行。但这里我想直接跳到**自底向上的数组版**，因为它的思维更接近后面所有 DP 题的标准写法。\n\n定义 `dp[i]` 表示「考虑前 i 间房（即下标 0 到 i-1）能偷到的最大值」。转移有两种情况：\n- 不偷第 i-1 间：答案是 `dp[i-1]`；\n- 偷第 i-1 间：答案是 `nums[i-1] + dp[i-2]`。\n\n取较大者。边界是 `dp[0] = 0`（零间房，偷 0）、`dp[1] = nums[0]`（一间房，只能偷它）。\n\n**为什么自底向上比记忆化好？** 两点：\n- 没有递归栈，n 再大也不会栈溢出；\n- 遍历顺序天然是 0 到 n，CPU 缓存友好，常数更小。\n\n**为什么它还不算最优？** 用了 O(n) 的数组，而 `dp[i]` 只依赖 `dp[i-1]` 和 `dp[i-2]`——和爬楼梯完全一样，可以滚动成两个变量。\n\n坑：\n1. `dp` 长度是 n+1，下标 0 是空集状态，不要搞混；\n2. `dp[i-2]` 在 `i=1` 时会越界，所以循环从 i=2 开始（i=1 单独处理或让 dp[0]=0 兜住）；\n3. 数组为空时要返回 0。",
+      "pseudocode": "输入：每间房的钱 nums\n输出：最大金额\n\n1. n = nums 长度；如果 n 等于 0：return 0\n2. dp = 长度 n 加 1 的数组\n3. dp[0] = 0；dp[1] = nums[0]\n4. 对 i 从 2 到 n：\n     dp[i] = max(dp[i 减 1], nums[i 减 1] 加 dp[i 减 2])\n5. return dp[n]\n\ndp[i] 表示考虑前 i 间房的最大金额，下标 0 是空集\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int rob(int[] nums) {\n        int n = nums.length;\n        if (n == 0) return 0;\n        int[] dp = new int[n + 1];\n        dp[0] = 0;\n        dp[1] = nums[0];\n        for (int i = 2; i <= n; i++) {\n            dp[i] = Math.max(dp[i - 1], nums[i - 1] + dp[i - 2]);\n        }\n        return dp[n];\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "house-robber",
+      "tier": "optimal",
+      "title": "两个变量滚动，空间 O(1)",
+      "idea": "转移方程 `dp[i] = max(dp[i-1], nums[i-1] + dp[i-2])` 里只有 `dp[i-1]` 和 `dp[i-2]` 两个历史值。所以整个数组可以压成两个变量。\n\n记号：`prev2` 相当于 `dp[i-2]`，`prev1` 相当于 `dp[i-1]`。每轮算 `cur = max(prev1, nums[i-1] + prev2)`，然后滚动 `prev2 = prev1; prev1 = cur;`。\n\n**初始化很关键，也是这题最常见的错点：**\n- `prev2 = 0`（dp[0]，零间房）\n- `prev1 = 0`（dp[-1] 的占位，理解为「还没开始」）\n\n然后循环 i 从 1 到 n，用 `nums[i-1]`。这样第一轮就是 `max(0, nums[0] + 0) = nums[0]`，天然正确，**不需要单独处理 dp[1]**。这是比上一版更干净的初始化——把边界吸收进循环。\n\n**这个技巧叫「滚动变量」或「状态压缩」**，适用于所有转移只依赖固定前 k 项的 DP：爬楼梯、最大子数组和、股票系列、打家劫舍系列都是它。**看到递推式右边只有几个固定下标，就该条件反射地想到它。**\n\n坑：\n1. 必须先算 `cur` 再滚动，顺序反了会丢值；\n2. 数组为空时循环不执行，返回 prev1=0，正确；\n3. `nums[i-1]` 的下标偏移别写错（因为 i 是 1-based 而 nums 是 0-based）。",
+      "pseudocode": "输入：每间房的钱 nums\n输出：最大金额\n\n1. prev2 = 0                            // 相当于 dp[i 减 2]\n2. prev1 = 0                            // 相当于 dp[i 减 1]\n3. 对 i 从 1 到 nums 长度：\n     cur = max(prev1, nums 取 i 减 1 加 prev2)\n     prev2 = prev1\n     prev1 = cur\n4. return prev1\n\n初始全 0 让第一轮自然得出 nums[0]，边界被吸收进循环\n必须先算 cur 再滚动，顺序反了会丢值\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int rob(int[] nums) {\n        int prev2 = 0;\n        int prev1 = 0;\n        for (int i = 1; i <= nums.length; i++) {\n            int cur = Math.max(prev1, nums[i - 1] + prev2);\n            prev2 = prev1;\n            prev1 = cur;\n        }\n        return prev1;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

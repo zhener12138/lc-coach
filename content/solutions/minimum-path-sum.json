@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "递归枚举所有路径",
+      "idea": "从左上角到右下角，只能右或下，求路径上数字和的最小值。递推很直接：`f(i,j) = grid[i][j] + min(f(i+1,j), f(i,j+1))`，边界是走到最后一行或最后一列时只能一直走到底。\n\n**这题和「不同路径」是同一副骨架，只换了聚合方式：**\n- 不同路径问「有多少条」，聚合是加法；\n- 最小路径和问「哪条最省」，聚合是取 min。\n\n**看到这个对应关系，你就能意识到「计数类」「最值类」的网格 DP 是同一个模板。** 这也是为什么刷题要按 tag 而不是按题号——同一 tag 里的题，骨架往往只差一个运算符。\n\n为什么暴力慢？因为每个格子被多条路径重复到达，递归树指数级。\n\n坑：\n1. 边界不是返回 0，而是「一直走到底的累加和」；\n2. 起点本身也要算进和里；\n3. 只有一行或一列时答案就是那一整行的和。",
+      "pseudocode": "输入：矩阵 grid\n输出：最小路径和\n\n1. m = 行数，n = 列数；return f(0, 0)\n\nf(i, j)：从 (i, j) 到终点的最小和\n2. 如果 i 等于 m 减 1 且 j 等于 n 减 1：return grid[i][j]\n3. 如果 i 等于 m 减 1：return grid[i][j] 加 f(i, j 加 1)\n4. 如果 j 等于 n 减 1：return grid[i][j] 加 f(i 加 1, j)\n5. return grid[i][j] 加 min(f(i 加 1, j), f(i, j 加 1))\n\n和「不同路径」同一副骨架，只把加法换成取 min\n复杂度：时间 指数级；空间 O(m 加 n)",
+      "codeJava": "class Solution {\n    public int minPathSum(int[][] grid) {\n        return f(grid, 0, 0);\n    }\n\n    private int f(int[][] g, int i, int j) {\n        int m = g.length;\n        int n = g[0].length;\n        if (i == m - 1 && j == n - 1) return g[i][j];\n        if (i == m - 1) return g[i][j] + f(g, i, j + 1);\n        if (j == n - 1) return g[i][j] + f(g, i + 1, j);\n        return g[i][j] + Math.min(f(g, i + 1, j), f(g, i, j + 1));\n    }\n}",
+      "timeComplexity": "指数级",
+      "spaceComplexity": "O(m + n)"
+    },
+    {
+      "tier": "better",
+      "title": "二维填表，原地改 grid",
+      "idea": "`dp[i][j]` = 从起点到 `(i,j)` 的最小和。转移 `dp[i][j] = grid[i][j] + min(dp[i-1][j], dp[i][j-1])`。\n\n**这一版做了一件值得学的事：直接复用输入数组当 DP 表。** 因为每个格子只被用一次（算完自己的 dp 值后，`grid[i][j]` 原来的值就再也不需要了），所以完全可以就地覆盖。**这省掉 O(m·n) 的额外空间，而且因为访问的是同一块内存，缓存更友好。**\n\n代价是可读性和副作用：函数会修改入参。力扣的判题方式不介意（每次都是新数据），但在真实项目里这样做会让人困惑。**面试时如果这么做，要主动说一句「这里为了省空间原地修改了输入，如果需要保留原数组应当另开 dp 表」。** 这句话体现的是工程判断，不是抠门。\n\n**边界处理是这题的第二个坑：**\n- 第一行 `dp[0][j] = dp[0][j-1] + grid[0][j]`（只能从左边来）；\n- 第一列 `dp[i][0] = dp[i-1][0] + grid[i][0]`（只能从上边来）。\n\n如果偷懒只写 `min(上方, 左方)`，第一行第一列会访问越界或拿到 0，答案就错了。\n\n坑：\n1. 第一行和第一列要单独累加；\n2. 主循环从 (1,1) 开始；\n3. 原地修改后 `grid[m-1][n-1]` 就是答案。",
+      "pseudocode": "输入：grid（会被原地修改）\n输出：最小路径和\n\n1. m = 行数，n = 列数\n2. 对 j 从 1 到 n 减 1：grid[0][j] = grid[0][j] 加 grid[0][j 减 1]\n3. 对 i 从 1 到 m 减 1：grid[i][0] = grid[i][0] 加 grid[i 减 1][0]\n4. 对 i 从 1 到 m 减 1：\n     对 j 从 1 到 n 减 1：\n        grid[i][j] = grid[i][j] 加 min(grid[i 减 1][j], grid[i][j 减 1])\n5. return grid[m 减 1][n 减 1]\n\n复用输入数组当 DP 表，省 O(m 乘 n) 空间，但有副作用\n复杂度：时间 O(m 乘 n)；空间 O(1) 额外",
+      "codeJava": "class Solution {\n    public int minPathSum(int[][] grid) {\n        int m = grid.length;\n        int n = grid[0].length;\n\n        for (int j = 1; j < n; j++) grid[0][j] += grid[0][j - 1];\n        for (int i = 1; i < m; i++) grid[i][0] += grid[i - 1][0];\n\n        for (int i = 1; i < m; i++) {\n            for (int j = 1; j < n; j++) {\n                grid[i][j] += Math.min(grid[i - 1][j], grid[i][j - 1]);\n            }\n        }\n        return grid[m - 1][n - 1];\n    }\n}",
+      "timeComplexity": "O(m · n)",
+      "spaceComplexity": "O(1) 额外"
+    },
+    {
+      "tier": "optimal",
+      "title": "一维滚动，时间空间双优",
+      "idea": "和「不同路径」完全一样的压缩思路：一维数组 `dp[j]`，逐行更新 `dp[j] = grid[i][j] + min(dp[j], dp[j-1])`。\n\n- `dp[j]` 在更新前是**上一行同列**的值（从上方来）；\n- `dp[j-1]` 是**本行左边**刚更新过的值（从左方来）。\n\n**但这里有个比「不同路径」更微妙的地方：第一行怎么初始化？**\n\n不同路径的第一行全是 1，可以直接 `fill(1)`。但最小路径和的第一行是**前缀和**，必须 `dp[j] = dp[j-1] + grid[0][j]` 逐格累加。**很多人套模板时这里直接露馅**——用 `Arrays.fill(dp, grid[0][0])` 或者干脆不初始化，导致整行算错。\n\n所以正确的初始化是：先把 `dp[0] = grid[0][0]`，然后 j 从 1 到 n-1 做 `dp[j] = dp[j-1] + grid[0][j]`。\n\n**为什么内层 j 必须从小往大？** 和上一题同理：`dp[j-1]` 必须是本行的新值。反了就成了「上方 + 上方左」。\n\n**为什么这是最优？** 时间 O(m·n) 是输出规模的下界（每个格子都要看一遍），空间 O(n) 是压缩后的下界（至少要存一行）。**两头都到底了，优化到此为止。**\n\n坑：\n1. 第一行必须做前缀和，不能 fill 同一个值；\n2. 主循环从 i=1 开始，j 从 1 开始（j=0 每行只需 `dp[0] += grid[i][0]`）；\n3. 注意 `dp[0]` 每行都要更新，它代表本行第一列从上面下来的累加。",
+      "pseudocode": "输入：grid\n输出：最小路径和\n\n1. m = 行数，n = 列数；dp = 长度 n 的数组\n2. dp[0] = grid[0][0]\n3. 对 j 从 1 到 n 减 1：dp[j] = dp[j 减 1] 加 grid[0][j]   // 第一行前缀和\n4. 对 i 从 1 到 m 减 1：\n     dp[0] = dp[0] 加 grid[i][0]                        // 本行第一列\n     对 j 从 1 到 n 减 1：\n        dp[j] = grid[i][j] 加 min(dp[j], dp[j 减 1])\n5. return dp[n 减 1]\n\n第一行必须做前缀和，不能像「不同路径」那样直接 fill\n这是套模板时最容易露馅的地方\n复杂度：时间 O(m 乘 n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int minPathSum(int[][] grid) {\n        int m = grid.length;\n        int n = grid[0].length;\n        int[] dp = new int[n];\n\n        dp[0] = grid[0][0];\n        for (int j = 1; j < n; j++) dp[j] = dp[j - 1] + grid[0][j];\n\n        for (int i = 1; i < m; i++) {\n            dp[0] += grid[i][0];\n            for (int j = 1; j < n; j++) {\n                dp[j] = grid[i][j] + Math.min(dp[j], dp[j - 1]);\n            }\n        }\n        return dp[n - 1];\n    }\n}",
+      "timeComplexity": "O(m · n)",
+      "spaceComplexity": "O(n)"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "枚举所有柱子对 · 算面积取最大",
+      "idea": "容器能装多少水，取决于「两块板中较矮的那块」和「两块板之间的距离」。所以面积 = min(h[i], h[j]) × (j - i)。\n\n最直白的做法就是把所有 i < j 的组合都试一遍，算面积取最大。逻辑没有任何技巧，但好写、好验证，面试时先说出来能证明你真的理解了题意。\n\n为什么一定超时？n 根柱子挑两根，组合数 n(n-1)/2。n = 10⁵ 时是 50 亿次，必然超时。\n\n**容易踩的坑**：很多人会想「是不是要用最高的两根柱子」——不对。最高两根如果挨得很近，面积反而很小。这题的矛盾在于「高度」和「宽度」的权衡，必须两者一起考虑。记住这个权衡，才能理解为什么双指针一定要「移动矮的那边」。\n\n复杂度 O(n²) 时间，O(1) 空间。",
+      "pseudocode": "输入：整数数组 height，height[i] 是第 i 根板的高度\n输出：能装的最大水量\n\n1. n = height 长度，maxArea = 0\n2. i 从 0 循环到 n-2：\n     j 从 i+1 循环到 n-1：\n        a. 高度 = min(height[i], height[j])    // 木桶效应：短板决定\n        b. 宽度 = j - i\n        c. 面积 = 高度 乘 宽度\n        d. 如果 面积 大于 maxArea：maxArea = 面积\n3. 返回 maxArea\n\n复杂度：时间 O(n²)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int maxArea(int[] height) {\n        int n = height.length;\n        int maxArea = 0;\n\n        for (int i = 0; i < n - 1; i++) {\n            for (int j = i + 1; j < n; j++) {\n                // 木桶效应：水的高度由两块板中较矮的那块决定\n                int h = Math.min(height[i], height[j]);\n                int area = h * (j - i);\n                if (area > maxArea) maxArea = area;\n            }\n        }\n        return maxArea;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)"
+    },
+    {
+      "tier": "better",
+      "title": "固定左边 + 预处理右侧最高",
+      "idea": "暴力版的内层循环在反复做同一件事：对每个 i，扫一遍右边所有 j。能不能预处理一下，把内层从 O(n) 降下来？\n\n想法：对每个右端点 j，如果我能快速知道「j 左边有没有更高的板」，就能判断把 j 往左挪是否有意义。开一个数组 leftMax[i] = 前 i 根板里的最高值。于是对每个 j，只要 height[j] <= leftMax[j]，就说明左边存在比它高（或相等）的板，宽度更大、高度不变，面积一定更大——那 j 作为右端点就没有意义，可以跳过。\n\n这能把一部分无用组合剪掉，实际运行快很多，但**最坏情况仍然是 O(n²)**（比如高度单调递增时，每个 j 都不会被剪掉）。所以它只是「常数优化」，不是复杂度突破。\n\n为什么它有价值？因为它是通向双指针的桥梁：你会发现「矮的那边注定被淘汰」这个判断，正是双指针每次移动的依据。想清这一点，最优解就不是背出来的，而是推出来的。\n\n复杂度最坏 O(n²) 时间，O(n) 空间。",
+      "pseudocode": "输入：整数数组 height\n输出：最大水量\n\n1. n = height 长度\n2. leftMax[i] = 前 i 根板里的最高高度（从前往后扫一遍累出）\n3. maxArea = 0\n4. j 从 1 循环到 n-1：\n     a. 如果 height[j] 小于等于 leftMax[j-1]：\n          说明 j 左边有更高或等高的板，j 当右端点无意义，跳过\n     b. i 从 0 循环到 j-1：\n          面积 = min(height[i], height[j]) 乘 (j-i)\n          更新 maxArea\n5. 返回 maxArea\n\n这版仍然是 O(n²) 最坏（高度单调递增时全部保留），只是剪枝\n\n复杂度：时间最坏 O(n²)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int maxArea(int[] height) {\n        int n = height.length;\n        int[] leftMax = new int[n];\n        leftMax[0] = height[0];\n        for (int i = 1; i < n; i++) {\n            leftMax[i] = Math.max(leftMax[i - 1], height[i]);\n        }\n\n        int maxArea = 0;\n        for (int j = 1; j < n; j++) {\n            // j 左边有更高（或等高）的板，用它当右端点不可能更优\n            if (height[j] <= leftMax[j - 1]) continue;\n            for (int i = 0; i < j; i++) {\n                int area = Math.min(height[i], height[j]) * (j - i);\n                if (area > maxArea) maxArea = area;\n            }\n        }\n        return maxArea;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "双指针 · 每次移动矮的一边",
+      "idea": "这是本题的标准答案，也是「双指针夹逼」最经典的证明之一。\n\n算法：left 指最左，right 指最右，每次算面积后更新最大值，然后**把较矮的那根板往里移一格**，直到两指针相遇。\n\n为什么移动矮的，而不是高的？这是整个算法的灵魂，面试必问。\n\n假设 height[left] < height[right]，当前面积 = height[left] × (right - left)。现在考虑：如果固定 left，把 right 往左移，宽度变小；而高度受限于 height[left]（短板），新的 min 只会小于等于 height[left]。所以**固定 left 的情况下，右侧任何其它板都不可能得到更大的面积**——left 这个位置已经被「榨干」了，可以安全丢弃。因此 left++。\n\n对称地，若 height[right] 更矮，就丢弃 right。\n\n这样每一步都确定性地淘汰一个位置，总共走 n-1 步，也不漏掉最优解。这是「剪枝的正确性证明」，不是启发式。\n\n相比剪枝版改了什么？从「按右端点枚举」变成「两端同时收缩」，每一步都丢掉一个确定无用的位置，复杂度从 O(n²) 降到 O(n)。\n\n坑：面积要用 long 还是 int？n ≤ 10⁵，高度 ≤ 10⁴，最大面积约 10⁹，刚好在 int 范围内（约 2.1×10⁹），用 int 安全。但为了稳妥可以写 (long)。\n\n复杂度 O(n) 时间，O(1) 空间。",
+      "pseudocode": "输入：整数数组 height\n输出：最大水量\n\n1. left = 0，right = height 长度 - 1，maxArea = 0\n2. 当 left 小于 right 循环：\n     a. 面积 = min(height[left], height[right]) 乘 (right - left)\n     b. maxArea = max(maxArea, 面积)\n     c. 如果 height[left] 小于 height[right]：\n          left 加 1        // 矮的板已被榨干，左边往后挪\n        否则：\n          right 减 1       // 矮的板在右边，右边往前挪\n3. 返回 maxArea\n\n为什么移动矮的不会漏解：\n  固定矮的那侧时，宽度只会变小，高度受短板限制也不会变大，\n  所以当前这个位置已经不可能再形成更大面积，可以安全丢弃。\n\n复杂度：时间 O(n) 两指针共走 n-1 步；空间 O(1)",
+      "codeJava": "class Solution {\n    public int maxArea(int[] height) {\n        int left = 0, right = height.length - 1;\n        int maxArea = 0;\n\n        while (left < right) {\n            int area = Math.min(height[left], height[right]) * (right - left);\n            if (area > maxArea) maxArea = area;\n\n            // 关键：移动较矮的一边。固定的那侧已被榨干，不可能得到更优解\n            if (height[left] < height[right]) {\n                left++;\n            } else {\n                right--;\n            }\n        }\n        return maxArea;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)"
+    }
+  ]
+}

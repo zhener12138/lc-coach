@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "单列表 + 每次遍历找最小",
+      "idea": "最直白的实现：用一个 ArrayList 存所有元素，push 就是 add 到末尾，pop 就是 remove 最后一个，top 取末尾，getMin 就把整个列表扫一遍找最小值。\n\n为什么这版会被面试官嫌弃？因为 getMin 是 O(n)。如果调用方连续调用 getMin 一万次，总成本就是 O(n²)。而题目要求「在常数时间内检索到最小元素」，所以这版不满足题意。\n\n那为什么还要先写它？因为它把接口语义钉死了：\n- push 加在末尾、pop 删末尾 —— 这必须是栈（后进先出），不能是队列；\n- top 返回末尾元素；\n- getMin 只在栈非空时调用（题目保证）。\n\n**最关键的一步是想清楚为什么不能只维护一个 min 变量**：因为最小值被 pop 掉之后，你不知道新的最小值是多少了——除非你记住了历史。这个「历史」就是第二版辅助栈的动机。能把这个反问讲清楚，比写出代码更能体现理解。\n\n复杂度：push/pop/top 均摊 O(1)，getMin O(n)。空间 O(n)。",
+      "pseudocode": "输入：一系列 push / pop / top / getMin 操作\n输出：各操作的返回值\n\n数据结构：一个 ArrayList list\n\npush(value)：\n  list.add(value)\n\npop()：\n  list.remove(list.size() - 1)\n\ntop()：\n  return list.get(list.size() - 1)\n\ngetMin()：\n  mn = list.get(0)\n  对 list 里每个 v：如果 v 小于 mn，mn = v\n  return mn\n\n为什么不能只用一个 min 变量：最小值被 pop 后，历史信息丢了\n复杂度：getMin O(n)，其余 O(1)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass MinStack {\n    private List<Integer> list;\n\n    public MinStack() {\n        list = new ArrayList<>();\n    }\n\n    public void push(int value) {\n        list.add(value);\n    }\n\n    public void pop() {\n        list.remove(list.size() - 1);\n    }\n\n    public int top() {\n        return list.get(list.size() - 1);\n    }\n\n    public int getMin() {\n        int mn = list.get(0);\n        for (int v : list) if (v < mn) mn = v;   // 每次都要全扫，O(n)\n        return mn;\n    }\n}",
+      "timeComplexity": "getMin O(n)，其余 O(1)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "better",
+      "title": "双栈 · 辅助栈同步记录每个位置的最小值",
+      "idea": "既然「pop 掉最小值后不知道新最小值」，那就把「每个位置对应的最小值」都记下来。用一个辅助栈 minStack，它的第 i 个元素 = 主栈前 i 个元素的最小值。\n\n维护规则：push(x) 时主栈压 x，辅助栈压 `min(x, 当前辅助栈顶)`；pop 时两个栈一起弹。这样**辅助栈永远和主栈等高、同步进退**，每次都直接读辅助栈顶就得到 O(1) 的最小值。\n\n为什么这一定对？因为「前 i 个元素的最小值」这个信息只依赖前 i-1 个的最小值和新来的 x，可以递推。辅助栈就是把这个递推的结果物化了。\n\n为什么同步栈好写？因为不用考虑「什么时候弹辅助栈」这种分支判断，push/pop 各一行，边界条件压到最小。\n\n相比暴力版改了什么？把 getMin 从 O(n) 降到 O(1)，代价是额外 O(n) 空间——用空间换时间，这是最典型的交换。\n\n一个小实现细节：初始化时辅助栈是空的，第一次 push 要特判（`minStack.isEmpty() ? x : Math.min(x, minStack.peek())`）。或者构造时先塞一个 `Integer.MAX_VALUE` 进去，就能省掉特判——这是很常见的技巧。\n\n复杂度所有操作 O(1)，空间 O(n)。",
+      "pseudocode": "输入：push / pop / top / getMin 操作序列\n输出：各操作返回值\n\n数据结构：主栈 data，辅助栈 mins（第 i 个 = 前 i+1 个元素的最小值）\n\npush(value)：\n  data 压 value\n  mins 压 min(value, mins 栈顶)      // mins 为空时直接压 value\n\npop()：\n  data 弹栈\n  mins 同时弹栈\n\ntop()：\n  return data 栈顶\n\ngetMin()：\n  return mins 栈顶\n\n辅助栈与主栈等高、同步进退，两个栈一起弹就不用判分支\n复杂度：全部操作 O(1)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass MinStack {\n    private Deque<Integer> data;\n    private Deque<Integer> mins;   // mins 第 i 个 = data 前 i+1 个的最小值\n\n    public MinStack() {\n        data = new ArrayDeque<>();\n        mins = new ArrayDeque<>();\n    }\n\n    public void push(int value) {\n        data.push(value);\n        // 辅助栈同步压入「当前最小值」\n        mins.push(mins.isEmpty() ? value : Math.min(value, mins.peek()));\n    }\n\n    public void pop() {\n        data.pop();\n        mins.pop();   // 同步弹出，不需要任何分支判断\n    }\n\n    public int top() {\n        return data.peek();\n    }\n\n    public int getMin() {\n        return mins.peek();\n    }\n}",
+      "timeComplexity": "全部 O(1)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "辅助栈不同步 · 只在新最小时才入栈",
+      "idea": "同步辅助栈的问题是：即使后来的元素都比最小值大，辅助栈仍然老老实实跟着压一份重复的最小值。比如连续 push 5, 6, 7, 8，辅助栈里是 [5, 5, 5, 5]——三个 5 全是浪费。\n\n优化：辅助栈只在「新元素 ≤ 当前最小值」时才入栈。这样辅助栈里存的是**一路创下的历史最低点**，严格单调不增，长度远小于主栈。\n\n那 pop 的时候怎么办？关键规则：**弹出主栈的值等于辅助栈顶时，辅助栈也弹一次**。为什么？因为辅助栈顶代表「当前生效的最小值」，只有当这个最小值本身被弹走时，次小值才需要顶上来。\n\n为什么用「≤」而不是「<」？这点很重要。如果 push 5, 5，第二个 5 用 `<` 判断就不会入辅助栈；此时 pop 一个 5 后，辅助栈顶还是 5，看着对——但再 pop 一次就把辅助栈弹空了，而主栈里本来还有一个 5。所以要允许相等的值入栈，让辅助栈的 5 和主栈的 5 数量匹配。这是本题最隐蔽的坑。\n\n相比同步版改了什么？空间从「恒等于主栈长度」降到「历史最低点个数」，最坏仍 O(n) 但平均小很多。所有操作仍是 O(1)。\n\n还有一个更极致的技巧：单栈存 `long` 差值编码（`2*x - min`），能用 O(1) 空间实现全部操作。但可读性差、容易溢出，面试不推荐现场写，能说出思路即可。\n\n复杂度所有操作 O(1)，空间 O(n) 最坏。",
+      "pseudocode": "输入：push / pop / top / getMin 操作\n输出：各操作返回值\n\n数据结构：主栈 data，辅助栈 mins（只存历史最低点，单调不增）\n\npush(value)：\n  data 压 value\n  如果 mins 为空 或 value 小于等于 mins 栈顶：\n     mins 压 value                  // 只有创了新低才记\n\npop()：\n  v = data 弹出\n  如果 v 等于 mins 栈顶：mins 弹栈     // 唯一的最小值被弹走了\n\ntop()：\n  return data 栈顶\n\ngetMin()：\n  return mins 栈顶\n\n为什么 push 用「小于等于」而不是「小于」：\n  push 5,5 时第二个 5 也要入辅助栈，否则 pop 两次会弹空\n\n复杂度：全部 O(1)；空间 O(n) 最坏，平均远小于主栈",
+      "codeJava": "import java.util.*;\n\nclass MinStack {\n    private Deque<Integer> data;\n    private Deque<Integer> mins;   // 只存历史最低点，单调不增\n\n    public MinStack() {\n        data = new ArrayDeque<>();\n        mins = new ArrayDeque<>();\n    }\n\n    public void push(int value) {\n        data.push(value);\n        // 必须用 <= ：相等的值也要入栈，否则 pop 时数量对不上\n        if (mins.isEmpty() || value <= mins.peek()) {\n            mins.push(value);\n        }\n    }\n\n    public void pop() {\n        int v = data.pop();\n        // 弹走的正是当前最小值，辅助栈才跟着弹\n        if (!mins.isEmpty() && v == mins.peek()) {\n            mins.pop();\n        }\n    }\n\n    public int top() {\n        return data.peek();\n    }\n\n    public int getMin() {\n        return mins.peek();\n    }\n}",
+      "timeComplexity": "全部 O(1)",
+      "spaceComplexity": "O(n)"
+    }
+  ]
+}

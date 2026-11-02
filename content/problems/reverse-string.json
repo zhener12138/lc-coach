@@ -1,0 +1,49 @@
+{
+  "slug": "reverse-string",
+  "frontendId": "344",
+  "titleEn": "Reverse String",
+  "titleCn": "反转字符串",
+  "difficulty": "Easy",
+  "tags": "双指针,字符串",
+  "contentHtml": "<p>Write a function that reverses a string. The input string is given as an array of characters <code>s</code>.</p>\n\n<p>You must do this by modifying the input array <a href=\"https://en.wikipedia.org/wiki/In-place_algorithm\" target=\"_blank\">in-place</a> with <code>O(1)</code> extra memory.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<pre><strong>Input:</strong> s = [\"h\",\"e\",\"l\",\"l\",\"o\"]\n<strong>Output:</strong> [\"o\",\"l\",\"l\",\"e\",\"h\"]\n</pre><p><strong>Example 2:</strong></p>\n<pre><strong>Input:</strong> s = [\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]\n<strong>Output:</strong> [\"h\",\"a\",\"n\",\"n\",\"a\",\"H\"]\n</pre>\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= s.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>s[i]</code> is a <a href=\"https://en.wikipedia.org/wiki/ASCII#Printable_characters\" target=\"_blank\">printable ascii character</a>.</li>\n</ul>",
+  "contentCnHtml": "<p>编写一个函数，其作用是将输入的字符串反转过来。输入字符串以字符数组 <code>s</code> 的形式给出。</p>\n\n<p>不要给另外的数组分配额外的空间，你必须<strong><a href=\"https://baike.baidu.com/item/原地算法\" target=\"_blank\">原地</a>修改输入数组</strong>、使用 O(1) 的额外空间解决这一问题。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>s = [\"h\",\"e\",\"l\",\"l\",\"o\"]\n<strong>输出：</strong>[\"o\",\"l\",\"l\",\"e\",\"h\"]\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>s = [\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]\n<strong>输出：</strong>[\"h\",\"a\",\"n\",\"n\",\"a\",\"H\"]</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= s.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>s[i]</code> 都是 <a href=\"https://baike.baidu.com/item/ASCII\" target=\"_blank\">ASCII</a> 码表中的可打印字符</li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public void reverseString(char[] s) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "reverse-string",
+      "tier": "brute",
+      "title": "辅助数组倒序拷贝",
+      "idea": "最直白：开一个同样长度的字符数组，把 s 从后往前读、从前往后写，然后把结果拷回 s。\n\n为什么题目要求「原地修改、不返回新数组」？因为返回 void 的函数签名就暗示了「答案必须写进入参」。所以必须把临时数组的内容再拷回去，否则力扣判定为未修改。\n\n这版的价值：它把「反转 = 首尾对调」这个语义表达得最清楚，而且不用担心下标写错。当你对双指针交换没把握时，这版一定对。\n\n复杂度分析：时间 O(n) 两趟；空间 O(n)。题目进阶要求 O(1) 额外空间，所以这版不满足要求。\n\n顺带提醒一个初学者常犯的错：不要用 `s = new String(...)` 之类的想法，入参是 char[] 且返回 void，只能改 s 的内容。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：字符数组 s\n输出：无（原地反转 s）\n\n1. n = s 长度\n2. 建一个长度 n 的临时数组 tmp\n3. i 从 0 循环到 n-1：\n     tmp[i] = s[n-1-i]           // 倒着读，正着写\n4. i 从 0 循环到 n-1：\n     s[i] = tmp[i]                // 必须拷回去\n\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public void reverseString(char[] s) {\n        int n = s.length;\n        char[] tmp = new char[n];\n        for (int i = 0; i < n; i++) {\n            tmp[i] = s[n - 1 - i];\n        }\n        // 题目要求原地修改，必须拷回入参\n        for (int i = 0; i < n; i++) {\n            s[i] = tmp[i];\n        }\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "reverse-string",
+      "tier": "better",
+      "title": "双指针交换 · 原地 O(1)",
+      "idea": "上一版开了额外数组，不满足进阶要求。这版直接原地交换：left 指头、right 指尾，交换两者，然后 left++、right--，直到 left >= right。\n\n为什么 left >= right 就停？因为中间那个元素（长度为奇数时）不用动，已经在对的位置；偶数时两指针会交叉，也不该再交换。\n\n相比辅助数组版改了什么？**零额外空间**，一次遍历。这是本题的标准答案，也是所有「原地反转」的母题（反转字符串、反转数组、反转链表的前半部分都靠这个思路）。\n\n写的时候注意：循环条件是 `left < right`，不是 `left <= right`。用后者在奇数长度时会自己和自己交换一次，虽然结果正确但多一次无谓操作。\n\nswap 的三行赋值顺序：先存 tmp，再覆盖，最后写回。顺序写错会把一个值丢成两份。\n\n复杂度 O(n/2) 时间，O(1) 空间。",
+      "pseudocode": "输入：字符数组 s\n输出：无（原地反转）\n\n1. left = 0，right = s 长度 - 1\n2. 当 left 小于 right 循环：\n     a. tmp = s[left]\n     b. s[left] = s[right]\n     c. s[right] = tmp\n     d. left 加 1，right 减 1\n3. 结束\n\n循环条件用 left 小于 right（不是小于等于）\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public void reverseString(char[] s) {\n        int left = 0, right = s.length - 1;\n        while (left < right) {\n            char tmp = s[left];\n            s[left] = s[right];\n            s[right] = tmp;\n            left++;\n            right--;\n        }\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "reverse-string",
+      "tier": "optimal",
+      "title": "双指针 for 循环 · 一步到位",
+      "idea": "这版和上一版算法完全一样，差别只在写法：把 while 换成 for，把两个指针的移动写进循环头里，代码更短、更不容易忘写指针移动。\n\n```java\nfor (int i = 0, j = s.length - 1; i < j; i++, j--)\n```\n\n为什么值得单独讲？因为 **`i++, j--` 忘了写是初学者最高频的 bug**——忘了就会死循环。把移动写进 for 的第三段，编译器替你保证每轮都执行，从结构上消灭这个 bug。\n\n为什么它算「最优」而不是和上一版并列？复杂度完全一致（O(n) 时间、O(1) 空间），这版的价值是**工程可读性**：一眼能看出「从两端向中间收」，是面试现场手写最不容易出错的形态。\n\n另一个可以提的写法是 Java 里没有内置 reverse，但 `StringBuilder.reverse()` 可以反转字符串（不是数组），如果面试官问的是 String 反转，可以先 toCharArray 再双指针，或者直接用 StringBuilder。但要注意 StringBuilder 用了 O(n) 空间。\n\n复杂度 O(n/2) 时间，O(1) 空间。",
+      "pseudocode": "输入：字符数组 s\n输出：无（原地反转）\n\n1. for 循环，i 从 0 开始、j 从 n-1 开始\n   条件 i 小于 j\n   每轮 i 加 1、j 减 1：\n     交换 s[i] 和 s[j]\n2. 结束\n\n为什么把 i++/j-- 写进 for 的第三段：\n  避免忘写导致死循环，这是最高频的手写 bug\n\n如果题目是 String 而不是 char[]：\n  可以 toCharArray 后双指针，或直接用 new StringBuilder(s).reverse().toString()（O(n) 空间）\n\n复杂度：时间 O(n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public void reverseString(char[] s) {\n        // 把两个指针的移动写进 for 头，从结构上避免「忘了写 i++ 导致死循环」\n        for (int i = 0, j = s.length - 1; i < j; i++, j--) {\n            char tmp = s[i];\n            s[i] = s[j];\n            s[j] = tmp;\n        }\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 3
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "slug": "largest-rectangle-in-histogram",
+  "frontendId": "84",
+  "titleEn": "Largest Rectangle in Histogram",
+  "titleCn": "柱状图中最大的矩形",
+  "difficulty": "Hard",
+  "tags": "栈,数组,单调栈,区间最值查询",
+  "contentHtml": "<p>Given an array of integers <code>heights</code> representing the histogram&#39;s bar height where the width of each bar is <code>1</code>, return <em>the area of the largest rectangle in the histogram</em>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2021/01/04/histogram.jpg\" />\n<pre>\n<strong>Input:</strong> heights = [2,1,5,6,2,3]\n<strong>Output:</strong> 10\n<strong>Explanation:</strong> The above is a histogram where width of each bar is 1.\nThe largest rectangle is shown in the red area, which has an area = 10 units.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n<img alt=\"\" src=\"https://assets.leetcode.com/uploads/2021/01/04/histogram-1.jpg\" />\n<pre>\n<strong>Input:</strong> heights = [2,4]\n<strong>Output:</strong> 4\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= heights.length &lt;= 10<sup>5</sup></code></li>\n\t<li><code>0 &lt;= heights[i] &lt;= 10<sup>4</sup></code></li>\n</ul>",
+  "contentCnHtml": "<p>给定 <em>n</em> 个非负整数，用来表示柱状图中各个柱子的高度。每个柱子彼此相邻，且宽度为 1 。</p>\n\n<p>求在该柱状图中，能够勾勒出来的矩形的最大面积。</p>\n\n<p><strong>示例 1:</strong></p>\n\n<p><img src=\"https://assets.leetcode.com/uploads/2021/01/04/histogram.jpg\" /></p>\n\n<pre>\n<strong>输入：</strong>heights = [2,1,5,6,2,3]\n<strong>输出：</strong>10\n<strong>解释：</strong>最大的矩形为图中红色区域，面积为 10\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<p><img src=\"https://assets.leetcode.com/uploads/2021/01/04/histogram-1.jpg\" /></p>\n\n<pre>\n<strong>输入：</strong> heights = [2,4]\n<b>输出：</b> 4</pre>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 <= heights.length <=10<sup>5</sup></code></li>\n\t<li><code>0 <= heights[i] <= 10<sup>4</sup></code></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int largestRectangleArea(int[] heights) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "largest-rectangle-in-histogram",
+      "tier": "brute",
+      "title": "枚举左右端点 · 内层维护最小高度",
+      "idea": "矩形的面积 = 高 × 宽。任何一个合法矩形，其高度必然等于区间内**某根柱子的高度**（可以被拉高到最矮那根）。所以最直接的枚举方式是：固定左端点 l，右端点 r 从 l 往右扩，扩的过程中维护区间最小高度，面积 = 最小高度 × (r - l + 1)。\n\n为什么内层要在扩展时维护 min 而不是每轮重新扫？因为向右扩一格，新的最小值只需和旧最小值比一次，O(1)。这已经是能想到的最自然的写法。\n\n为什么必超时？n = 10⁵ 时外层 n 次、内层平均 n/2 次，约 5×10⁹ 次操作。\n\n为什么值得先写？因为它明确定义了搜索空间：**所有 O(n²) 个连续区间**。后面两个优化都是在「不枚举所有区间」的前提下找最大值。而且这版有个天然剪枝点：如果某个 l 处 `heights[l] * (n - l)` 已经小于当前最优，就可以直接跳过——写出这句能体现实战感。\n\n坑：面积计算用 int 可能溢出（10⁴ × 10⁵ = 10⁹ 还在 int 范围内，但保险起见用 long 或至少注意题目的数据范围）。\n\n复杂度 O(n²) 时间，O(1) 空间。",
+      "pseudocode": "输入：柱高数组 heights\n输出：最大矩形面积\n\n1. n = 数组长度，best = 0\n2. l 从 0 循环到 n-1：\n     minH = heights[l]\n     r 从 l 循环到 n-1：\n        minH = min(minH, heights[r])      // 边扩边维护最小值\n        best = max(best, minH * (r - l + 1))\n3. 返回 best\n\n矩形的高必然等于区间里某根柱子的高度\n可加剪枝：heights[l] * (n - l) 小于 best 时直接跳过 l\n复杂度：时间 O(n²)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int largestRectangleArea(int[] heights) {\n        int n = heights.length;\n        int best = 0;\n\n        for (int l = 0; l < n; l++) {\n            // 剪枝：即使右边全部用得上，也超不过当前最优\n            if ((long) heights[l] * (n - l) <= best) continue;\n\n            int minH = heights[l];\n            for (int r = l; r < n; r++) {\n                minH = Math.min(minH, heights[r]);   // 边扩边维护\n                best = Math.max(best, minH * (r - l + 1));\n            }\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "largest-rectangle-in-histogram",
+      "tier": "better",
+      "title": "分治 · 以最矮柱子为界切两半",
+      "idea": "换个角度看：全局最大矩形只有两种可能——\n1. 它**跨越**了整段里最矮的那根柱子。此时高度被这根柱子卡死，最优就是「最矮高度 × 整段宽度」；\n2. 它完全落在最矮柱子的左边，或完全落在右边。\n\n于是可以分治：找到区间内最矮柱子的位置 m，答案是三者取最大——`heights[m] × 区间长度`、左半段递归的结果、右半段递归的结果。\n\n为什么这个递归是对的？因为任何不跨越 m 的矩形必然整体在 m 左侧或右侧（矩形是连续区间，跳过 m 就必须在一边），不会有遗漏。\n\n复杂度分析（面试常问）：如果每次都恰好从中间劈开，是标准的 O(n log n)；但如果数组已经**单调递增**（比如 1,2,3,...,n），最矮的永远在最左端，每次只切掉一个元素，退化成 O(n²)。这就是为什么它比单调栈差——**分治的平均性能好，但没有最坏保证**。这正是一个很好的对比素材。\n\n相比枚举版改了什么？从「枚举所有区间」改成「只考察跨越最矮柱子的那一个区间 + 两个子问题」，平均复杂度从 O(n²) 降到 O(n log n)。\n\n坑：找最矮柱子的下标时要返回**下标**而不是高度，因为要算宽度。递归用 `[lo, hi]` 闭区间，`hi - lo + 1` 是区间长度，`hi < lo` 时返回 0。\n\n复杂度平均 O(n log n)、最坏 O(n²) 时间，O(log n) 平均栈空间。",
+      "pseudocode": "输入：heights，区间 lo 到 hi（闭区间）\n输出：该区间内最大矩形面积\n\nsolve(lo, hi)：\n  如果 lo 大于 hi：return 0\n  找 lo 到 hi 里最矮柱子的下标 m\n  crossArea = heights[m] * (hi - lo + 1)     // 跨越最矮柱子\n  leftArea  = solve(lo, m - 1)\n  rightArea = solve(m + 1, hi)\n  return max(crossArea, leftArea, rightArea)\n\n找最矮柱子必须返回下标，因为要算宽度\n为什么对：不跨越 m 的矩形必然整体落在左侧或右侧\n复杂度：平均 O(n log n)，最坏（单调数组）O(n²)；空间 O(log n)",
+      "codeJava": "class Solution {\n    public int largestRectangleArea(int[] heights) {\n        if (heights == null || heights.length == 0) return 0;\n        return solve(heights, 0, heights.length - 1);\n    }\n\n    private int solve(int[] h, int lo, int hi) {\n        if (lo > hi) return 0;\n\n        // 找区间内最矮柱子的下标\n        int m = lo;\n        for (int i = lo; i <= hi; i++) {\n            if (h[i] < h[m]) m = i;\n        }\n\n        int cross = h[m] * (hi - lo + 1);   // 跨越最矮柱子\n        int left = solve(h, lo, m - 1);\n        int right = solve(h, m + 1, hi);\n        return Math.max(cross, Math.max(left, right));\n    }\n}",
+      "timeComplexity": "平均 O(n log n)，最坏 O(n²)",
+      "spaceComplexity": "O(log n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "largest-rectangle-in-histogram",
+      "tier": "optimal",
+      "title": "单调栈 + 首尾补零哨兵",
+      "idea": "面试标准答案。核心问题换个问法：**对每根柱子 i，它能向左向右各延伸到多远？** 答案是「左边第一个比它矮的位置」到「右边第一个比它矮的位置」之间。如果能 O(1) 求出这个区间，就能 O(n) 算出所有柱子的最大矩形。\n\n单调栈就是求「第一个更小元素」的利器。维护一个**从栈底到栈顶严格递增**的下标栈：\n- 遍历到 i 时，若 `heights[i] < heights[栈顶]`，说明栈顶那根柱子的「右边第一个更矮」就是 i，它的右边界确定了；弹出它，此时新的栈顶就是它「左边第一个更矮」，左边界也确定了。于是它的最大矩形 = `heights[栈顶] × (i - 新栈顶 - 1)`，立刻结算。\n- 不断弹到栈顶比 i 矮为止，再把 i 入栈。\n\n**哨兵技巧（这是本题最漂亮的一步）**：在数组首尾各补一个高度为 0 的虚拟柱子。\n- 首部哨兵：保证栈永远不为空，于是「左边界」的计算不用判 `stack.isEmpty()`，直接取新栈顶；\n- 尾部哨兵：值为 0，它一定比所有真实柱子矮，于是**遍历到最后一个哨兵时，栈里所有剩余柱子都会被强制弹空并结算**，循环结束后不需要再写一个 while 清栈。\n\n一句话：两个哨兵换掉了两处边界特判。这是「用数据结构设计消灭分支」的经典范例，值得记住。\n\n为什么一次遍历就够？每个下标入栈一次、出栈一次，总操作 ≤ 2n 次，严格 O(n)。\n\n相比分治版改了什么？把「平均 O(n log n)、最坏 O(n²)」压成**严格 O(n)**，且没有递归栈开销。代价是多 O(n) 的空间。\n\n坑：宽度是 `i - stack.peek() - 1`，不是 `i - stack.peek()`。因为弹出的柱子占的那一格要算进去，而新栈顶本身是边界不能算。这个 −1 是本题最常写错的地方。\n\n复杂度 O(n) 时间，O(n) 空间。",
+      "pseudocode": "输入：柱高数组 heights\n输出：最大矩形面积\n\n1. 构造 arr：arr[0] = 0，arr[1..n] = heights，arr[n+1] = 0\n   （首尾各补一个 0 当哨兵）\n2. 建空栈 stack，存下标\n3. best = 0，i 从 0 循环到 arr 长度减 1：\n     当 stack 不为空 且 arr[stack 栈顶] 大于 arr[i] 循环：\n        h = arr[stack 弹出]\n        left = stack 现在的栈顶           // 左边第一个更矮的\n        width = i - left - 1\n        best = max(best, h * width)\n     stack 压入 i\n4. 返回 best\n\n首哨兵：栈永不为空，左边界不用判空\n尾哨兵：值为 0，强制把栈里剩下的全部弹空结算，省掉清栈代码\n坑：宽度是 i - left - 1，别漏了减 1\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int largestRectangleArea(int[] heights) {\n        int n = heights.length;\n        // 首尾补 0 当哨兵\n        int[] arr = new int[n + 2];\n        for (int i = 0; i < n; i++) arr[i + 1] = heights[i];\n\n        Deque<Integer> stack = new ArrayDeque<>();   // 存下标，高度递增\n        int best = 0;\n\n        for (int i = 0; i < arr.length; i++) {\n            // 当前柱子比栈顶矮：栈顶的右边界确定，弹出并结算\n            while (!stack.isEmpty() && arr[stack.peek()] > arr[i]) {\n                int h = arr[stack.pop()];\n                int left = stack.peek();     // 首哨兵保证栈不会空\n                best = Math.max(best, h * (i - left - 1));\n            }\n            stack.push(i);\n        }\n        return best;   // 尾哨兵已把栈清空，无需额外循环\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 3
+    }
+  ]
+}

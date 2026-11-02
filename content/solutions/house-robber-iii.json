@@ -1,0 +1,31 @@
+{
+  "solutions": [
+    {
+      "tier": "brute",
+      "title": "递归：偷当前节点，或跳过它",
+      "idea": "打家劫舍搬到了二叉树上，规则不变：**偷了当前节点，就不能偷它的直接子节点。**\n\n所以对每个节点 `node`，有两种选择：\n- **偷它**：`node.val + 偷两个孙子的最优`；\n- **不偷它**：`偷两个儿子的最优`。\n\n取较大者。这直接对应 198 题的 `max(偷, 不偷)`，只是「隔一间」变成了「隔一层」。\n\n**为什么这算暴力？** 因为求「偷孙子」时要递归进孙子，求「不偷儿子」时要递归进儿子，**同一个节点会被反复访问**。具体算一下：\n- `rob(node)` 调 `rob(node.left.left)`、`rob(node.left.right)`、`rob(node.right.left)`、`rob(node.right.right)`、`rob(node.left)`、`rob(node.right)`；\n- 而 `rob(node.left)` 内部又调了 `rob(node.left.left)` 和 `rob(node.left.right)`。\n\n**重叠子问题出现了，而且是跨层的重叠。** 复杂度约 O(2 的 n 次方)。\n\n**这题的价值在于让你看到「树上的 DP」和「数组上的 DP」是同一回事。** 树只是换了个数据结构的「序列」，状态转移的思路完全一样。\n\n坑：\n1. 空节点返回 0；\n2. 偷当前节点时，孙子可能为空，要判空或用辅助函数；\n3. `node.val` 可能是负数（力扣本题是非负，但理论上要考虑——如果可能为负，「偷」就未必划算）。",
+      "pseudocode": "输入：二叉树根 root\n输出：能偷到的最大金额\n\n1. 如果 root 为空：return 0\n2. 方案一：偷 root\n     take = root.val\n     如果 root 左孩子非空：take 加 rob(root 左孩子的左孩子) 加 rob(root 左孩子的右孩子)\n     对右孩子同理累加\n3. 方案二：不偷 root\n     skip = rob(root 左孩子) 加 rob(root 右孩子)\n4. return max(take, skip)\n\n偷了当前节点就不能偷直接子节点，等价于 198 题的「隔一间」\n跨层的重叠子问题让复杂度指数级\n复杂度：时间 O(2 的 n 次方)；空间 O(h)",
+      "codeJava": "class Solution {\n    public int rob(TreeNode root) {\n        if (root == null) return 0;\n\n        int take = root.val;\n        if (root.left != null) {\n            take += rob(root.left.left) + rob(root.left.right);\n        }\n        if (root.right != null) {\n            take += rob(root.right.left) + rob(root.right.right);\n        }\n\n        int skip = rob(root.left) + rob(root.right);\n        return Math.max(take, skip);\n    }\n}",
+      "timeComplexity": "O(2ⁿ)",
+      "spaceComplexity": "O(h)"
+    },
+    {
+      "tier": "better",
+      "title": "记忆化：每个节点只算一次",
+      "idea": "上一版的重叠来自「同一个节点被不同祖先重复访问」。所以把 `rob(node)` 的结果存进一个 Map，key 用节点对象。\n\n**用 `Map<TreeNode, Integer>` 而不是数组**，因为树节点的值不唯一（可能有重复值），没法用值当 key；而节点对象本身有唯一身份。Java 的 `HashMap` 默认用 `equals`/`hashCode`，对没重写的对象就是引用比较，正好符合需求。\n\n优化后每个节点只计算一次，O(n)。\n\n**为什么它还只是「较好」？** 结构上有个隐患：`rob(node)` 这个函数**混装了两种语义**——它既要返回「偷 node 的最优」，又要返回「不偷 node 的最优」，但实际上它只返回了两者的较大值。可这个较大值在父节点看来是不完整的：\n\n- 父节点想「偷自己」时，需要知道子节点的**「不偷」**值；\n- 父节点想「不偷自己」时，需要知道子节点的**「偷或不偷」的最大值**。\n\n**当前方案只能提供后者，前者拿不到。** 所以上一版才要用「孙子」来绕——绕的代价是访问了孙辈节点。**真正的解法是让每个节点同时返回两个值。** 这就是下一版。\n\n坑：\n1. Map 的 key 是节点对象，不要用 `val`；\n2. 空节点不要在 Map 里存；\n3. 递归入口先查 Map。",
+      "pseudocode": "输入：root\n输出：最大金额\n\n1. memo = 空 Map（节点 到 金额）\n2. return rob(root, memo)\n\nrob(node, memo)：\n3. 如果 node 为空：return 0\n4. 如果 memo 含 node：return memo 取 node\n5. take = node.val\n     加 rob(node 左孩子的左孩子) 加 rob(node 左孩子的右孩子)\n     加 rob(node 右孩子的左孩子) 加 rob(node 右孩子的右孩子)\n6. skip = rob(node 左孩子) 加 rob(node 右孩子)\n7. best = max(take, skip)；memo 放入 (node, best)\n8. return best\n\n每个节点只算一次，降到线性\n但函数只返回单值，父节点拿不到「不偷」的分量，仍需访问孙辈\n复杂度：时间 O(n)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int rob(TreeNode root) {\n        return rob(root, new HashMap<>());\n    }\n\n    private int rob(TreeNode node, Map<TreeNode, Integer> memo) {\n        if (node == null) return 0;\n        if (memo.containsKey(node)) return memo.get(node);\n\n        int take = node.val;\n        if (node.left != null) take += rob(node.left.left, memo) + rob(node.left.right, memo);\n        if (node.right != null) take += rob(node.right.left, memo) + rob(node.right.right, memo);\n\n        int skip = rob(node.left, memo) + rob(node.right, memo);\n        int best = Math.max(take, skip);\n        memo.put(node, best);\n        return best;\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(n)"
+    },
+    {
+      "tier": "optimal",
+      "title": "树形 DP：每个节点返回两个值",
+      "idea": "这题的正解是**让每个节点一次返回两个值**：\n\n- `res[0]` = **不偷**当前节点时的最大金额；\n- `res[1]` = **偷**当前节点时的最大金额。\n\n转移就非常干净了：\n\n- `res[0] = max(左[0], 左[1]) + max(右[0], 右[1])`（不偷自己，孩子偷不偷都行，各取最大）\n- `res[1] = node.val + 左[0] + 右[0]`（偷自己，孩子必须都不偷，只能取 `[0]`）\n\n**为什么这个设计比上一版好？** 因为它**把「偷」和「不偷」两个维度的信息完整地传给了父节点**，父节点不再需要访问孙辈——所有信息都在儿子这一层就位。\n\n**这就是树形 DP 的标准范式：返回值设计成「父节点需要的所有信息」。** 一次后序遍历，O(n) 时间，且不需要 Map（栈上返回数组即可）。\n\n**对比上一版的实际收益：**\n- 去掉哈希表，常数更小；\n- 每个节点严格访问一次（不是「平均一次」）；\n- 代码更短，转移关系更清晰——**上一版你需要在脑子里追踪「孙辈」，这一版只看「儿子」，认知负担小得多**。\n\n**这个「返回数组而不是单值」的技巧可以迁移到很多树上问题：**\n- 二叉树的最大路径和（返回「单边贡献」）；\n- 打家劫舍 III（本题，返回「偷/不偷」）；\n- 树的最小支配集、树上涂色（返回「当前节点选/不选」）；\n- 监控二叉树（返回「状态 0/1/2」）。\n\n**判定标准：如果需要知道某个节点「被选了」「没被选」两种情况下不同的最优值，就必须返回数组。**\n\n坑：\n1. `res[1]` 里必须用 `左[0]` 和 `右[0]`，不能取 max；\n2. 空节点返回 `new int[]{0, 0}`；\n3. 最后答案是 `max(res[0], res[1])`。",
+      "pseudocode": "输入：root\n输出：最大金额\n\n1. res = dfs(root)\n2. return max(res[0], res[1])\n\ndfs(node)：返回长度 2 的数组\n3. 如果 node 为空：return (0, 0)\n4. left = dfs(node 左孩子)\n5. right = dfs(node 右孩子)\n6. noTake = max(left[0], left[1]) 加 max(right[0], right[1])\n7. take = node.val 加 left[0] 加 right[0]        // 偷自己则孩子必不偷\n8. return (noTake, take)\n\n每个节点返回「偷」和「不偷」两个值，父节点只看儿子就够了\n这是树形 DP 的标准范式：返回值带上父节点需要的所有信息\n复杂度：时间 O(n)；空间 O(h)",
+      "codeJava": "class Solution {\n    public int rob(TreeNode root) {\n        int[] res = dfs(root);\n        return Math.max(res[0], res[1]);\n    }\n\n    private int[] dfs(TreeNode node) {\n        if (node == null) return new int[]{0, 0};\n\n        int[] left = dfs(node.left);\n        int[] right = dfs(node.right);\n\n        int noTake = Math.max(left[0], left[1]) + Math.max(right[0], right[1]);\n        int take = node.val + left[0] + right[0];\n        return new int[]{noTake, take};\n    }\n}",
+      "timeComplexity": "O(n)",
+      "spaceComplexity": "O(h)"
+    }
+  ]
+}

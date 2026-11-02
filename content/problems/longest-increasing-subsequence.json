@@ -1,0 +1,49 @@
+{
+  "slug": "longest-increasing-subsequence",
+  "frontendId": "300",
+  "titleEn": "Longest Increasing Subsequence",
+  "titleCn": "最长递增子序列",
+  "difficulty": "Medium",
+  "tags": "数组,二分查找,动态规划,最长上升子序列",
+  "contentHtml": "<p>Given an integer array <code>nums</code>, return <em>the length of the longest <strong>strictly increasing </strong></em><span><em><strong>subsequence</strong></em></span>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [10,9,2,5,3,7,101,18]\n<strong>Output:</strong> 4\n<strong>Explanation:</strong> The longest increasing subsequence is [2,3,7,101], therefore the length is 4.\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [0,1,0,3,2,3]\n<strong>Output:</strong> 4\n</pre>\n\n<p><strong>Example 3:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [7,7,7,7,7,7,7]\n<strong>Output:</strong> 1\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 2500</code></li>\n\t<li><code>-10<sup>4</sup> &lt;= nums[i] &lt;= 10<sup>4</sup></code></li>\n</ul>\n\n<p>&nbsp;</p>\n<p><b>Follow up:</b>&nbsp;Can you come up with an algorithm that runs in&nbsp;<code>O(n log(n))</code> time complexity?</p>",
+  "contentCnHtml": "<p>给你一个整数数组 <code>nums</code> ，找到其中最长严格递增子序列的长度。</p>\n\n<p><strong>子序列&nbsp;</strong>是由数组派生而来的序列，删除（或不删除）数组中的元素而不改变其余元素的顺序。例如，<code>[3,6,2,7]</code> 是数组 <code>[0,3,1,6,2,2,7]</code> 的<span>子序列</span>。</p>\n&nbsp;\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [10,9,2,5,3,7,101,18]\n<strong>输出：</strong>4\n<strong>解释：</strong>最长递增子序列是 [2,3,7,101]，因此长度为 4 。\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [0,1,0,3,2,3]\n<strong>输出：</strong>4\n</pre>\n\n<p><strong>示例 3：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [7,7,7,7,7,7,7]\n<strong>输出：</strong>1\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 2500</code></li>\n\t<li><code>-10<sup>4</sup> &lt;= nums[i] &lt;= 10<sup>4</sup></code></li>\n</ul>\n\n<p>&nbsp;</p>\n\n<p><b>进阶：</b></p>\n\n<ul>\n\t<li>你能将算法的时间复杂度降低到&nbsp;<code>O(n log(n))</code> 吗?</li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public int lengthOfLIS(int[] nums) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "longest-increasing-subsequence",
+      "tier": "brute",
+      "title": "枚举所有子序列，判是否递增",
+      "idea": "最长递增子序列（LIS）最朴素的想法：**把所有子序列都列出来，挑最长的那个递增的。**\n\n用位掩码枚举 2 的 n 次方个子集，每个子集按原顺序检查是否严格递增，记录最长长度。\n\n**这一版肯定超时，但它是理解问题的地基。** 它把两件事说清楚了：\n- 子序列 ≠ 子数组——**子序列可以不连续**，跳过元素是允许的。这是本题和「最长递增连续子序列」的根本区别，很多人一开始就搞混；\n- 严格递增意味着 `nums[j] < nums[i]` 是 `<` 不是 `<=`。力扣本题是严格递增，重复元素不能同时选。\n\n**为什么必须提这一段？** 因为面试官很爱问「如果要求连续呢」。答案是：连续版就是「扫描 + 当前长度」，O(n)。**你必须能立刻区分这两个问题，否则就会拿 O(n²) 的 LIS 去解连续版，或者反过来。**\n\n坑：\n1. 位掩码上限是 n ≤ 30 左右，超过就溢出了；\n2. 检查递增时要按原数组顺序，不能排序；\n3. 空数组答案是 0。",
+      "pseudocode": "输入：数组 nums\n输出：最长严格递增子序列的长度\n\n1. n = nums 长度；best = 0\n2. 对 mask 从 1 到 (1 左移 n) 减 1：\n     prev = 负无穷；len = 0；ok = true\n     对 i 从 0 到 n 减 1：\n        如果 mask 的第 i 位是 0：跳过\n        如果 nums[i] 小于等于 prev：ok = false；跳出\n        prev = nums[i]；len 加 1\n     如果 ok：best = max(best, len)\n3. return best\n\n子序列可以不连续，这是本题和「连续」版的根本区别\n严格递增用小于号，重复元素不能同时选\n复杂度：时间 O(2 的 n 次方 乘 n)；空间 O(1)",
+      "codeJava": "class Solution {\n    public int lengthOfLIS(int[] nums) {\n        int n = nums.length;\n        int best = 0;\n        for (int mask = 1; mask < (1 << n); mask++) {\n            int prev = Integer.MIN_VALUE;\n            int len = 0;\n            boolean ok = true;\n            for (int i = 0; i < n; i++) {\n                if ((mask & (1 << i)) == 0) continue;\n                if (nums[i] <= prev) {\n                    ok = false;\n                    break;\n                }\n                prev = nums[i];\n                len++;\n            }\n            if (ok) best = Math.max(best, len);\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(2ⁿ · n)",
+      "spaceComplexity": "O(1)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "longest-increasing-subsequence",
+      "tier": "better",
+      "title": "O(n²) DP：以每个位置结尾的最长长度",
+      "idea": "关键的状态定义：**`dp[i]` = 以 `nums[i]` 结尾的最长递增子序列长度。**\n\n为什么必须「以 i 结尾」？因为如果只定义「前 i 个元素里的 LIS」，你是没法转移的——你不知道上一个选的元素值是多少，就没法判断能不能接上。**加上「以 i 结尾」这个约束，状态里就隐含了「最后一个值是 nums[i]」，转移才成立。这是 DP 状态设计里最常见的补救手法：状态不够就加维度。**\n\n转移：对所有 j < i，若 `nums[j] < nums[i]`，则可以用 `dp[j] + 1` 更新 `dp[i]`。初值全为 1（每个元素自己构成长度 1 的序列）。答案是 `max(dp)`。\n\n**为什么还是「较好」？** O(n²)。力扣 n 最大 2500，625 万次操作，能过但不算快。n 到 10^5 就死了。\n\n**这题的坑主要集中在「答案不是 dp[n-1]」上。** 因为最长子序列未必以最后一个元素结尾，必须扫全表取最大值。这个坑在「最大子数组和」里是反过来的（那个必须包含末尾），**两道题看起来很像我，答案取法完全不同，非常容易搞混。**\n\n坑：\n1. 初值全 1，不是 0；\n2. 答案是 `max(dp)`，不是 `dp[n-1]`；\n3. 严格递增用 `<`，非递减用 `<=`。",
+      "pseudocode": "输入：nums\n输出：LIS 长度\n\n1. n = nums 长度；如果 n 等于 0：return 0\n2. dp = 长度 n 的数组，全填 1\n3. 对 i 从 1 到 n 减 1：\n     对 j 从 0 到 i 减 1：\n        如果 nums[j] 小于 nums[i]：\n           dp[i] = max(dp[i], dp[j] 加 1)\n4. return dp 里的最大值\n\ndp[i] 必须定义为「以 i 结尾」，否则无法判断能否接上\n答案是全表最大值，不是 dp[n 减 1]\n复杂度：时间 O(n 的平方)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public int lengthOfLIS(int[] nums) {\n        int n = nums.length;\n        if (n == 0) return 0;\n        int[] dp = new int[n];\n        Arrays.fill(dp, 1);\n\n        int best = 1;\n        for (int i = 1; i < n; i++) {\n            for (int j = 0; j < i; j++) {\n                if (nums[j] < nums[i]) dp[i] = Math.max(dp[i], dp[j] + 1);\n            }\n            best = Math.max(best, dp[i]);\n        }\n        return best;\n    }\n}",
+      "timeComplexity": "O(n²)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "longest-increasing-subsequence",
+      "tier": "optimal",
+      "title": "贪心 + 二分：维护最小结尾数组",
+      "idea": "这是 LIS 最漂亮的做法，也是「贪心 + 二分」的经典样板。\n\n维护一个数组 `tails`，含义是：**`tails[k]` = 所有长度为 k+1 的递增子序列中，结尾最小的那个值。**\n\n遍历每个数 x：\n- 若 x 比 `tails` 的末尾还大，直接追加（LIS 长度加 1）；\n- 否则用二分找到 `tails` 里第一个 ≥ x 的位置，把它替换成 x。\n\n**为什么替换是对的？** 因为同样长度的子序列，结尾越小越「有前途」——后面来接数字时余地更大。所以长度不变、结尾更小，是一个纯粹的改进，不会破坏任何已有的可能性。**这是一个支配关系的论证：结尾更小的方案支配结尾更大的方案。**\n\n**为什么不能直接返回 tails 的长度就够了、还要记答案？** 其实 `tails.size()` 就是答案。但要特别注意：**`tails` 本身不是任何一个真实的递增子序列**，它只是「每个长度的最小结尾」这个信息表。所以不要试图返回它。这个误解非常普遍，面试时要主动说清。\n\n**复杂度 O(n log n)。** 内层是 `Arrays.binarySearch` 或手写二分。力扣 n 到 2500 时优势不明显，但 n 到 10^5 时只能用这一版。\n\n**边界细节：二分求「第一个 ≥ x」用的是 lowerBound。** 用 `Arrays.binarySearch(tails, 0, len, x)` 时若返回负数，插入点是 `-(ret+1)`；若返回非负说明找到了相等的元素，直接替换该位置（严格递增时相等也要替换，因为不能再接一个相同的）。\n\n坑：\n1. `tails` 要预分配 n 长度，用一个 `len` 变量记录有效长度（`Arrays.copyOf` 会慢）；\n2. 二分区间是 `[0, len)`，不是 `[0, n)`；\n3. 相等时也要替换（覆盖掉），否则重复元素会被算进长度。",
+      "pseudocode": "输入：nums\n输出：LIS 长度\n\n1. n = nums 长度；tails = 长度 n 的数组；len = 0\n2. 对 nums 里每个 x：\n     pos = 在 tails 的 0 到 len 范围里二分找第一个大于等于 x 的位置\n     tails[pos] = x\n     如果 pos 等于 len：len 加 1\n3. return len\n\n二分写法（左闭右开）：\n4. left = 0；right = len\n5. 当 left 小于 right：\n     mid = left 加 (right 减 left) 除以 2\n     如果 tails[mid] 小于 x：left = mid 加 1\n     否则：right = mid\n6. return left\n\ntails[k] 是长度为 k 加 1 的子序列里最小的结尾\ntails 本身不是任何真实子序列，只是信息表，别返回它\n复杂度：时间 O(n 乘 log n)；空间 O(n)",
+      "codeJava": "class Solution {\n    public int lengthOfLIS(int[] nums) {\n        int n = nums.length;\n        int[] tails = new int[n];\n        int len = 0;\n\n        for (int x : nums) {\n            int left = 0;\n            int right = len;\n            while (left < right) {\n                int mid = left + (right - left) / 2;\n                if (tails[mid] < x) left = mid + 1;\n                else right = mid;\n            }\n            tails[left] = x;\n            if (left == len) len++;\n        }\n        return len;\n    }\n}",
+      "timeComplexity": "O(n log n)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 3
+    }
+  ]
+}

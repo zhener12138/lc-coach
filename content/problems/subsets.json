@@ -1,0 +1,49 @@
+{
+  "slug": "subsets",
+  "frontendId": "78",
+  "titleEn": "Subsets",
+  "titleCn": "子集",
+  "difficulty": "Medium",
+  "tags": "位运算,数组,回溯",
+  "contentHtml": "<p>Given an integer array <code>nums</code> of <strong>unique</strong> elements, return <em>all possible</em> <span><em>subsets</em></span> <em>(the power set)</em>.</p>\n\n<p>The solution set <strong>must not</strong> contain duplicate subsets. Return the solution in <strong>any order</strong>.</p>\n\n<p>&nbsp;</p>\n<p><strong>Example 1:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [1,2,3]\n<strong>Output:</strong> [[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]\n</pre>\n\n<p><strong>Example 2:</strong></p>\n\n<pre>\n<strong>Input:</strong> nums = [0]\n<strong>Output:</strong> [[],[0]]\n</pre>\n\n<p>&nbsp;</p>\n<p><strong>Constraints:</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 10</code></li>\n\t<li><code>-10 &lt;= nums[i] &lt;= 10</code></li>\n\t<li>All the numbers of&nbsp;<code>nums</code> are <strong>unique</strong>.</li>\n</ul>",
+  "contentCnHtml": "<p>给你一个整数数组&nbsp;<code>nums</code> ，数组中的元素 <strong>互不相同</strong> 。返回该数组所有可能的<span>子集</span>（幂集）。</p>\n\n<p>解集 <strong>不能</strong> 包含重复的子集。你可以按 <strong>任意顺序</strong> 返回解集。</p>\n\n<p>&nbsp;</p>\n\n<p><strong>示例 1：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [1,2,3]\n<strong>输出：</strong>[[],[1],[2],[1,2],[3],[1,3],[2,3],[1,2,3]]\n</pre>\n\n<p><strong>示例 2：</strong></p>\n\n<pre>\n<strong>输入：</strong>nums = [0]\n<strong>输出：</strong>[[],[0]]\n</pre>\n\n<p>&nbsp;</p>\n\n<p><strong>提示：</strong></p>\n\n<ul>\n\t<li><code>1 &lt;= nums.length &lt;= 10</code></li>\n\t<li><code>-10 &lt;= nums[i] &lt;= 10</code></li>\n\t<li><code>nums</code> 中的所有元素 <strong>互不相同</strong></li>\n</ul>",
+  "javaTemplate": "class Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        \n    }\n}",
+  "solutions": [
+    {
+      "id": 0,
+      "problemSlug": "subsets",
+      "tier": "brute",
+      "title": "按位掩码枚举 · 2 的 n 次方位",
+      "idea": "n 个元素，每个元素有「选」和「不选」两种状态，所以子集总数恰好是 2ⁿ。这直接对应**二进制数的每一位**：用 0 到 2ⁿ-1 的每个数表示一种选择方案，第 j 位是 1 就表示选 `nums[j]`。\n\n为什么这一定对？因为 0 到 2ⁿ-1 恰好枚举了 n 位二进制的所有组合，而每个组合唯一对应一个子集，不重不漏。**这是「子集 ↔ 二进制」的双射**，是组合数学里最基础的一一对应。\n\n为什么算暴力？它必须显式枚举 2ⁿ 种情况（这不可优化，因为输出本身就有 2ⁿ 个），但**它不能剪枝、不能提前终止，也无法迁移到「子集和等于 target」这类需要剪枝的题**。而回溯版可以在中途判断「已经超了」就停，这是本质区别。\n\n为什么值得先写？因为它给出了**子集数量的直观证明**（2ⁿ），而且位运算的写法在真实工程里非常常用——比如权限位掩码、特征组合枚举、状态压缩 DP（状压 DP 就是这么干的）。\n\n坑：\n1. 内层循环用 `1 << j` 判断第 j 位，注意 `(mask >> j) & 1` 也行；\n2. `1 << n` 在 n ≥ 31 时溢出（int 只有 31 位可用），要改用 `long`；\n3. 结果顺序是「按掩码从小到大」，空集在最前面（mask=0）。\n\n复杂度 O(n · 2ⁿ) 时间，O(n · 2ⁿ) 空间。",
+      "pseudocode": "输入：nums\n输出：所有子集\n\n1. n = nums 长度，result = 空列表\n2. 对 mask 从 0 到 (1 左移 n) 减 1：\n     subset = 空列表\n     对 j 从 0 到 n-1：\n        如果 mask 的第 j 位是 1：subset 追加 nums[j]\n     result 追加 subset\n3. return result\n\nn 个元素有 选/不选 两种状态 → 共 2 的 n 次方个子集\n子集 ↔ 二进制是双射，这是状压 DP 的基础\n坑：1 左移 n 在 n 大于等于 31 时溢出\n复杂度：时间 O(n · 2 的 n 次方)；空间 O(n · 2 的 n 次方)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        int n = nums.length;\n        List<List<Integer>> result = new ArrayList<>();\n\n        for (int mask = 0; mask < (1 << n); mask++) {\n            List<Integer> subset = new ArrayList<>();\n            for (int j = 0; j < n; j++) {\n                if ((mask & (1 << j)) != 0) subset.add(nums[j]);\n            }\n            result.add(subset);\n        }\n        return result;\n    }\n}",
+      "timeComplexity": "O(n · 2ⁿ)",
+      "spaceComplexity": "O(n · 2ⁿ)",
+      "sortOrder": 1
+    },
+    {
+      "id": 0,
+      "problemSlug": "subsets",
+      "tier": "better",
+      "title": "回溯 · 每个节点都是答案",
+      "idea": "子集问题在回溯家族里有一个特殊之处：**树的每个节点都是一个合法子集**，不像排列那样只有叶子才是答案。\n\n所以模板要改一处：**进入函数后先收集当前 path，再往下递归**，而不是在终止条件里收集。\n\n参数用 `start`（下一个可选元素的起始下标）来保证**不重复**：选了 `nums[i]` 之后，下一层只能从 `i+1` 开始选，所以 `[1,2]` 和 `[2,1]` 不会同时出现（它们被视为同一个子集）。\n\n为什么这一定对？因为任何子集都可以按「下标递增」的顺序唯一表示，而 `start` 参数强制了这个顺序。每个子集恰好对应树上一个节点，不重不漏。\n\n相比位掩码版改了什么？\n- 空间从 O(n·2ⁿ) 降到 **O(n)**（只有 path，输出另算）；\n- **可以剪枝**：如果题目变成「子集和不超过 target」，在循环里加一句 `if (sum > target) break;` 就搞定，位掩码版做不到；\n- 模板可迁移：`start` 参数是组合类问题的统一入口（77 组合、39/40 组合总和、131 分割回文串）。\n\n**「每个节点都是答案」这个识别点是关键**：遇到「求所有 XXX」的题，先问自己「答案是树的叶子还是所有节点？」。子集是节点，排列是叶子，组合是叶子（长度等于 k 时）。\n\n坑：\n1. `result.add` 要放在循环**之前**（先收当前 path）；\n2. 必须 `new ArrayList<>(path)`；\n3. 循环里 `backtrack(i + 1)` 是 `i+1` 不是 `start+1`——这是「不重复」的关键；\n4. 撤销 `path.remove(path.size()-1)` 不能漏。\n\n复杂度 O(n · 2ⁿ) 时间，O(n) 空间（不含输出）。",
+      "pseudocode": "输入：nums\n输出：所有子集\n\nresult = 空列表，path = 空列表\n\nbacktrack(start)：\n  result 追加 path 的副本          // 每个节点都是答案，先收集\n  对 i 从 start 到 n-1：\n     path 追加 nums[i]\n     backtrack(i + 1)              // 从 i+1 开始，保证不重复\n     path 删掉最后一个              // 撤销\n\n主流程：backtrack(0)，return result\n\n特殊点：树的每个节点都是答案，不像排列只有叶子是答案\nstart 参数强制下标递增，所以不会重复\n可剪枝：子集和类问题在循环里加 sum 判断即可\n复杂度：时间 O(n · 2 的 n 次方)；空间 O(n)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    private List<List<Integer>> result = new ArrayList<>();\n    private List<Integer> path = new ArrayList<>();\n\n    public List<List<Integer>> subsets(int[] nums) {\n        backtrack(nums, 0);\n        return result;\n    }\n\n    private void backtrack(int[] nums, int start) {\n        result.add(new ArrayList<>(path));   // 每个节点都是答案\n\n        for (int i = start; i < nums.length; i++) {\n            path.add(nums[i]);\n            backtrack(nums, i + 1);          // 从 i+1 开始，保证不重复\n            path.remove(path.size() - 1);    // 撤销\n        }\n    }\n}",
+      "timeComplexity": "O(n · 2ⁿ)",
+      "spaceComplexity": "O(n)",
+      "sortOrder": 2
+    },
+    {
+      "id": 0,
+      "problemSlug": "subsets",
+      "tier": "optimal",
+      "title": "逐个元素迭代扩张 · 复用已有子集",
+      "idea": "这版不用递归也不用位运算，而是用**迭代增量构造**，思路极其干净：\n\n从「只含空集」开始，每拿来一个元素 `v`，就把当前所有子集**各复制一份并加上 v**，追加到结果里。\n\n举例：`nums = [1,2,3]`\n- 初始：`[[]]`\n- 加入 1：`[[], [1]]`\n- 加入 2：`[[], [1], [2], [1,2]]`\n- 加入 3：`[[], [1], [2], [1,2], [3], [1,3], [2,3], [1,2,3]]`\n\n为什么这一定对？因为「不含 v 的所有子集」+「含 v 的所有子集（= 不含 v 的每个子集加 v）」恰好是全部子集，两两不重。这本质上是**子集数量的递推式 `S(n) = 2·S(n-1)`** 的执行过程。\n\n为什么这版算最优？\n- **没有递归**，零爆栈风险；\n- **没有额外的 path 维护**，不需要撤销操作，因此不可能漏写撤销（这是回溯版最常见的 bug）；\n- **代码最短**（6 行），可读性最高；\n- 空间 O(n·2ⁿ) 但只有输出本身，无额外结构（对比位掩码版的额外开销）。\n\n**它的局限**：无法剪枝。如果题目要求「只保留和不超过 target 的子集」，这个版本做不了——因为它在生成时不保留和的信息。所以**回溯版和迭代版各有适用场景**：纯枚举用迭代版，需要约束/剪枝用回溯版。能说清这个取舍就是成熟的判断。\n\n坑：\n1. 内层循环必须**先固定 `size = result.size()`**，因为 `result` 在循环中会增长，用动态的 size 会无限循环；\n2. 复制的子集要 `new ArrayList<>(result.get(i))` 再 `add(v)`，不能直接改原列表。\n\n复杂度 O(n · 2ⁿ) 时间，O(n · 2ⁿ) 空间。",
+      "pseudocode": "输入：nums\n输出：所有子集\n\n1. result = 空列表，里面放一个空列表      // 只有空集\n2. 对 nums 里每个 v：\n     size = result 当前长度              // 必须先固定！\n     对 i 从 0 到 size-1：\n        copy = result[i] 的副本\n        copy 追加 v\n        result 追加 copy                  // 含 v 的那一半\n3. return result\n\n不含 v 的子集 + 含 v 的子集 = 全部子集，两两不重\n递推式 S(n) = 2 · S(n-1) 的执行过程\n优势：无递归、无撤销操作，不可能漏写 remove\n局限：无法剪枝，带约束的子集问题要用回溯版\n复杂度：时间 O(n · 2 的 n 次方)；空间 O(n · 2 的 n 次方)",
+      "codeJava": "import java.util.*;\n\nclass Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        List<List<Integer>> result = new ArrayList<>();\n        result.add(new ArrayList<>());\n\n        for (int v : nums) {\n            int size = result.size();       // 必须先固定\n            for (int i = 0; i < size; i++) {\n                List<Integer> copy = new ArrayList<>(result.get(i));\n                copy.add(v);\n                result.add(copy);\n            }\n        }\n        return result;\n    }\n}",
+      "timeComplexity": "O(n · 2ⁿ)",
+      "spaceComplexity": "O(n · 2ⁿ)",
+      "sortOrder": 3
+    }
+  ]
+}
