@@ -1,0 +1,366 @@
+[
+  {
+    "category": "万能开头",
+    "title": "万能开头",
+    "code": "import java.util.*;",
+    "note": "力扣里一般已经预置了 `import java.util.*;`，没有就自己加这一行。",
+    "sortOrder": 0
+  },
+  {
+    "category": "数组",
+    "title": "数组",
+    "code": "// 长度\nint n = nums.length;\n\n// 遍历\nfor (int i = 0; i < n; i++) { }\n\n// 倒序遍历\nfor (int i = n - 1; i >= 0; i--) { }\n\n// 创建返回数组\nreturn new int[]{i, j};\n\n// 创建指定长度的数组\nint[] arr = new int[n];\n\n// 复制数组\nint[] copy = Arrays.copyOf(nums, nums.length);\n\n// 排序\nArrays.sort(nums);\n\n// 填充\nArrays.fill(arr, 0);\n\n// 二维数组\nint[][] grid = new int[m][n];\nint rows = grid.length, cols = grid[0].length;\n\n// 数组转 List（注意返回的是定长 List，不能 add）\nList<Integer> list = Arrays.asList(1, 2, 3);",
+    "note": "数组是力扣最基础的结构，八成题的第一反应都是「能不能一趟扫完」，先想清楚下标范围和越界。",
+    "sortOrder": 1
+  },
+  {
+    "category": "字符串",
+    "title": "字符串",
+    "code": "// 长度（有括号！）\nint n = s.length();\n\n// 取字符\nchar c = s.charAt(i);\n\n// 转字符数组\nchar[] cs = s.toCharArray();\n\n// 字符数组转字符串\nString t = new String(cs);\n\n// 子串（左闭右开）\nString sub = s.substring(a, b);\n\n// 判断相等（必须用 equals）\nif (s1.equals(s2)) { }\n\n// 大小写\ns.toLowerCase();\ns.toUpperCase();\n\n// 去空格\ns.trim();\n\n// 拆分\nString[] parts = s.split(\",\");\n\n// 字符串拼接（循环里用 StringBuilder，别用 +）\nStringBuilder sb = new StringBuilder();\nsb.append('a');\nsb.append(\"bc\");\nString result = sb.toString();\n\n// 字符串反转\nString rev = new StringBuilder(s).reverse().toString();",
+    "note": "Java 里字符串不可变，每次拼字符串都在造新对象，循环里拼接一定要换 StringBuilder。",
+    "sortOrder": 2
+  },
+  {
+    "category": "HashMap（哈希表）",
+    "title": "HashMap（哈希表）",
+    "code": "// 建表：键 → 值\nMap<Integer, Integer> map = new HashMap<>();\nMap<Character, Integer> count = new HashMap<>();\nMap<String, List<Integer>> groups = new HashMap<>();\n\n// 存\nmap.put(key, value);\n\n// 取\nint v = map.get(key);\n\n// 查是否存在\nif (map.containsKey(key)) { }\n\n// 取不到就给默认值（最常用！）\nint c = map.getOrDefault(key, 0);\n\n// 计数套路\nmap.put(x, map.getOrDefault(x, 0) + 1);\n\n// 删除\nmap.remove(key);\n\n// 大小\nint size = map.size();\n\n// 遍历\nfor (Map.Entry<Integer, Integer> e : map.entrySet()) {\n    int k = e.getKey();\n    int v = e.getValue();\n}\n\n// 只遍历 key\nfor (int k : map.keySet()) { }\n\n// 只遍历 value\nfor (int v : map.values()) { }\n\nMap<Integer, Integer> map = new HashMap<>();  // 值 → 下标\nfor (int i = 0; i < nums.length; i++) {\n    int need = target - nums[i];\n    if (map.containsKey(need)) {\n        return new int[]{map.get(need), i};\n    }\n    map.put(nums[i], i);   // 先查后存，保证不重复用同一元素\n}\n\nMap<Character, Integer> freq = new HashMap<>();\nfor (char c : s.toCharArray()) {\n    freq.put(c, freq.getOrDefault(c, 0) + 1);\n}",
+    "note": "### 两数之和模板（哈希边扫边查） ### 统计频次模板",
+    "sortOrder": 3
+  },
+  {
+    "category": "HashSet（去重、判重）",
+    "title": "HashSet（去重、判重）",
+    "code": "Set<Integer> set = new HashSet<>();\nSet<Character> seen = new HashSet<>();\n\nset.add(x);\nif (set.contains(x)) { }\nset.remove(x);\nint size = set.size();\n\n// 经典用法：边扫边判重\nfor (int x : nums) {\n    if (set.contains(x)) return true;\n    set.add(x);\n}",
+    "note": "只要题目出现「重复」「是否存在」就先想 HashSet，代价是额外 O(n) 空间换 O(1) 判断。",
+    "sortOrder": 4
+  },
+  {
+    "category": "ArrayList（动态数组）",
+    "title": "ArrayList（动态数组）",
+    "code": "List<Integer> list = new ArrayList<>();\nList<List<Integer>> res = new ArrayList<>();\n\nlist.add(x);\nlist.add(index, x);\nlist.get(i);\nlist.set(i, x);\nlist.size();\nlist.isEmpty();\nlist.remove(index);          // 按下标删\nlist.remove(Integer.valueOf(x)); // 按值删\n\n// 排序\nCollections.sort(list);\n\n// 遍历\nfor (int x : list) { }",
+    "note": "ArrayList 查得快、中间插入删除慢，知道要频繁头部操作就别用它，换 LinkedList 或 ArrayDeque。",
+    "sortOrder": 5
+  },
+  {
+    "category": "栈和队列（都用 ArrayDeque）",
+    "title": "栈和队列（都用 ArrayDeque）",
+    "code": "// 栈：后进先出\nDeque<Integer> stack = new ArrayDeque<>();\nstack.push(x);    // 入栈\nstack.pop();      // 出栈\nstack.peek();     // 看栈顶\nstack.isEmpty();\n\n// 队列：先进先出\nDeque<Integer> queue = new ArrayDeque<>();\nqueue.offer(x);   // 入队\nqueue.poll();     // 出队\nqueue.peek();     // 看队头\nqueue.isEmpty();\n\n// 单调栈套路（下一个更大元素）\nDeque<Integer> st = new ArrayDeque<>();\nfor (int i = 0; i < n; i++) {\n    while (!st.isEmpty() && nums[st.peek()] < nums[i]) {\n        int idx = st.pop();   // idx 的下一个更大元素就是 nums[i]\n    }\n    st.push(i);\n}",
+    "note": "> 别用 `Stack` 类和 `LinkedList` 当栈/队列，Java 里 `ArrayDeque` 最快。",
+    "sortOrder": 6
+  },
+  {
+    "category": "双指针",
+    "title": "双指针",
+    "code": "// 对撞指针（通常要求有序）\nint l = 0, r = nums.length - 1;\nwhile (l < r) {\n    int sum = nums[l] + nums[r];\n    if (sum == target) { /* 找到 */ break; }\n    else if (sum < target) l++;\n    else r--;\n}\n\n// 快慢指针（链表判环）\nListNode slow = head, fast = head;\nwhile (fast != null && fast.next != null) {\n    slow = slow.next;\n    fast = fast.next.next;\n    if (slow == fast) { /* 有环 */ }\n}\n\n// 同向双指针（删除重复元素）\nint slow = 0;\nfor (int fast = 0; fast < n; fast++) {\n    if (nums[fast] != nums[slow]) {\n        slow++;\n        nums[slow] = nums[fast];\n    }\n}",
+    "note": "双指针把 O(n²) 的两层循环压成 O(n) 的关键前提是数组有序，无序先排序再想。",
+    "sortOrder": 7
+  },
+  {
+    "category": "滑动窗口",
+    "title": "滑动窗口",
+    "code": "// 求最长/最短满足条件的子串/子数组\nint left = 0;\nMap<Character, Integer> window = new HashMap<>();\nint ans = 0;\n\nfor (int right = 0; right < s.length(); right++) {\n    char c = s.charAt(right);\n    window.put(c, window.getOrDefault(c, 0) + 1);\n\n    // 窗口不满足条件时收缩\n    while (/* 不满足条件 */) {\n        char d = s.charAt(left);\n        window.put(d, window.get(d) - 1);\n        if (window.get(d) == 0) window.remove(d);\n        left++;\n    }\n\n    ans = Math.max(ans, right - left + 1);  // 求最长\n}",
+    "note": "滑动窗口解决的是「连续子数组/子串」的最值问题，想清楚什么时候右扩、什么时候左缩。",
+    "sortOrder": 8
+  },
+  {
+    "category": "二分查找",
+    "title": "二分查找",
+    "code": "// 标准二分（找目标值）\nint l = 0, r = nums.length - 1;\nwhile (l <= r) {\n    int mid = l + (r - l) / 2;   // 防溢出写法\n    if (nums[mid] == target) return mid;\n    else if (nums[mid] < target) l = mid + 1;\n    else r = mid - 1;\n}\n\n// 找左边界（第一个 >= target 的位置）\nint l = 0, r = nums.length;\nwhile (l < r) {\n    int mid = l + (r - l) / 2;\n    if (nums[mid] < target) l = mid + 1;\n    else r = mid;\n}\nreturn l;   // 可能等于 nums.length，表示没找到",
+    "note": "二分的边界是全场最容易写错的地方，统一用左闭右开或闭区间中的一个，别两种混着用。",
+    "sortOrder": 9
+  },
+  {
+    "category": "链表",
+    "title": "链表",
+    "code": "class ListNode {\n    int val;\n    ListNode next;\n    ListNode(int x) { val = x; }\n}\n\n// 虚拟头节点（能省掉大量边界判断）\nListNode dummy = new ListNode(0);\ndummy.next = head;\n\n// 反转链表\nListNode prev = null, cur = head;\nwhile (cur != null) {\n    ListNode nxt = cur.next;\n    cur.next = prev;\n    prev = cur;\n    cur = nxt;\n}\nreturn prev;\n\n// 遍历\nwhile (cur != null) {\n    // 处理 cur.val\n    cur = cur.next;\n}",
+    "note": "链表题九成要虚拟头节点，能省掉「头节点被删」这一整类特判。",
+    "sortOrder": 10
+  },
+  {
+    "category": "二叉树",
+    "title": "二叉树",
+    "code": "class TreeNode {\n    int val;\n    TreeNode left, right;\n    TreeNode(int x) { val = x; }\n}\n\n// 前序 / 中序 / 后序（递归）\nvoid dfs(TreeNode root) {\n    if (root == null) return;\n    // 前序：这里处理 root\n    dfs(root.left);\n    // 中序：这里处理 root\n    dfs(root.right);\n    // 后序：这里处理 root\n}\n\n// 层序遍历（BFS）\nQueue<TreeNode> q = new LinkedList<>();\nq.offer(root);\nwhile (!q.isEmpty()) {\n    int size = q.size();\n    for (int i = 0; i < size; i++) {\n        TreeNode node = q.poll();\n        // 处理 node\n        if (node.left != null) q.offer(node.left);\n        if (node.right != null) q.offer(node.right);\n    }\n}",
+    "note": "二叉树题先确定是「前中后序」还是「层序」，遍历顺序选错就得返工重写。",
+    "sortOrder": 11
+  },
+  {
+    "category": "回溯（全排列 / 子集 / 组合）",
+    "title": "回溯（全排列 / 子集 / 组合）",
+    "code": "List<List<Integer>> res = new ArrayList<>();\nList<Integer> path = new ArrayList<>();\n\nvoid backtrack(参数) {\n    if (满足结束条件) {\n        res.add(new ArrayList<>(path));  // 必须 new，否则存的是引用\n        return;\n    }\n    for (选择 : 选择列表) {\n        path.add(选择);        // 做选择\n        backtrack(新参数);\n        path.remove(path.size() - 1);  // 撤销\n    }\n}",
+    "note": "回溯的模板是「做选择 → 递归 → 撤销」，撤销那一步漏写就会得到脏结果。",
+    "sortOrder": 12
+  },
+  {
+    "category": "图 / 网格 DFS、BFS",
+    "title": "图 / 网格 DFS、BFS",
+    "code": "// 网格 DFS（岛屿数量）\nint[][] dirs = {{1,0}, {-1,0}, {0,1}, {0,-1}};\n\nvoid dfs(int[][] grid, int i, int j) {\n    if (i < 0 || i >= grid.length || j < 0 || j >= grid[0].length) return;\n    if (grid[i][j] != 1) return;\n\n    grid[i][j] = 2;  // 标记已访问\n    for (int[] d : dirs) {\n        dfs(grid, i + d[0], j + d[1]);\n    }\n}\n\n// 网格 BFS\nQueue<int[]> q = new LinkedList<>();\nq.offer(new int[]{si, sj});\nint step = 0;\nwhile (!q.isEmpty()) {\n    int size = q.size();\n    for (int k = 0; k < size; k++) {\n        int[] cur = q.poll();\n        for (int[] d : dirs) {\n            int ni = cur[0] + d[0], nj = cur[1] + d[1];\n            if (合法 && 未访问) {\n                q.offer(new int[]{ni, nj});\n            }\n        }\n    }\n    step++;\n}",
+    "note": "网格 DFS 递归深度可能到 m×n 会爆栈，数据大时改用 BFS 或并查集。",
+    "sortOrder": 13
+  },
+  {
+    "category": "动态规划",
+    "title": "动态规划",
+    "code": "// 一维 DP（爬楼梯 / 打家劫舍）\nint[] dp = new int[n + 1];\ndp[0] = 1;\nfor (int i = 1; i <= n; i++) {\n    dp[i] = dp[i - 1] + dp[i - 2];\n}\nreturn dp[n];\n\n// 二维 DP（不同路径 / 编辑距离）\nint[][] dp = new int[m][n];\nfor (int i = 0; i < m; i++) {\n    for (int j = 0; j < n; j++) {\n        // dp[i][j] = ...\n    }\n}",
+    "note": "**DP 三步，写在纸上再写代码：** 1. `dp[i]` 的定义是什么（一句话说清） 2. 转移方程是什么 3. 初始值是什么",
+    "sortOrder": 14
+  },
+  {
+    "category": "常用小技巧",
+    "title": "常用小技巧",
+    "code": "// 最大值 / 最小值\nint max = Integer.MIN_VALUE;\nint min = Integer.MAX_VALUE;\nMath.max(a, b);\nMath.min(a, b);\nMath.abs(x);\n\n// 取整\nx / 2        // 整数除法\nx % 2        // 取余\n(int) Math.sqrt(x)\n\n// 交换\nint tmp = a; a = b; b = tmp;\n\n// 字符转数字\nint num = c - '0';\n\n// 数字转字符\nchar c = (char) (num + '0');\n\n// 字母转下标（a=0, b=1, ...）\nint idx = c - 'a';\n\n// 26 个字母计数数组\nint[] cnt = new int[26];\ncnt[c - 'a']++;\n\n// 判断奇偶\nif (x % 2 == 0) { }   // 偶数\n\n// 位运算\nx & 1        // 判断奇偶\nx >> 1       // 除以 2\nx << 1       // 乘以 2",
+    "note": "位运算和小技巧能救场的场景不多，但一旦用上就是 O(1)，常见的就那几个，记住就够。",
+    "sortOrder": 15
+  },
+  {
+    "category": "单调栈",
+    "title": "下一个更大元素（模板本体）",
+    "code": "// 求每个位置右边第一个比它大的元素下标，没有则 -1\nint[] nextGreater(int[] nums) {\n    int n = nums.length;\n    int[] res = new int[n];\n    Arrays.fill(res, -1);\n\n    // 栈里存「下标」，且从栈底到栈顶是递减的（栈顶最小）\n    Deque<Integer> stack = new ArrayDeque<>();\n    for (int i = 0; i < n; i++) {\n        // 当前元素比栈顶大 → 栈顶那个位置的答案就是 i\n        while (!stack.isEmpty() && nums[stack.peek()] < nums[i]) {\n            res[stack.pop()] = i;\n        }\n        stack.push(i);\n    }\n    return res;\n}",
+    "note": "题目出现「下一个更大/更小」「右边第一个比它大的」就往单调栈上想，每个元素只进出栈一次所以是 O(n)。",
+    "sortOrder": 100
+  },
+  {
+    "category": "单调栈",
+    "title": "每日温度 / 下一个更大元素的距离",
+    "code": "int[] dailyTemperatures(int[] t) {\n    int n = t.length;\n    int[] res = new int[n];          // 默认 0 = 后面没有更暖的\n    Deque<Integer> stack = new ArrayDeque<>();   // 存下标，栈内温度递减\n\n    for (int i = 0; i < n; i++) {\n        while (!stack.isEmpty() && t[stack.peek()] < t[i]) {\n            int prev = stack.pop();\n            res[prev] = i - prev;    // 天数差\n        }\n        stack.push(i);\n    }\n    return res;\n}",
+    "note": "和上一个同源，只是要的是「隔了几天」，把答案从下标换成下标之差。",
+    "sortOrder": 101
+  },
+  {
+    "category": "单调栈",
+    "title": "柱状图中最大的矩形（两侧第一个更矮）",
+    "code": "int largestRectangleArea(int[] h) {\n    int n = h.length;\n    // 左右各加一个 0 当哨兵：省掉「栈空了怎么办」和「扫完栈里还剩」两种特判\n    int[] a = new int[n + 2];\n    for (int i = 0; i < n; i++) a[i + 1] = h[i];\n\n    Deque<Integer> stack = new ArrayDeque<>();\n    int best = 0;\n    for (int i = 0; i < a.length; i++) {\n        while (!stack.isEmpty() && a[stack.peek()] > a[i]) {\n            int height = a[stack.pop()];\n            int width = i - stack.peek() - 1;   // 弹掉后栈顶就是左边界\n            best = Math.max(best, height * width);\n        }\n        stack.push(i);\n    }\n    return best;\n}",
+    "note": "想求「以某根柱子为高的最大矩形」，就要知道它左右两边第一个比它矮的位置，这是单调栈最经典的变形。",
+    "sortOrder": 102
+  },
+  {
+    "category": "堆 / 优先队列",
+    "title": "大顶堆与小顶堆（Java 写法）",
+    "code": "// 小顶堆（默认）\nPriorityQueue<Integer> minHeap = new PriorityQueue<>();\n\n// 大顶堆：两种等价写法\nPriorityQueue<Integer> maxHeap = new PriorityQueue<>(Collections.reverseOrder());\nPriorityQueue<Integer> maxHeap2 = new PriorityQueue<>((a, b) -> b - a);\n\n// 存数组时按第 0 位排序（Dijkstra 常用）\nPriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[0] - b[0]);\n\n// 注意：b - a 有溢出风险，数值可能接近 int 边界时用 Integer.compare(b, a)",
+    "note": "Java 的 PriorityQueue 默认是小顶堆，要大顶堆必须传 Collections.reverseOrder() 或自己写比较器，这一点第一次用必踩坑。",
+    "sortOrder": 103
+  },
+  {
+    "category": "堆 / 优先队列",
+    "title": "求第 K 大 / TopK 元素",
+    "code": "int findKthLargest(int[] nums, int k) {\n    // 求第 K 大 → 小顶堆；求第 K 小 → 大顶堆\n    PriorityQueue<Integer> heap = new PriorityQueue<>();\n    for (int x : nums) {\n        heap.offer(x);\n        if (heap.size() > k) heap.poll();   // 超过 k 个就把最小的踢掉\n    }\n    return heap.peek();\n}\n\n// TopK 的 k 个元素（不要求顺序）\nint[] topK(int[] nums, int k) {\n    PriorityQueue<Integer> heap = new PriorityQueue<>();\n    for (int x : nums) {\n        heap.offer(x);\n        if (heap.size() > k) heap.poll();\n    }\n    int[] res = new int[k];\n    for (int i = k - 1; i >= 0; i--) res[i] = heap.poll();   // 弹出是升序，倒着填\n    return res;\n}",
+    "note": "求第 K 大要用「小顶堆」而不是大顶堆，堆顶是当前 k 个里最小的那个，正是被淘汰的分界线——这是最容易记反的一处。",
+    "sortOrder": 104
+  },
+  {
+    "category": "堆 / 优先队列",
+    "title": "数据流中位数（双堆）",
+    "code": "class MedianFinder {\n    PriorityQueue<Integer> left  = new PriorityQueue<>(Collections.reverseOrder()); // 小的一半，堆顶是最大值\n    PriorityQueue<Integer> right = new PriorityQueue<>();                           // 大的一半，堆顶是最小值\n\n    public void addNum(int num) {\n        left.offer(num);\n        right.offer(left.poll());            // 先丢给右边，保证有序\n        if (right.size() > left.size()) {    // 再平衡，让左边不少于右边\n            left.offer(right.poll());\n        }\n    }\n\n    public double findMedian() {\n        if (left.size() > right.size()) return left.peek();\n        return (left.peek() + right.peek()) / 2.0;   // 注意 2.0，否则整数除法\n    }\n}",
+    "note": "「不断插入、随时问中位数」就双堆：左边大顶堆存小的一半，右边小顶堆存大的一半，保证左边不比右边少也不多超过 1 个。",
+    "sortOrder": 105
+  },
+  {
+    "category": "并查集（Union-Find）",
+    "title": "并查集完整模板（路径压缩 + 按秩合并）",
+    "code": "class UnionFind {\n    private final int[] parent;\n    private final int[] rank;\n    private int count;                 // 连通块个数\n\n    public UnionFind(int n) {\n        parent = new int[n];\n        rank = new int[n];\n        count = n;\n        for (int i = 0; i < n; i++) parent[i] = i;\n    }\n\n    public int find(int x) {\n        // 路径压缩：顺手把沿途节点都挂到根上，之后查就是 O(1)\n        if (parent[x] != x) parent[x] = find(parent[x]);\n        return parent[x];\n    }\n\n    public boolean union(int a, int b) {\n        int ra = find(a), rb = find(b);\n        if (ra == rb) return false;    // 已经连通 —— 再加这条边就会成环\n        // 按秩合并：把矮的树挂到高的树下，防止退化成链表\n        if (rank[ra] < rank[rb])      parent[ra] = rb;\n        else if (rank[ra] > rank[rb]) parent[rb] = ra;\n        else { parent[rb] = ra; rank[ra]++; }\n        count--;\n        return true;\n    }\n\n    public boolean connected(int a, int b) { return find(a) == find(b); }\n    public int count() { return count; }\n}",
+    "note": "题目问「连不连通」「有几个连通块」「加这条边会不会成环」，都优先想并查集，比 DFS 泛洪好写且能在线加边。",
+    "sortOrder": 106
+  },
+  {
+    "category": "并查集（Union-Find）",
+    "title": "二维网格转并查集（岛屿 / 连通区域）",
+    "code": "int countIslands(char[][] grid) {\n    int m = grid.length, n = grid[0].length;\n    UnionFind uf = new UnionFind(m * n);\n    int water = 0;\n\n    for (int r = 0; r < m; r++) {\n        for (int c = 0; c < n; c++) {\n            if (grid[r][c] == '0') { water++; continue; }\n\n            // 只往右和往下看，避免同一条边被合并两次\n            if (c + 1 < n && grid[r][c + 1] == '1') uf.union(r * n + c, r * n + c + 1);\n            if (r + 1 < m && grid[r + 1][c] == '1') uf.union(r * n + c, (r + 1) * n + c);\n        }\n    }\n    // 连通块数要减掉所有水格（每格水单独算了一个块）\n    return uf.count() - water;\n}",
+    "note": "网格题用并查集的关键是把 (r,c) 压成一维下标 r * cols + c，「只往右和往下合并」就够，不用四个方向都做。",
+    "sortOrder": 107
+  },
+  {
+    "category": "字典树 Trie",
+    "title": "Trie 模板（数组版，26 字母）",
+    "code": "class Trie {\n    private final Trie[] children = new Trie[26];\n    private boolean isEnd;                    // 必须是独立字段，不能用「有孩子」代替\n\n    public void insert(String word) {\n        Trie node = this;\n        for (char ch : word.toCharArray()) {\n            int i = ch - 'a';\n            if (node.children[i] == null) node.children[i] = new Trie();\n            node = node.children[i];\n        }\n        node.isEnd = true;\n    }\n\n    private Trie walk(String prefix) {\n        Trie node = this;\n        for (char ch : prefix.toCharArray()) {\n            int i = ch - 'a';\n            if (node.children[i] == null) return null;\n            node = node.children[i];\n        }\n        return node;\n    }\n\n    public boolean search(String word) {\n        Trie n = walk(word);\n        return n != null && n.isEnd;          // 必须整词结束，不能只是前缀\n    }\n\n    public boolean startsWith(String prefix) {\n        return walk(prefix) != null;          // 是前缀就行\n    }\n}",
+    "note": "任务是「前缀」「自动补全」「单词是否在集合里且支持前缀查询」，就用 Trie，查一个词是 O(长度) 跟词库大小无关。",
+    "sortOrder": 108
+  },
+  {
+    "category": "字典树 Trie",
+    "title": "Trie 模板（Map 版，字符集不确定时用）",
+    "code": "class TrieNode {\n    Map<Character, TrieNode> children = new HashMap<>();\n    boolean isEnd;\n}\n\nclass Trie {\n    private final TrieNode root = new TrieNode();\n\n    public void insert(String word) {\n        TrieNode node = root;\n        for (char ch : word.toCharArray()) {\n            node = node.children.computeIfAbsent(ch, k -> new TrieNode());\n        }\n        node.isEnd = true;\n    }\n\n    public boolean search(String word) {\n        TrieNode n = walk(word);\n        return n != null && n.isEnd;\n    }\n\n    public boolean startsWith(String prefix) { return walk(prefix) != null; }\n\n    private TrieNode walk(String s) {\n        TrieNode node = root;\n        for (char ch : s.toCharArray()) {\n            node = node.children.get(ch);\n            if (node == null) return null;\n        }\n        return node;\n    }\n}",
+    "note": "字符不只有 a-z（大小写、数字、汉字）时，用 Map 存孩子比开 26 或 128 的数组省内存也通用。",
+    "sortOrder": 109
+  },
+  {
+    "category": "拓扑排序",
+    "title": "Kahn 算法（BFS 剥入度为 0）",
+    "code": "// 返回 true 表示能学完全部课程（无环）\nboolean canFinish(int numCourses, int[][] prerequisites) {\n    List<List<Integer>> g = new ArrayList<>();\n    for (int i = 0; i < numCourses; i++) g.add(new ArrayList<>());\n    int[] indeg = new int[numCourses];\n\n    for (int[] p : prerequisites) {\n        g.get(p[1]).add(p[0]);   // p[1] 是 p[0] 的先修课\n        indeg[p[0]]++;\n    }\n\n    Deque<Integer> q = new ArrayDeque<>();\n    for (int i = 0; i < numCourses; i++) if (indeg[i] == 0) q.offer(i);\n\n    int seen = 0;\n    while (!q.isEmpty()) {\n        int cur = q.poll();\n        seen++;\n        for (int next : g.get(cur)) {\n            if (--indeg[next] == 0) q.offer(next);   // 入度归零才可以进队\n        }\n    }\n    return seen == numCourses;\n}",
+    "note": "题目出现「先修课程」「有向依赖」「能不能排出一个合法顺序」，就是拓扑排序。输出节点数 < 总数就说明有环。",
+    "sortOrder": 110
+  },
+  {
+    "category": "拓扑排序",
+    "title": "拓扑排序求输出顺序（课程表 II）",
+    "code": "int[] findOrder(int numCourses, int[][] prerequisites) {\n    List<List<Integer>> g = new ArrayList<>();\n    for (int i = 0; i < numCourses; i++) g.add(new ArrayList<>());\n    int[] indeg = new int[numCourses];\n\n    for (int[] p : prerequisites) {\n        g.get(p[1]).add(p[0]);\n        indeg[p[0]]++;\n    }\n\n    Deque<Integer> q = new ArrayDeque<>();\n    for (int i = 0; i < numCourses; i++) if (indeg[i] == 0) q.offer(i);\n\n    int[] res = new int[numCourses];\n    int k = 0;\n    while (!q.isEmpty()) {\n        int cur = q.poll();\n        res[k++] = cur;                          // 出队即入答案，天然正序\n        for (int next : g.get(cur)) {\n            if (--indeg[next] == 0) q.offer(next);\n        }\n    }\n    return k == numCourses ? res : new int[0];   // 没排完 = 有环 = 无解\n}",
+    "note": "和上面同一套代码，只是顺手把出队顺序记下来就是答案；如果要求字典序最小，把队列换成 PriorityQueue。",
+    "sortOrder": 111
+  },
+  {
+    "category": "前缀和 / 差分",
+    "title": "一维前缀和（区间和 O(1)）",
+    "code": "// pre[i] = nums[0..i-1] 的和，pre[0] = 0\n// 多留一个 0 是为了让「从下标 0 开始的区间」不用特判\nint[] buildPrefix(int[] nums) {\n    int n = nums.length;\n    int[] pre = new int[n + 1];\n    for (int i = 0; i < n; i++) pre[i + 1] = pre[i] + nums[i];\n    return pre;\n}\n\n// 闭区间 [l, r] 的和\nint rangeSum(int[] pre, int l, int r) {\n    return pre[r + 1] - pre[l];\n}",
+    "note": "题目要反复问「某个区间之和」时先建前缀和，一次 O(n) 预处理换每次 O(1)，比每次重新累加快得多。",
+    "sortOrder": 112
+  },
+  {
+    "category": "前缀和 / 差分",
+    "title": "前缀和 + HashMap 数子数组（和为 K）",
+    "code": "int subarraySum(int[] nums, int k) {\n    // key = 前缀和, value = 这个和出现过几次\n    Map<Integer, Integer> pre = new HashMap<>();\n    pre.put(0, 1);          // 关键：空前缀算一次，否则漏掉「从下标 0 开始」的答案\n\n    int sum = 0, cnt = 0;\n    for (int x : nums) {\n        sum += x;\n        // 找 sum - k 出现过几次：说明中间那段的和正好是 k\n        cnt += pre.getOrDefault(sum - k, 0);\n        pre.merge(sum, 1, Integer::sum);\n    }\n    return cnt;\n}",
+    "note": "「有多少个子数组和正好是 K」这类题，前缀和一身两用：既算区间和，又当哈希表的 key 去找前面有没有需要的差值。",
+    "sortOrder": 113
+  },
+  {
+    "category": "前缀和 / 差分",
+    "title": "差分数组（区间批量加减）",
+    "code": "// 对 nums 的 [l, r] 闭区间整体加 c，做 m 次后还原\nint[] diff = new int[n + 1];\n\nvoid add(int l, int r, int c) {\n    diff[l] += c;\n    diff[r + 1] -= c;      // 出区间时抵消，保证只影响 [l, r]\n}\n\nint[] restore(int[] nums) {\n    int cur = 0;\n    int[] res = nums.clone();\n    for (int i = 0; i < nums.length; i++) {\n        cur += diff[i];    // 前缀和累加回来\n        res[i] += cur;\n    }\n    return res;\n}",
+    "note": "要对区间做很多次「整体加 c」最后再问结果，用差分：改两个端点 O(1)，最后一次前缀和还原，比每次循环改区间快一个量级。",
+    "sortOrder": 114
+  },
+  {
+    "category": "前缀和 / 差分",
+    "title": "二维前缀和（子矩阵和）",
+    "code": "int[][] pre;   // pre[i][j] = 左上角 (0,0) 到 (i-1,j-1) 的矩形和\n\nvoid build(int[][] matrix) {\n    int m = matrix.length, n = matrix[0].length;\n    pre = new int[m + 1][n + 1];\n    for (int i = 1; i <= m; i++) {\n        for (int j = 1; j <= n; j++) {\n            // 容斥：加本格，加上方，加左方，减去左上被算两次的\n            pre[i][j] = matrix[i - 1][j - 1]\n                      + pre[i - 1][j] + pre[i][j - 1] - pre[i - 1][j - 1];\n        }\n    }\n}\n\n// 左上 (r1,c1) 到右下 (r2,c2) 的子矩阵和\nint sumRegion(int r1, int c1, int r2, int c2) {\n    return pre[r2 + 1][c2 + 1] - pre[r1][c2 + 1] - pre[r2 + 1][c1] + pre[r1][c1];\n}",
+    "note": "矩阵题问「某个子矩形的和」就上二维前缀和，公式靠容斥，写错了会重复减，最好背下来。",
+    "sortOrder": 115
+  },
+  {
+    "category": "排序",
+    "title": "归并排序（顺便求逆序对）",
+    "code": "int mergeSort(int[] a, int lo, int hi, int[] tmp) {\n    if (lo >= hi) return 0;\n\n    int mid = lo + (hi - lo) / 2;\n    int cnt = mergeSort(a, lo, mid, tmp) + mergeSort(a, mid + 1, hi, tmp);\n\n    int i = lo, j = mid + 1, k = lo;\n    while (i <= mid && j <= hi) {\n        if (a[i] <= a[j]) {\n            tmp[k++] = a[i++];\n        } else {\n            tmp[k++] = a[j++];\n            cnt += mid - i + 1;    // 左边从 i 到 mid 都比 a[j] 大\n        }\n    }\n    while (i <= mid) tmp[k++] = a[i++];\n    while (j <= hi)  tmp[k++] = a[j++];\n    System.arraycopy(tmp, lo, a, lo, hi - lo + 1);\n    return cnt;\n}",
+    "note": "要 O(nlogn) 且稳定就用归并；「逆序对」几乎是归并排序的专属题型，合并时右边先出队就说明左边剩下的都比它大。",
+    "sortOrder": 116
+  },
+  {
+    "category": "排序",
+    "title": "快速选择（O(n) 求第 K 大）",
+    "code": "int findKthLargest(int[] nums, int k) {\n    int target = nums.length - k;   // 第 k 大 = 升序里的第 n-k 位\n    int lo = 0, hi = nums.length - 1;\n    Random rand = new Random();\n\n    while (lo < hi) {\n        // 随机 pivot：防止面对已排序数组时退化成 O(n^2)\n        int p = lo + rand.nextInt(hi - lo + 1);\n        swap(nums, p, hi);\n        int pivot = nums[hi];\n\n        int store = lo;\n        for (int i = lo; i < hi; i++) {\n            if (nums[i] < pivot) swap(nums, store++, i);\n        }\n        swap(nums, store, hi);\n\n        if (store == target) return nums[store];\n        else if (store < target) lo = store + 1;   // 只走一侧\n        else hi = store - 1;\n    }\n    return nums[lo];\n}",
+    "note": "只需要第 K 个而不需要整个有序数组时，快速选择比全排序快，因为只递归一侧，平均 2n 次比较。",
+    "sortOrder": 117
+  },
+  {
+    "category": "排序",
+    "title": "自定义比较器（按多个字段排序）",
+    "code": "// 数组：按区间左端点升序，左端点相同则按右端点升序\nint[][] intervals = {{1, 3}, {2, 6}, {8, 10}};\nArrays.sort(intervals, (a, b) -> {\n    if (a[0] != b[0]) return Integer.compare(a[0], b[0]);\n    return Integer.compare(a[1], b[1]);\n});\n\n// 字符串按长度，再按字典序\nString[] words = {\"abc\", \"ab\", \"abcd\"};\nArrays.sort(words, (a, b) -> {\n    if (a.length() != b.length()) return a.length() - b.length();\n    return a.compareTo(b);           // 字符串比较必须用 compareTo，不能用 ==\n});\n\n// List 用 Collections.sort 或 list.sort\nList<String> list = new ArrayList<>(Arrays.asList(\"a\", \"bb\"));\nlist.sort(Comparator.comparingInt(String::length).thenComparing(Comparator.naturalOrder()));",
+    "note": "Java 写比较器最容易踩的是「b - a 溢出」和「字符串别用 == 」，数组和集合的写法还不一样。",
+    "sortOrder": 118
+  },
+  {
+    "category": "位运算",
+    "title": "位运算常用式子",
+    "code": "// 取最低位的 1（lowbit）\nx & (-x)          // 例：x=12(1100) → 4(0100)\n\n// 抹掉最低位的 1 —— 用来数 1 的个数，循环次数 = 1 的个数\nx & (x - 1)\n\n// 判断奇偶\n(x & 1) == 1\n\n// 第 k 位是 0 还是 1（k 从 0 开始）\n(x >> k) & 1\n\n// 把第 k 位置 1 / 清 0 / 取反\nx |  (1 << k)\nx & ~(1 << k)\nx ^  (1 << k)\n\n// 异或的三条性质，a^a=0 是「消消乐」题的根本\na ^ a == 0\na ^ 0 == a\na ^ b ^ a == b\n\n// 遍历所有子集（n 个元素，状压 DP 起手）\nfor (int mask = 0; mask < (1 << n); mask++) { }",
+    "note": "位运算能用的场景不多，但真用上就是 O(1)，下面这几条几乎覆盖了面试会考的全部。",
+    "sortOrder": 119
+  },
+  {
+    "category": "位运算",
+    "title": "统计二进制里 1 的个数（Brian Kernighan）",
+    "code": "int countOnes(int x) {\n    int cnt = 0;\n    while (x != 0) {\n        x &= x - 1;    // 每次抹掉最低位的 1\n        cnt++;\n    }\n    return cnt;\n}\n\n// 应用：汉明距离 = 两个数异或之后 1 的个数\nint hammingDistance(int x, int y) {\n    int d = x ^ y;\n    int cnt = 0;\n    while (d != 0) { d &= d - 1; cnt++; }\n    return cnt;\n}",
+    "note": "「x & (x-1) 能抹掉最低位的 1」这一条推出来的写法，循环次数就是一个数里 1 的个数，比逐位判断更省。",
+    "sortOrder": 120
+  },
+  {
+    "category": "位运算",
+    "title": "只出现一次的数字（异或消消乐）",
+    "code": "int singleNumber(int[] nums) {\n    int res = 0;\n    for (int x : nums) res ^= x;   // a^a=0, a^0=a\n    return res;\n}\n\n// 进阶：其他都出现三次 → 按位统计，每一位 1 的个数 % 3 就是答案这一位\nint singleNumberII(int[] nums) {\n    int res = 0;\n    for (int b = 0; b < 32; b++) {\n        int cnt = 0;\n        for (int x : nums) cnt += (x >> b) & 1;\n        if (cnt % 3 != 0) res |= (1 << b);\n    }\n    return res;\n}",
+    "note": "题目说「其他元素都出现两次，只有一个出现一次」，答案就是全部异或——成对的自己抵消成 0，剩下的就是它。",
+    "sortOrder": 121
+  },
+  {
+    "category": "图论 · 最短路",
+    "title": "Dijkstra（单源最短路，边权非负）",
+    "code": "int[] dijkstra(int n, List<int[]>[] g, int src) {   // g[u] = {v, w}\n    int[] dist = new int[n];\n    Arrays.fill(dist, Integer.MAX_VALUE);\n    dist[src] = 0;\n\n    // 小顶堆存 {距离, 节点}，按距离排序\n    PriorityQueue<int[]> pq = new PriorityQueue<>((a, b) -> a[0] - b[0]);\n    pq.offer(new int[]{0, src});\n\n    while (!pq.isEmpty()) {\n        int[] cur = pq.poll();\n        int d = cur[0], u = cur[1];\n        if (d > dist[u]) continue;      // 懒删除：这是过期的旧记录，直接跳过\n\n        for (int[] e : g[u]) {\n            int v = e[0], w = e[1];\n            if (dist[u] + w < dist[v]) {\n                dist[v] = dist[u] + w;\n                pq.offer(new int[]{dist[v], v});\n            }\n        }\n    }\n    return dist;   // 仍是 MAX_VALUE 表示不可达\n}",
+    "note": "边权非负求最短路就用 Dijkstra；边权有负数必须换 Bellman-Ford，用 Dijkstra 会得到错答案。",
+    "sortOrder": 122
+  },
+  {
+    "category": "图论 · 最短路",
+    "title": "Floyd（多源最短路，n 很小才用）",
+    "code": "void floyd(int[][] dist) {   // dist 初始为邻接矩阵，无边填 INF，自己到自己填 0\n    int n = dist.length;\n    for (int k = 0; k < n; k++) {          // 中转点必须在最外层！\n        for (int i = 0; i < n; i++) {\n            for (int j = 0; j < n; j++) {\n                if (dist[i][k] == INF || dist[k][j] == INF) continue;  // 防溢出\n                dist[i][j] = Math.min(dist[i][j], dist[i][k] + dist[k][j]);\n            }\n        }\n    }\n}",
+    "note": "要求「任意两点之间」的最短路、且节点数只有几百，就用 Floyd，三层循环写起来最短；中转点 k 必须在最外层。",
+    "sortOrder": 123
+  },
+  {
+    "category": "图论 · 最短路",
+    "title": "Bellman-Ford（允许负权边）",
+    "code": "int[] bellmanFord(int n, int[][] edges, int src) {   // edges = {u, v, w}\n    int INF = Integer.MAX_VALUE / 2;     // 别用 MAX_VALUE，加 w 会溢出\n    int[] dist = new int[n];\n    Arrays.fill(dist, INF);\n    dist[src] = 0;\n\n    for (int i = 0; i < n - 1; i++) {    // 最多松弛 n-1 轮\n        boolean changed = false;\n        for (int[] e : edges) {\n            if (dist[e[0]] == INF) continue;\n            if (dist[e[0]] + e[2] < dist[e[1]]) {\n                dist[e[1]] = dist[e[0]] + e[2];\n                changed = true;\n            }\n        }\n        if (!changed) break;             // 提前收敛\n    }\n    return dist;\n}",
+    "note": "有负权边时必须用 Bellman-Ford；「最多经过 k 条边」这种限制也是它独有的能力。",
+    "sortOrder": 124
+  },
+  {
+    "category": "图论 · 遍历",
+    "title": "建图（邻接表）+ 通用 BFS",
+    "code": "// 无边权的无向图\nList<List<Integer>> g = new ArrayList<>();\nfor (int i = 0; i < n; i++) g.add(new ArrayList<>());\nfor (int[] e : edges) {\n    g.get(e[0]).add(e[1]);\n    g.get(e[1]).add(e[0]);      // 无向图必须反向也加，漏了就只有单向可达\n}\n\n// 通用 BFS：层数就是最短距离（边权都为 1 时）\nint[] bfs(List<List<Integer>> g, int src) {\n    int n = g.size();\n    int[] dist = new int[n];\n    Arrays.fill(dist, -1);\n    dist[src] = 0;\n\n    Deque<Integer> q = new ArrayDeque<>();\n    q.offer(src);\n    while (!q.isEmpty()) {\n        int u = q.poll();\n        for (int v : g.get(u)) {\n            if (dist[v] != -1) continue;   // 入队时就标记，别等出队，否则会重复入队\n            dist[v] = dist[u] + 1;\n            q.offer(v);\n        }\n    }\n    return dist;\n}",
+    "note": "拿到边列表第一件事是建图，「无向图要正反各加一条」是最常写漏的一行。",
+    "sortOrder": 125
+  },
+  {
+    "category": "图论 · 遍历",
+    "title": "二分图判定（染色法）",
+    "code": "boolean isBipartite(int[][] graph) {\n    int n = graph.length;\n    int[] color = new int[n];     // 0 = 未染色, 1 / -1 = 两种颜色\n\n    for (int i = 0; i < n; i++) {\n        if (color[i] != 0) continue;\n\n        Deque<Integer> q = new ArrayDeque<>();\n        q.offer(i);\n        color[i] = 1;\n\n        while (!q.isEmpty()) {\n            int u = q.poll();\n            for (int v : graph[u]) {\n                if (color[v] == 0) {\n                    color[v] = -color[u];        // 染成相反颜色\n                    q.offer(v);\n                } else if (color[v] == color[u]) {\n                    return false;                // 相邻同色 → 不是二分图\n                }\n            }\n        }\n    }\n    return true;\n}",
+    "note": "题目出现「分成两组、组内不能有边」就是二分图判定，DFS 染色，遇到已染且颜色相同的邻居就说明不是二分图。",
+    "sortOrder": 126
+  },
+  {
+    "category": "字符串 · 进阶",
+    "title": "KMP（字符串匹配 O(n+m)）",
+    "code": "// next[i] = pattern[0..i] 的最长「相等前后缀」长度\nint[] buildNext(String p) {\n    int[] next = new int[p.length()];\n    int j = 0;\n    for (int i = 1; i < p.length(); i++) {\n        while (j > 0 && p.charAt(i) != p.charAt(j)) j = next[j - 1];  // 失配就往前跳\n        if (p.charAt(i) == p.charAt(j)) j++;\n        next[i] = j;\n    }\n    return next;\n}\n\nint kmp(String s, String p) {\n    if (p.isEmpty()) return 0;\n    int[] next = buildNext(p);\n    int j = 0;\n    for (int i = 0; i < s.length(); i++) {\n        while (j > 0 && s.charAt(i) != p.charAt(j)) j = next[j - 1];\n        if (s.charAt(i) == p.charAt(j)) j++;\n        if (j == p.length()) return i - p.length() + 1;   // 找到，返回起始下标\n    }\n    return -1;\n}",
+    "note": "只有「在长串里找短串」且要求线性时间时才用 KMP，多数面试写 indexOf 就够；但 next 数组的原理常被追问。",
+    "sortOrder": 127
+  },
+  {
+    "category": "字符串 · 进阶",
+    "title": "字符串常用操作（Java 易错点）",
+    "code": "String s = \"hello\";\n\n// 长度是方法不是属性（数组才是 s.length）\ns.length()\n\n// 取字符 / 取子串（左闭右开）\ns.charAt(0)\ns.substring(1, 3)          // \"el\"\n\n// 字符串比较必须用 equals，== 比的是对象引用！\ns.equals(\"hello\")          // true\ns == \"hello\"               // 可能 false，别用\n\n// 大小写 / 去空格 / 替换 / 分割\ns.toUpperCase()\ns.trim()\ns.replace('l', 'L')\ns.split(\",\")               // 参数是正则，切 \".\" 要写成 \"\\\\.\"\n\n// 字符与数字互转\nchar c = '7';\nint d = c - '0';           // 数字字符转数值\nchar back = (char) ('0' + d);\n\n// 循环里拼字符串必须用 StringBuilder，否则每次都新建对象\nStringBuilder sb = new StringBuilder();\nsb.append('a').append(1);\nsb.reverse().toString();\nsb.deleteCharAt(sb.length() - 1);   // 回溯时撤销最后一个字符",
+    "note": "Java 字符串不可变、== 比的是引用、substring 在旧版本会内存泄漏——这几条是写题时最常翻车的地方。",
+    "sortOrder": 128
+  },
+  {
+    "category": "数学",
+    "title": "最大公约数与最小公倍数",
+    "code": "int gcd(int a, int b) {\n    return b == 0 ? a : gcd(b, a % b);\n}\n\n// 先除后乘：a * b 可能溢出 int\nint lcm(int a, int b) {\n    return a / gcd(a, b) * b;\n}\n\n// 迭代写法（防止递归层数太深）\nint gcdIter(int a, int b) {\n    while (b != 0) {\n        int t = a % b;\n        a = b;\n        b = t;\n    }\n    return a;\n}",
+    "note": "辗转相除求 gcd 是数学题地基，lcm 要用 a / gcd * b 的顺序算，先乘会溢出。",
+    "sortOrder": 129
+  },
+  {
+    "category": "数学",
+    "title": "快速幂（含取模）",
+    "code": "// 不带取模\ndouble myPow(double x, long n) {\n    if (n < 0) { x = 1 / x; n = -n; }     // 注意 n 用 long，防 Integer.MIN_VALUE 取负溢出\n    double res = 1, base = x;\n    while (n > 0) {\n        if ((n & 1) == 1) res *= base;    // 这一位是 1 就乘进来\n        base *= base;                     // 底数平方\n        n >>= 1;\n    }\n    return res;\n}\n\n// 带取模（结果对 mod 取余，防溢出用 long 中转）\nlong powMod(long a, long n, long mod) {\n    long res = 1;\n    a %= mod;\n    while (n > 0) {\n        if ((n & 1) == 1) res = res * a % mod;\n        a = a * a % mod;\n        n >>= 1;\n    }\n    return res;\n}",
+    "note": "求 a^n 时把指数二进制拆分，O(logn)；带取模的版本在计数类题目里到处都是。",
+    "sortOrder": 130
+  },
+  {
+    "category": "数学",
+    "title": "质数筛（埃氏筛 / 线性筛）",
+    "code": "// 埃氏筛：O(n log log n)，够用且好写\nint countPrimes(int n) {\n    boolean[] notPrime = new boolean[n];\n    int cnt = 0;\n    for (int i = 2; i < n; i++) {\n        if (notPrime[i]) continue;\n        cnt++;\n        // 从 i*i 开始标记，步长 i；i*i 可能溢出，用 i < n / i 判断\n        if ((long) i * i < n) {\n            for (int j = i * i; j < n; j += i) notPrime[j] = true;\n        }\n    }\n    return cnt;\n}\n\n// 线性筛：每个合数只被它的最小质因数标记一次，O(n)\nList<Integer> linearSieve(int n) {\n    boolean[] comp = new boolean[n];\n    List<Integer> primes = new ArrayList<>();\n    for (int i = 2; i < n; i++) {\n        if (!comp[i]) primes.add(i);\n        for (int p : primes) {\n            if ((long) i * p >= n) break;\n            comp[i * p] = true;\n            if (i % p == 0) break;       // 灵魂：保证只被最小质因数标记\n        }\n    }\n    return primes;\n}",
+    "note": "要「n 以内所有质数」就用筛法，逐个试除是 O(n√n) 会超时；线性筛每个合数只被标记一次。",
+    "sortOrder": 131
+  },
+  {
+    "category": "数学",
+    "title": "整数溢出与取模套路",
+    "code": "// 1) 相加/相乘前转 long\nlong sum = (long) a + b;\nlong prod = (long) a * b;\n\n// 2) 判断乘 10 之后会不会溢出（反转整数题必用）\nif (res > Integer.MAX_VALUE / 10) return 0;\n\n// 3) 取模：(a + b) % m 要写成 ((a % m) + (b % m)) % m，避免提前溢出\nint MOD = 1_000_000_007;\nlong ans = 0;\nans = (ans + x) % MOD;\n\n// 4) 负数的取模在 Java 里返回负数！\n(-7) % 3 == -1        // 想要正数结果就 ((-7) % 3 + 3) % 3\n\n// 5) 比较中间值大小别直接相减\n// a - b 可能溢出 → 用 Integer.compare(a, b)",
+    "note": "Java 的 int 溢出不会报错、只会静默变成负数，这是最难查的一类 WA；涉及累加相乘就先想 long。",
+    "sortOrder": 132
+  },
+  {
+    "category": "设计类题目",
+    "title": "LRU 缓存（HashMap + 双向链表）",
+    "code": "class LRUCache {\n    class Node {\n        int key, val;\n        Node prev, next;\n        Node(int k, int v) { key = k; val = v; }\n    }\n\n    private final Map<Integer, Node> map = new HashMap<>();\n    private final int capacity;\n    // 虚拟头尾：省掉「链表为空 / 只有一个节点」的特判\n    private final Node head = new Node(0, 0);\n    private final Node tail = new Node(0, 0);\n\n    public LRUCache(int capacity) {\n        this.capacity = capacity;\n        head.next = tail;\n        tail.prev = head;\n    }\n\n    public int get(int key) {\n        Node n = map.get(key);\n        if (n == null) return -1;\n        moveToHead(n);          // 用过就提到最前\n        return n.val;\n    }\n\n    public void put(int key, int value) {\n        Node n = map.get(key);\n        if (n != null) {\n            n.val = value;\n            moveToHead(n);\n            return;\n        }\n        if (map.size() == capacity) {\n            Node last = tail.prev;   // 最久没用的\n            remove(last);\n            map.remove(last.key);    // 别忘了从 map 里删，否则内存泄漏\n        }\n        Node node = new Node(key, value);\n        map.put(key, node);\n        addToHead(node);\n    }\n\n    private void addToHead(Node n) {\n        n.next = head.next; n.prev = head;\n        head.next.prev = n; head.next = n;\n    }\n    private void remove(Node n) {\n        n.prev.next = n.next;\n        n.next.prev = n.prev;\n    }\n    private void moveToHead(Node n) { remove(n); addToHead(n); }\n}",
+    "note": "「最近最少使用先淘汰」就 LRU：哈希表负责 O(1) 查，双向链表负责 O(1) 挪位置和删尾部，缺一个都到不了 O(1)。",
+    "sortOrder": 133
+  },
+  {
+    "category": "设计类题目",
+    "title": "最小栈（辅助栈存最小值）",
+    "code": "class MinStack {\n    private final Deque<Integer> stack = new ArrayDeque<>();\n    private final Deque<Integer> minStack = new ArrayDeque<>();   // 栈顶 = 当前最小值\n\n    public void push(int value) {\n        stack.push(value);\n        // 辅助栈要同步压：新值更小就压新值，否则重复压当前最小值\n        minStack.push(minStack.isEmpty() ? value : Math.min(value, minStack.peek()));\n    }\n\n    public void pop() {\n        stack.pop();\n        minStack.pop();     // 两边必须一起弹，否则最小值就对不上了\n    }\n\n    public int top()   { return stack.peek(); }\n    public int getMin(){ return minStack.peek(); }\n}",
+    "note": "要求 getMin 是 O(1)，就不能每次遍历找最小；开一个辅助栈同步记录「到当前为止的最小值」。",
+    "sortOrder": 134
+  },
+  {
+    "category": "设计类题目",
+    "title": "用栈实现队列 / 用队列实现栈",
+    "code": "// 两个栈实现队列：in 负责进，out 负责出\nclass MyQueue {\n    private final Deque<Integer> in = new ArrayDeque<>();\n    private final Deque<Integer> out = new ArrayDeque<>();\n\n    public void push(int x) { in.push(x); }\n\n    public int pop() {\n        move();\n        return out.pop();\n    }\n\n    public int peek() {\n        move();\n        return out.peek();\n    }\n\n    public boolean empty() { return in.isEmpty() && out.isEmpty(); }\n\n    private void move() {\n        // 只有 out 空了才倒，否则顺序会乱\n        if (out.isEmpty()) {\n            while (!in.isEmpty()) out.push(in.pop());\n        }\n    }\n}",
+    "note": "两个栈倒一次就是队列；一个队列也能实现栈，靠「把前面 n-1 个挪到队尾」把新元素顶到队头。",
+    "sortOrder": 135
+  }
+]
