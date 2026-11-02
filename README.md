@@ -351,6 +351,43 @@ spring:
 
 另外 `app.js` 开头对 `lock.js` 做了兜底：万一 `lock.js` 因为缓存没加载成功，题目页也不会整页白屏，而是三个解法全部显示「刷新页面」的锁屏卡（宁可锁死，也不能崩）。
 
+## 模板库为什么要有一个 `SnippetStore`
+
+准备推到 GitHub 时发现一个真缺陷：**52 段模板原来只存在数据库里。**
+
+当初是写 `seed-snippets.js` 一段段 POST 进去的，数据库里有，所以自己机器上一切正常。但只要换台机器、或者把 `data/` 删了重来，模板库就是空的 —— 而模板库是五项需求之一。
+
+靠「记得先跑一遍 seed 脚本」来保证它存在，那不叫功能，叫运气。别人 clone 下来发现模板库空的，不会觉得是自己漏跑了一步，只会觉得这东西是半成品。
+
+所以加了 `SnippetStore`（`src/main/java/com/lc/service/SnippetStore.java`），`@PostConstruct` 里检查 `snippet` 表：
+
+```
+表里有数据  → 什么都不做
+表是空的    → 从 content/snippets.json 灌 52 段
+```
+
+三条设计决定：
+
+| 决定 | 理由 |
+| --- | --- |
+| **只在表为空时灌** | 用户可能自己加过、删过模板。每次启动都补回来，等于一遍遍抹掉他的编辑 —— 一个会自动还原你删除操作的功能，比没有功能更烦人 |
+| **数据放 `content/snippets.json`** | 和 `content/problems/` 一样的思路：内容归内容，代码归代码。加模板不用改 Java，也不用重新编译 |
+| **灌失败不拦启动** | 模板库空着顶多少一个功能，服务起不来是整个项目不能用。这两件事的代价差太远，不能同归于尽 |
+
+`snippets.json` 里**没有 `id` 字段** —— 各环境自增序列不同，带上别人的 id 只会撞车，让数据库自己发号就行。`sortOrder` 要保留，否则 52 段模板的展示顺序会乱。
+
+### 日志乱码：`-Dfile.encoding` 管不到控制台
+
+第一次验证时启动日志打出来是这个：
+
+```
+ģ���Ϊ�գ��Ѵ� content/snippets.json ���� 52 ��ģ��
+```
+
+启动命令明明加了 `-Dfile.encoding=UTF-8`。原因是**那个参数管文件读写，管不到 JVM 的 stdout** —— Windows 上控制台默认还是 GBK，重定向到 `run.log` 之后按 UTF-8 读就是一堆问号。
+
+修法不是让大家记得多传一个参数，而是在 `log()` 里直接把字符串按 `StandardCharsets.UTF_8` 写 `System.out`。**验证方式是故意不带任何编码参数启动**，日志照样是可读的中文 —— 这才说明不靠外部参数救命。
+
 ## 模板库的「可直接用 / 片段」是怎么判出来的
 
 模板库里的代码有两种，用同一把尺子量会得出错误结论：
@@ -503,7 +540,8 @@ H2 文件库：`data/lccoach.mv.db`（MODE=MySQL，AUTO_SERVER=TRUE）。删掉�
 | 模板可用性标记 | `test-snippet-kinds.js` 18 项断言；`snippet-kinds.json` 判定数与库内条数一致、无漏判 |
 | AI 资讯接入 | `test-aihot.js` 37 项断言（三个接口通 / 缓存真拦请求 6ms / 日期乱写不崩 / 前端渲染 / 后端 If-None-Match、304、429 冷却、single-flight 全在） |
 | AI 资讯渲染 | `.probe/ViewProbe.js` 用真实 app.js 渲染，实测 23210 字符、20 条精选、10 条热点、无裸露 undefined/null |
-| 全量回归 | 14 个脚本 486 项断言全过（`bash content-src/run-all.sh` 一条命令跑完） |
+| 全量回归 | 15 个脚本 508 项断言全过（`bash content-src/run-all.sh` 一条命令跑完） |
+| 模板库可分发 | `test-snippets-seed.js` 22 项断言：干净数据库启动后 52 段模板自动出现，且与 `content/snippets.json` 逐条对得上 |
 | 复制 | `test-copy.js` 32 项断言（安全上下文 / 局域网 IP / 权限被拒 / 两条路全废四个场景） |
 | 锐评 | `test-roast.js` 37 项断言（四档文案分界 / 编译失败优先 / 靶子来自最弱维度的真实 evidence / 8 种情况都给了 advice / 同分数同文案 / XSS 转义 / 接线正确） |
 | 锐评端到端 | 真实 app.js 渲染：评分卡里有 `.roast`、位置在免责声明之前；编译失败时说「给一具尸体量体温」而不是评分数 |

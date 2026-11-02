@@ -64,11 +64,26 @@ public class SnippetStore {
                         so);
                 n++;
             }
-            System.out.println("模板库为空，已从 content/snippets.json 灌入 " + n + " 段模板");
+            log("模板库为空，已从 content/snippets.json 灌入 " + n + " 段模板");
         } catch (Exception e) {
             // 灌数据失败不该拦住整个服务启动 —— 模板库空着顶多少一个功能，
             // 但服务起不来是整个项目不能用。差异太大，不能同归于尽。
-            System.out.println("模板初始化失败（不影响启动）：" + e.getMessage());
+            log("模板初始化失败（不影响启动）：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 日志一律按 UTF-8 输出。
+     * Windows 上 JVM 的 stdout 默认是 GBK，启动时加的 -Dfile.encoding=UTF-8
+     * 只管文件读写、管不到控制台，结果重定向到 run.log 再按 UTF-8 读就是一堆乱码。
+     * 日志看不懂等于没写日志，所以这里不指望启动参数，自己在源头定死。
+     */
+    private static void log(String msg) {
+        try {
+            System.out.write((msg + System.lineSeparator()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            System.out.flush();
+        } catch (Exception ignored) {
+            // 连日志都打不出去就算了，别为这个再抛异常
         }
     }
 }
