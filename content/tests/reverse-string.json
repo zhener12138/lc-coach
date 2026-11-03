@@ -1,0 +1,21 @@
+{
+  "slug": "reverse-string",
+  "name": "reverseString",
+  "params": [
+    {
+      "name": "s",
+      "type": "character[]"
+    }
+  ],
+  "return": {
+    "type": "void"
+  },
+  "cases": [
+    [
+      "[\"h\",\"e\",\"l\",\"l\",\"o\"]"
+    ],
+    [
+      "[\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]"
+    ]
+  ]
+}

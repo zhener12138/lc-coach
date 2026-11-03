@@ -1,0 +1,21 @@
+{
+  "slug": "partition-equal-subset-sum",
+  "name": "canPartition",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "boolean"
+  },
+  "cases": [
+    [
+      "[1,5,11,5]"
+    ],
+    [
+      "[1,2,3,5]"
+    ]
+  ]
+}

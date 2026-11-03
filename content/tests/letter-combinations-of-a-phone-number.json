@@ -1,0 +1,21 @@
+{
+  "slug": "letter-combinations-of-a-phone-number",
+  "name": "letterCombinations",
+  "params": [
+    {
+      "name": "digits",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "list<string>"
+  },
+  "cases": [
+    [
+      "\"23\""
+    ],
+    [
+      "\"2\""
+    ]
+  ]
+}

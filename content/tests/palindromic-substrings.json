@@ -1,0 +1,21 @@
+{
+  "slug": "palindromic-substrings",
+  "name": "countSubstrings",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "\"abc\""
+    ],
+    [
+      "\"aaa\""
+    ]
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "slug": "reverse-linked-list-ii",
+  "name": "reverseBetween",
+  "params": [
+    {
+      "name": "head",
+      "type": "ListNode"
+    },
+    {
+      "name": "left",
+      "type": "integer"
+    },
+    {
+      "name": "right",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "ListNode",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "[1,2,3,4,5]",
+      "2",
+      "4"
+    ],
+    [
+      "[5]",
+      "1",
+      "1"
+    ]
+  ]
+}

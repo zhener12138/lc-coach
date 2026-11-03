@@ -118,7 +118,9 @@ const app = R('static/app.js');
 const idxHtml = R('static/index.html');
 const css = R('static/app.css');
 ok('roast.js 在 app.js 之前加载', idxHtml.indexOf('roast.js') > 0 && idxHtml.indexOf('roast.js') < idxHtml.indexOf('app.js'));
-ok('renderGradeResult 调用了 renderRoast', /renderGradeResult[\s\S]{0,3000}renderRoast\(g\)/.test(app));
+// 判题区块插在 grade-dims 和 roast 之间，renderGradeResult 变长了（3000 字符不够）。
+// 这条断言的本意是「别把 renderRoast 调漏了」，所以放宽长度并明说原因。
+ok('renderGradeResult 调用了 renderRoast', /renderGradeResult[\s\S]{0,8000}renderRoast\(g\)/.test(app));
 ok('有 typeof 兜底（roast.js 没加载也不崩）', app.includes("typeof renderRoast === 'function'"));
 ok('CSS 有 .roast', css.includes('.roast {'));
 ok('CSS 有 .roast-head', css.includes('.roast-head'));

@@ -1,0 +1,24 @@
+{
+  "slug": "maximum-subarray",
+  "name": "maxSubArray",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "[-2,1,-3,4,-1,2,1,-5,4]"
+    ],
+    [
+      "[1]"
+    ],
+    [
+      "[5,4,-1,7,8]"
+    ]
+  ]
+}

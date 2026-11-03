@@ -1,0 +1,21 @@
+{
+  "slug": "counting-bits",
+  "name": "countBits",
+  "params": [
+    {
+      "name": "n",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "integer[]"
+  },
+  "cases": [
+    [
+      "2"
+    ],
+    [
+      "5"
+    ]
+  ]
+}

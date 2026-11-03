@@ -1,0 +1,21 @@
+{
+  "slug": "surrounded-regions",
+  "name": "solve",
+  "params": [
+    {
+      "name": "board",
+      "type": "character[][]"
+    }
+  ],
+  "return": {
+    "type": "void"
+  },
+  "cases": [
+    [
+      "[[\"X\",\"X\",\"X\",\"X\"],[\"X\",\"O\",\"O\",\"X\"],[\"X\",\"X\",\"O\",\"X\"],[\"X\",\"O\",\"X\",\"X\"]]"
+    ],
+    [
+      "[[\"X\"]]"
+    ]
+  ]
+}

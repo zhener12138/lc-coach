@@ -1,0 +1,27 @@
+{
+  "slug": "course-schedule",
+  "name": "canFinish",
+  "params": [
+    {
+      "name": "numCourses",
+      "type": "integer"
+    },
+    {
+      "name": "prerequisites",
+      "type": "integer[][]"
+    }
+  ],
+  "return": {
+    "type": "boolean"
+  },
+  "cases": [
+    [
+      "2",
+      "[[1,0]]"
+    ],
+    [
+      "2",
+      "[[1,0],[0,1]]"
+    ]
+  ]
+}

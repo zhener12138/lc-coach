@@ -1,0 +1,31 @@
+{
+  "slug": "coin-change-ii",
+  "name": "change",
+  "params": [
+    {
+      "name": "amount",
+      "type": "integer"
+    },
+    {
+      "name": "coins",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "5",
+      "[1,2,5]"
+    ],
+    [
+      "3",
+      "[2]"
+    ],
+    [
+      "10",
+      "[10]"
+    ]
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "slug": "linked-list-cycle-ii",
+  "name": "detectCycle",
+  "params": [
+    {
+      "name": "head",
+      "type": "ListNode"
+    },
+    {
+      "name": "pos",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "ListNode"
+  },
+  "cases": [
+    [
+      "[3,2,0,-4]",
+      "1"
+    ],
+    [
+      "[1,2]",
+      "0"
+    ],
+    [
+      "[1]",
+      "-1"
+    ]
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "slug": "move-zeroes",
+  "name": "moveZeroes",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "void"
+  },
+  "cases": [
+    [
+      "[0,1,0,3,12]"
+    ],
+    [
+      "[0]"
+    ]
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "slug": "word-break",
+  "name": "wordBreak",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    },
+    {
+      "name": "wordDict",
+      "type": "list<string>"
+    }
+  ],
+  "return": {
+    "type": "boolean"
+  },
+  "cases": [
+    [
+      "\"leetcode\"",
+      "[\"leet\",\"code\"]"
+    ],
+    [
+      "\"applepenapple\"",
+      "[\"apple\",\"pen\"]"
+    ],
+    [
+      "\"catsandog\"",
+      "[\"cats\",\"dog\",\"sand\",\"and\",\"cat\"]"
+    ]
+  ]
+}

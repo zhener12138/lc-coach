@@ -1,0 +1,24 @@
+{
+  "slug": "longest-valid-parentheses",
+  "name": "longestValidParentheses",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "\"(()\""
+    ],
+    [
+      "\")()())\""
+    ],
+    [
+      "\"\""
+    ]
+  ]
+}

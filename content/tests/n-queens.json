@@ -1,0 +1,23 @@
+{
+  "slug": "n-queens",
+  "name": "solveNQueens",
+  "params": [
+    {
+      "name": "n",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "list<list<string>>",
+    "colsize": "param_1",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "4"
+    ],
+    [
+      "1"
+    ]
+  ]
+}

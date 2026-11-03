@@ -1,0 +1,27 @@
+{
+  "slug": "reverse-nodes-in-k-group",
+  "name": "reverseKGroup",
+  "params": [
+    {
+      "name": "head",
+      "type": "ListNode"
+    },
+    {
+      "name": "k",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "ListNode"
+  },
+  "cases": [
+    [
+      "[1,2,3,4,5]",
+      "2"
+    ],
+    [
+      "[1,2,3,4,5]",
+      "3"
+    ]
+  ]
+}

@@ -1233,3 +1233,60 @@ label.field > span {
   color: var(--ink-4);
   margin-bottom: 3px;
 }
+
+/* ============================ 判题结果 ============================ */
+/* 这是评分卡里唯一「真跑过」的部分，视觉上必须压过下面五个推断维度 */
+.judge-box {
+  margin: var(--s4) 0;
+  padding: var(--s4) var(--s5);
+  border-left: 3px solid var(--ink);
+  background: var(--paper-raised);
+  border-radius: 0 3px 3px 0;
+}
+.judge-box.good { border-left-color: var(--ok); background: var(--ok-soft); }
+.judge-box.mid { border-left-color: var(--warn); background: var(--warn-soft); }
+.judge-box.bad { border-left-color: var(--accent); background: var(--accent-soft); }
+.judge-box.skip { border-left-color: var(--rule); background: var(--paper-2); }
+.judge-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s2);
+}
+.judge-title {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--ink-soft);
+}
+.judge-score {
+  font-family: var(--f-mono);
+  font-size: var(--t-lg);
+  font-weight: 600;
+}
+.judge-score.good { color: var(--ok); }
+.judge-score.mid { color: var(--warn); }
+.judge-score.bad { color: var(--accent-deep); }
+.judge-line { font-size: var(--t-sm); color: var(--ink); line-height: 1.6; }
+.judge-fails { margin-top: var(--s3); display: grid; gap: 4px; }
+.judge-fail {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--ink-soft);
+}
+.judge-fail code {
+  background: var(--paper-raised);
+  padding: 1px 5px;
+  border-radius: 2px;
+  color: var(--ink);
+}
+.judge-fail .jf-got { color: var(--accent-deep); }
+.judge-fail .jf-k {
+  display: inline-block;
+  min-width: 2.4em;
+  color: var(--ink-faint);
+}
+.judge-more { margin-top: var(--s2); font-size: 11px; color: var(--ink-faint); }

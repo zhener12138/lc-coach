@@ -1,0 +1,21 @@
+{
+  "slug": "best-time-to-buy-and-sell-stock",
+  "name": "maxProfit",
+  "params": [
+    {
+      "name": "prices",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "[7,1,5,3,6,4]"
+    ],
+    [
+      "[7,6,4,3,1]"
+    ]
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "slug": "rotate-array",
+  "name": "rotate",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    },
+    {
+      "name": "k",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "void"
+  },
+  "cases": [
+    [
+      "[1,2,3,4,5,6,7]",
+      "3"
+    ],
+    [
+      "[-1,-100,3,99]",
+      "2"
+    ]
+  ]
+}

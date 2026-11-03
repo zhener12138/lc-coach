@@ -1,0 +1,24 @@
+{
+  "slug": "clone-graph",
+  "name": "cloneGraph",
+  "params": [
+    {
+      "name": "edges",
+      "type": "integer[][]"
+    }
+  ],
+  "return": {
+    "type": "boolean"
+  },
+  "cases": [
+    [
+      "[[2,4],[1,3],[2,4],[1,3]]"
+    ],
+    [
+      "[[]]"
+    ],
+    [
+      "[]"
+    ]
+  ]
+}

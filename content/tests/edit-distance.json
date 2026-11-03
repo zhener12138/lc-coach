@@ -1,0 +1,27 @@
+{
+  "slug": "edit-distance",
+  "name": "minDistance",
+  "params": [
+    {
+      "name": "word1",
+      "type": "string"
+    },
+    {
+      "name": "word2",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "\"horse\"",
+      "\"ros\""
+    ],
+    [
+      "\"intention\"",
+      "\"execution\""
+    ]
+  ]
+}

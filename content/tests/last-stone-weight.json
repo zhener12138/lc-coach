@@ -1,0 +1,21 @@
+{
+  "slug": "last-stone-weight",
+  "name": "lastStoneWeight",
+  "params": [
+    {
+      "name": "stones",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "[2,7,4,1,8,1]"
+    ],
+    [
+      "[1]"
+    ]
+  ]
+}

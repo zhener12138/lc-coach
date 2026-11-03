@@ -1,0 +1,32 @@
+{
+  "slug": "remove-nth-node-from-end-of-list",
+  "name": "removeNthFromEnd",
+  "params": [
+    {
+      "name": "head",
+      "type": "ListNode"
+    },
+    {
+      "name": "n",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "ListNode",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "[1,2,3,4,5]",
+      "2"
+    ],
+    [
+      "[1]",
+      "1"
+    ],
+    [
+      "[1,2]",
+      "1"
+    ]
+  ]
+}

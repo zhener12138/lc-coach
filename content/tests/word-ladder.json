@@ -1,0 +1,33 @@
+{
+  "slug": "word-ladder",
+  "name": "ladderLength",
+  "params": [
+    {
+      "name": "beginWord",
+      "type": "string"
+    },
+    {
+      "name": "endWord",
+      "type": "string"
+    },
+    {
+      "name": "wordList",
+      "type": "list<string>"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "\"hit\"",
+      "\"cog\"",
+      "[\"hot\",\"dot\",\"dog\",\"lot\",\"log\",\"cog\"]"
+    ],
+    [
+      "\"hit\"",
+      "\"cog\"",
+      "[\"hot\",\"dot\",\"dog\",\"lot\",\"log\"]"
+    ]
+  ]
+}

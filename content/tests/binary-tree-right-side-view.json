@@ -1,0 +1,28 @@
+{
+  "slug": "binary-tree-right-side-view",
+  "name": "rightSideView",
+  "params": [
+    {
+      "name": "root",
+      "type": "TreeNode"
+    }
+  ],
+  "return": {
+    "type": "list<integer>",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "[1,2,3,null,5,null,4]"
+    ],
+    [
+      "[1,2,3,4,null,null,null,5]"
+    ],
+    [
+      "[1,null,3]"
+    ],
+    [
+      "[]"
+    ]
+  ]
+}

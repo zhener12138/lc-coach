@@ -1,0 +1,24 @@
+{
+  "slug": "reverse-integer",
+  "name": "reverse",
+  "params": [
+    {
+      "name": "x",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "123"
+    ],
+    [
+      "-123"
+    ],
+    [
+      "120"
+    ]
+  ]
+}

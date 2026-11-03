@@ -1,0 +1,24 @@
+{
+  "slug": "flatten-binary-tree-to-linked-list",
+  "name": "flatten",
+  "params": [
+    {
+      "name": "root",
+      "type": "TreeNode"
+    }
+  ],
+  "return": {
+    "type": "void"
+  },
+  "cases": [
+    [
+      "[1,2,5,3,4,null,6]"
+    ],
+    [
+      "[]"
+    ],
+    [
+      "[0]"
+    ]
+  ]
+}

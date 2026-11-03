@@ -1,0 +1,21 @@
+{
+  "slug": "longest-palindromic-substring",
+  "name": "longestPalindrome",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "string"
+  },
+  "cases": [
+    [
+      "\"babad\""
+    ],
+    [
+      "\"cbbd\""
+    ]
+  ]
+}

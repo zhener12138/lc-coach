@@ -1,0 +1,26 @@
+{
+  "slug": "permutations",
+  "name": "permute",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "list<list<integer>>",
+    "colsize": "size_1",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "[1,2,3]"
+    ],
+    [
+      "[0,1]"
+    ],
+    [
+      "[1]"
+    ]
+  ]
+}

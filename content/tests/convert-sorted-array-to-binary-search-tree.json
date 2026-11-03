@@ -1,0 +1,22 @@
+{
+  "slug": "convert-sorted-array-to-binary-search-tree",
+  "name": "sortedArrayToBST",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "TreeNode",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "[-10,-3,0,5,9]"
+    ],
+    [
+      "[1,3]"
+    ]
+  ]
+}

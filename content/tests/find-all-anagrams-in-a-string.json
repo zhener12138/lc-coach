@@ -1,0 +1,27 @@
+{
+  "slug": "find-all-anagrams-in-a-string",
+  "name": "findAnagrams",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    },
+    {
+      "name": "p",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "list<integer>"
+  },
+  "cases": [
+    [
+      "\"cbaebabacd\"",
+      "\"abc\""
+    ],
+    [
+      "\"abab\"",
+      "\"ab\""
+    ]
+  ]
+}

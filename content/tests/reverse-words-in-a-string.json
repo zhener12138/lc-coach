@@ -1,0 +1,24 @@
+{
+  "slug": "reverse-words-in-a-string",
+  "name": "reverseWords",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "string"
+  },
+  "cases": [
+    [
+      "\"the sky is blue\""
+    ],
+    [
+      "\"  hello world  \""
+    ],
+    [
+      "\"a good   example\""
+    ]
+  ]
+}

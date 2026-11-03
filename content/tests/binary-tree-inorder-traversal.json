@@ -1,0 +1,28 @@
+{
+  "slug": "binary-tree-inorder-traversal",
+  "name": "inorderTraversal",
+  "params": [
+    {
+      "name": "root",
+      "type": "TreeNode"
+    }
+  ],
+  "return": {
+    "type": "list<integer>",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "[1,null,2,3]"
+    ],
+    [
+      "[1,2,3,4,5,null,8,null,null,6,7,9]"
+    ],
+    [
+      "[]"
+    ],
+    [
+      "[1]"
+    ]
+  ]
+}

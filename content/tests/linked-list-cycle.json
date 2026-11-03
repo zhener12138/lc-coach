@@ -1,0 +1,31 @@
+{
+  "slug": "linked-list-cycle",
+  "name": "hasCycle",
+  "params": [
+    {
+      "name": "head",
+      "type": "ListNode"
+    },
+    {
+      "name": "pos",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "boolean"
+  },
+  "cases": [
+    [
+      "[3,2,0,-4]",
+      "1"
+    ],
+    [
+      "[1,2]",
+      "0"
+    ],
+    [
+      "[1]",
+      "-1"
+    ]
+  ]
+}

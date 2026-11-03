@@ -1,0 +1,27 @@
+{
+  "slug": "distinct-subsequences",
+  "name": "numDistinct",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    },
+    {
+      "name": "t",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "\"rabbbit\"",
+      "\"rabbit\""
+    ],
+    [
+      "\"babgbag\"",
+      "\"bag\""
+    ]
+  ]
+}

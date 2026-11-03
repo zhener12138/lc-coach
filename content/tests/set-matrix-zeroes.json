@@ -1,0 +1,21 @@
+{
+  "slug": "set-matrix-zeroes",
+  "name": "setZeroes",
+  "params": [
+    {
+      "name": "matrix",
+      "type": "integer[][]"
+    }
+  ],
+  "return": {
+    "type": "void"
+  },
+  "cases": [
+    [
+      "[[1,1,1],[1,0,1],[1,1,1]]"
+    ],
+    [
+      "[[0,1,2,0],[3,4,5,2],[1,3,1,5]]"
+    ]
+  ]
+}

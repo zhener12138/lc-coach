@@ -1,0 +1,31 @@
+{
+  "slug": "minimum-size-subarray-sum",
+  "name": "minSubArrayLen",
+  "params": [
+    {
+      "name": "target",
+      "type": "integer"
+    },
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "7",
+      "[2,3,1,2,4,3]"
+    ],
+    [
+      "4",
+      "[1,4,4]"
+    ],
+    [
+      "11",
+      "[1,1,1,1,1,1,1,1]"
+    ]
+  ]
+}

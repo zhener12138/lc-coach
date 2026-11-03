@@ -1,0 +1,21 @@
+{
+  "slug": "perfect-squares",
+  "name": "numSquares",
+  "params": [
+    {
+      "name": "n",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "12"
+    ],
+    [
+      "13"
+    ]
+  ]
+}

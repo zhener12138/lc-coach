@@ -1,0 +1,24 @@
+{
+  "slug": "single-number",
+  "name": "singleNumber",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "[2,2,1]"
+    ],
+    [
+      "[4,1,2,1,2]"
+    ],
+    [
+      "[1]"
+    ]
+  ]
+}

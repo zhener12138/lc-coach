@@ -1,0 +1,38 @@
+{
+  "slug": "interleaving-string",
+  "name": "isInterleave",
+  "params": [
+    {
+      "name": "s1",
+      "type": "string"
+    },
+    {
+      "name": "s2",
+      "type": "string"
+    },
+    {
+      "name": "s3",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "boolean"
+  },
+  "cases": [
+    [
+      "\"aabcc\"",
+      "\"dbbca\"",
+      "\"aadbbcbcac\""
+    ],
+    [
+      "\"aabcc\"",
+      "\"dbbca\"",
+      "\"aadbbbaccc\""
+    ],
+    [
+      "\"\"",
+      "\"\"",
+      "\"\""
+    ]
+  ]
+}

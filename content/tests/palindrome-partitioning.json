@@ -1,0 +1,22 @@
+{
+  "slug": "palindrome-partitioning",
+  "name": "partition",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "list<list<string>>",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "\"aab\""
+    ],
+    [
+      "\"a\""
+    ]
+  ]
+}

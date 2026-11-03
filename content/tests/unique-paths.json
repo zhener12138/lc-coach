@@ -1,0 +1,27 @@
+{
+  "slug": "unique-paths",
+  "name": "uniquePaths",
+  "params": [
+    {
+      "name": "m",
+      "type": "integer"
+    },
+    {
+      "name": "n",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "3",
+      "7"
+    ],
+    [
+      "3",
+      "2"
+    ]
+  ]
+}

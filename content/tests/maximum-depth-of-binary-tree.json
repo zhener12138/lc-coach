@@ -1,0 +1,21 @@
+{
+  "slug": "maximum-depth-of-binary-tree",
+  "name": "maxDepth",
+  "params": [
+    {
+      "name": "root",
+      "type": "TreeNode"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "[3,9,20,null,null,15,7]"
+    ],
+    [
+      "[1,null,2]"
+    ]
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "slug": "longest-common-subsequence",
+  "name": "longestCommonSubsequence",
+  "params": [
+    {
+      "name": "text1",
+      "type": "string"
+    },
+    {
+      "name": "text2",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "\"abcde\"",
+      "\"ace\""
+    ],
+    [
+      "\"abc\"",
+      "\"abc\""
+    ],
+    [
+      "\"abc\"",
+      "\"def\""
+    ]
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "slug": "group-anagrams",
+  "name": "groupAnagrams",
+  "params": [
+    {
+      "name": "strs",
+      "type": "string[]"
+    }
+  ],
+  "return": {
+    "type": "list<list<string>>",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "[\"eat\",\"tea\",\"tan\",\"ate\",\"nat\",\"bat\"]"
+    ],
+    [
+      "[\"\"]"
+    ],
+    [
+      "[\"a\"]"
+    ]
+  ]
+}

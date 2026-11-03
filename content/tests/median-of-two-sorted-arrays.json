@@ -1,0 +1,27 @@
+{
+  "slug": "median-of-two-sorted-arrays",
+  "name": "findMedianSortedArrays",
+  "params": [
+    {
+      "name": "nums1",
+      "type": "integer[]"
+    },
+    {
+      "name": "nums2",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "double"
+  },
+  "cases": [
+    [
+      "[1,3]",
+      "[2]"
+    ],
+    [
+      "[1,2]",
+      "[3,4]"
+    ]
+  ]
+}

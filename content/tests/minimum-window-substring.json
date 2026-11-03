@@ -1,0 +1,31 @@
+{
+  "slug": "minimum-window-substring",
+  "name": "minWindow",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    },
+    {
+      "name": "t",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "string"
+  },
+  "cases": [
+    [
+      "\"ADOBECODEBANC\"",
+      "\"ABC\""
+    ],
+    [
+      "\"a\"",
+      "\"a\""
+    ],
+    [
+      "\"a\"",
+      "\"aa\""
+    ]
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "slug": "palindrome-number",
+  "name": "isPalindrome",
+  "params": [
+    {
+      "name": "x",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "boolean"
+  },
+  "cases": [
+    [
+      "121"
+    ],
+    [
+      "-121"
+    ],
+    [
+      "10"
+    ]
+  ]
+}

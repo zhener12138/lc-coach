@@ -1,0 +1,21 @@
+{
+  "slug": "house-robber",
+  "name": "rob",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "[1,2,3,1]"
+    ],
+    [
+      "[2,7,9,3,1]"
+    ]
+  ]
+}

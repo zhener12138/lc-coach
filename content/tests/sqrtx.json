@@ -1,0 +1,21 @@
+{
+  "slug": "sqrtx",
+  "name": "mySqrt",
+  "params": [
+    {
+      "name": "x",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "4"
+    ],
+    [
+      "8"
+    ]
+  ]
+}

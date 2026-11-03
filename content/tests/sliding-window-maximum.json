@@ -1,0 +1,27 @@
+{
+  "slug": "sliding-window-maximum",
+  "name": "maxSlidingWindow",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    },
+    {
+      "name": "k",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "integer[]"
+  },
+  "cases": [
+    [
+      "[1,3,-1,-3,5,3,6,7]",
+      "3"
+    ],
+    [
+      "[1]",
+      "1"
+    ]
+  ]
+}

@@ -797,6 +797,36 @@ function renderGradeResult(g) {
       '(' + esc(g.expectedParams || '') + ')，判题器会调不到你。');
   }
 
+  // 判题结果：这是全卡唯一能回答「我到底做对没有」的部分，放在最前面。
+  const j = g.judge;
+  let judgeBlock = '';
+  if (j && j.ran && j.total > 0) {
+    const allPass = j.passed === j.total;
+    const jc = allPass ? 'good' : j.passed === 0 ? 'bad' : 'mid';
+    const fails = (j.failures || []).slice(0, 3).map(f => `
+      <div class="judge-fail">
+        <span class="jf-k">输入</span> <code>${esc(String(f.input || ''))}</code>
+        <span class="jf-k">期望</span> <code>${esc(String(f.expected || ''))}</code>
+        <span class="jf-k">你的</span> <code class="jf-got">${esc(String(f.got || ''))}</code>
+      </div>`).join('');
+    judgeBlock = `
+    <div class="judge-box ${jc}">
+      <div class="judge-head">
+        <span class="judge-title">真跑官方示例</span>
+        <span class="judge-score ${jc}">${j.passed} / ${j.total}</span>
+      </div>
+      <div class="judge-line">${allPass
+        ? '全部通过。这题的答案是对的。'
+        : `有 ${j.total - j.passed} 个用例答案是错的 —— 代码能跑，但结果不对。`}</div>
+      ${fails ? `<div class="judge-fails">${fails}</div>` : ''}
+      ${(j.failures || []).length > 3 ? `<div class="judge-more">还有 ${j.failures.length - 3} 个用例没过</div>` : ''}
+    </div>`;
+  } else if (j && j.ran === false) {
+    judgeBlock = `<div class="judge-box skip"><div class="judge-line">这题没法真跑判题：${esc(j.reason || '')}</div></div>`;
+  } else if (!j) {
+    judgeBlock = `<div class="judge-box skip"><div class="judge-line">这题不支持真跑判题（没有单函数入口，或者用例缺失），正确性这一项已从总分里剔除，不是按 0 分算。</div></div>`;
+  }
+
   return `
   <div class="grade-card">
     <div class="grade-total ${cls}">
@@ -804,11 +834,13 @@ function renderGradeResult(g) {
       <div class="grade-total-of">/ 10</div>
     </div>
     ${notes.length ? `<div class="grade-notes">${notes.map(n => `<div>${n}</div>`).join('')}</div>` : ''}
+    ${judgeBlock}
     <div class="grade-dims">${dims}</div>
     ${typeof renderRoast === 'function' ? renderRoast(g) : ''}
     <div class="grade-disclaim">
-      没有测试用例，所以这里不判「答案对不对」。编译是 javac 真跑的；
-      复杂度、思路、规范是按代码结构推断的，标了「推断」的维度仅供参考。
+      正确性是<b>真跑官方示例用例</b>跑出来的（把代码编译后在同一个进程里加载执行，逐用例比对返回值）；
+      编译是 javac 真跑的。复杂度、思路、空间、边界、规范这五项是按代码结构静态推断的，
+      标了「推断」。判不了题的题（设计类，没有单一函数入口）已经把正确性从加权里剔除并重新归一。
     </div>
   </div>`;
 }

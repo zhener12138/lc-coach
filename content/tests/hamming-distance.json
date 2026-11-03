@@ -1,0 +1,27 @@
+{
+  "slug": "hamming-distance",
+  "name": "hammingDistance",
+  "params": [
+    {
+      "name": "x",
+      "type": "integer"
+    },
+    {
+      "name": "y",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "1",
+      "4"
+    ],
+    [
+      "3",
+      "1"
+    ]
+  ]
+}

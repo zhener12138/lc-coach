@@ -1,0 +1,23 @@
+{
+  "slug": "spiral-matrix",
+  "name": "spiralOrder",
+  "params": [
+    {
+      "name": "matrix",
+      "type": "integer[][]"
+    }
+  ],
+  "return": {
+    "type": "list<integer>",
+    "size": "size_1 * col_size_1",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "[[1,2,3],[4,5,6],[7,8,9]]"
+    ],
+    [
+      "[[1,2,3,4],[5,6,7,8],[9,10,11,12]]"
+    ]
+  ]
+}

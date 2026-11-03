@@ -1,0 +1,24 @@
+{
+  "slug": "merge-intervals",
+  "name": "merge",
+  "params": [
+    {
+      "name": "intervals",
+      "type": "integer[][]"
+    }
+  ],
+  "return": {
+    "type": "integer[][]"
+  },
+  "cases": [
+    [
+      "[[1,3],[2,6],[8,10],[15,18]]"
+    ],
+    [
+      "[[1,4],[4,5]]"
+    ],
+    [
+      "[[4,7],[1,4]]"
+    ]
+  ]
+}

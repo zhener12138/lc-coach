@@ -1,0 +1,23 @@
+{
+  "slug": "pascals-triangle",
+  "name": "generate",
+  "params": [
+    {
+      "name": "numRows",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "list<list<integer>>",
+    "dealloc": true,
+    "rowsize": "param_1"
+  },
+  "cases": [
+    [
+      "5"
+    ],
+    [
+      "1"
+    ]
+  ]
+}

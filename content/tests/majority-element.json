@@ -1,0 +1,21 @@
+{
+  "slug": "majority-element",
+  "name": "majorityElement",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "[3,2,3]"
+    ],
+    [
+      "[2,2,1,1,1,2,2]"
+    ]
+  ]
+}

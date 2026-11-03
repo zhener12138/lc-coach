@@ -1,0 +1,31 @@
+{
+  "slug": "powx-n",
+  "name": "myPow",
+  "params": [
+    {
+      "name": "x",
+      "type": "double"
+    },
+    {
+      "name": "n",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "double"
+  },
+  "cases": [
+    [
+      "2.00000",
+      "10"
+    ],
+    [
+      "2.10000",
+      "3"
+    ],
+    [
+      "2.00000",
+      "-2"
+    ]
+  ]
+}

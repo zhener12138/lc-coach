@@ -1,0 +1,21 @@
+{
+  "slug": "climbing-stairs",
+  "name": "climbStairs",
+  "params": [
+    {
+      "name": "n",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "2"
+    ],
+    [
+      "3"
+    ]
+  ]
+}

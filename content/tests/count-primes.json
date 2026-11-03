@@ -1,0 +1,24 @@
+{
+  "slug": "count-primes",
+  "name": "countPrimes",
+  "params": [
+    {
+      "name": "n",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "0"
+    ],
+    [
+      "1"
+    ],
+    [
+      "2"
+    ]
+  ]
+}

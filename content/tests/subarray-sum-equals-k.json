@@ -1,0 +1,27 @@
+{
+  "slug": "subarray-sum-equals-k",
+  "name": "subarraySum",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    },
+    {
+      "name": "k",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "[1,1,1]",
+      "2"
+    ],
+    [
+      "[1,2,3]",
+      "3"
+    ]
+  ]
+}

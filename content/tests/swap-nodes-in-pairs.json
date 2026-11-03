@@ -1,0 +1,27 @@
+{
+  "slug": "swap-nodes-in-pairs",
+  "name": "swapPairs",
+  "params": [
+    {
+      "name": "head",
+      "type": "ListNode"
+    }
+  ],
+  "return": {
+    "type": "ListNode"
+  },
+  "cases": [
+    [
+      "[1,2,3,4]"
+    ],
+    [
+      "[]"
+    ],
+    [
+      "[1]"
+    ],
+    [
+      "[1,2,3]"
+    ]
+  ]
+}

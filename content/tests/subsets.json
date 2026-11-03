@@ -1,0 +1,22 @@
+{
+  "slug": "subsets",
+  "name": "subsets",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "list<list<integer>>",
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "[1,2,3]"
+    ],
+    [
+      "[0]"
+    ]
+  ]
+}

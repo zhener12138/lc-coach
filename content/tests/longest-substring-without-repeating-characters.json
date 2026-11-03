@@ -1,0 +1,24 @@
+{
+  "slug": "longest-substring-without-repeating-characters",
+  "name": "lengthOfLongestSubstring",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "\"abcabcbb\""
+    ],
+    [
+      "\"bbbbb\""
+    ],
+    [
+      "\"pwwkew\""
+    ]
+  ]
+}

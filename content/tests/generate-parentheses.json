@@ -1,0 +1,21 @@
+{
+  "slug": "generate-parentheses",
+  "name": "generateParenthesis",
+  "params": [
+    {
+      "name": "n",
+      "type": "integer"
+    }
+  ],
+  "return": {
+    "type": "list<string>"
+  },
+  "cases": [
+    [
+      "3"
+    ],
+    [
+      "1"
+    ]
+  ]
+}

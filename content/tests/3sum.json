@@ -1,0 +1,26 @@
+{
+  "slug": "3sum",
+  "name": "threeSum",
+  "params": [
+    {
+      "name": "nums",
+      "type": "integer[]"
+    }
+  ],
+  "return": {
+    "type": "list<list<integer>>",
+    "colsize": 3,
+    "dealloc": true
+  },
+  "cases": [
+    [
+      "[-1,0,1,2,-1,-4]"
+    ],
+    [
+      "[0,1,1]"
+    ],
+    [
+      "[0,0,0]"
+    ]
+  ]
+}

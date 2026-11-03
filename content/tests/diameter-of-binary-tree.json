@@ -1,0 +1,21 @@
+{
+  "slug": "diameter-of-binary-tree",
+  "name": "diameterOfBinaryTree",
+  "params": [
+    {
+      "name": "root",
+      "type": "TreeNode"
+    }
+  ],
+  "return": {
+    "type": "integer"
+  },
+  "cases": [
+    [
+      "[1,2,3,4,5]"
+    ],
+    [
+      "[1,2]"
+    ]
+  ]
+}

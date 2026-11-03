@@ -153,8 +153,12 @@ const GOOD_CODE = `class Solution {
   const unlockedPage = mainEl.innerHTML;
   ok(unlockedPage.includes('class="ref-grade"'), '解锁后解法卡内出现评分块');
   ok(unlockedPage.includes('这个解法的评分'), '卡内评分有标题');
+  // 2026-11-03 接了真跑判题后从 6 项变 7 项（新增 correctness）。
+  // 但设计类题目（LRU、最小栈等）判不了，correctness 会被剔除，那时仍是 6 项。
+  // 所以断言「6 或 7」而不是写死数字 —— 写死数字的测试会给未来的自己埋雷。
   const rgdCount = (unlockedPage.match(/class="rgd-row"/g) || []).length;
-  ok(rgdCount === 6, '卡内评分六个维度齐全（实际 ' + rgdCount + '）');
+  ok(rgdCount === 6 || rgdCount === 7,
+    '卡内评分维度数 6 或 7（能判题=7，判不了=6，实际 ' + rgdCount + '）');
   ok(unlockedPage.includes('class="tab-score'), 'tab 上有分数角标');
 
   console.log('\n=== 2. 空代码点评分应被拦住 ===');
@@ -187,14 +191,21 @@ const GOOD_CODE = `class Solution {
   ok(out.includes('边界处理'), '有「边界处理」维度');
   ok(out.includes('代码规范'), '有「代码规范」维度');
   ok(out.includes('思路匹配'), '有「思路匹配」维度');
-  ok((out.match(/class="grade-dim"/g) || []).length === 6, '六个维度全部渲染');
+  // 同上：6 或 7 项，判题成功时多一项「正确性（真跑）」。
+  const dimCount = (out.match(/class="grade-dim"/g) || []).length;
+  ok(dimCount === 6 || dimCount === 7, '维度全部渲染（6 或 7 项，实际 ' + dimCount + '）');
+  ok(out.includes('正确性（真跑）') || out.includes('判不了'), '正确性维度在，或明确说明了判不了');
 
   console.log('\n=== 4. 实测 / 推断 必须分清 ===');
-  ok(out.includes('vtag real'), '有「实测」标签');
-  ok(out.includes('vtag guess'), '有「推断」标签');
-  ok((out.match(/vtag real/g) || []).length === 1, '只有编译一个维度标「实测」');
-  ok((out.match(/vtag guess/g) || []).length === 5, '其余五个维度标「推断」');
-  ok(out.includes('没有测试用例'), '明示了不判答案对不对');
+  // 2026-11-03 起接入了真跑判题：正确性不再靠猜，是 javac + 真执行官方示例用例比出来的。
+  // 原来这条断言查的是「没有测试用例，所以不判答案对不对」那句免责声明 —— 那句话现在不成立了，
+  // 断言跟着改：必须说清哪些是实测、哪些是推断，这才是免责声明该干的事。
+  // 维度数量也变了：能判题的题是 7 项（compile + correctness + 5 项推断），
+  // 判不了的题是 6 项（correctness 被剔除）。这里断言「推断的那些仍然是 5 个」。
+  ok(out.includes('vtag real') && out.includes('实测'), '有「实测」标签');
+  ok((out.match(/vtag guess/g) || []).length === 5, '推断维度恰好 5 个（正确性已升为实测）');
+  ok(out.includes('真跑官方示例用例') || out.includes('真跑'), '声明了正确性是真跑的');
+  ok(!out.includes('没有测试用例'), '不再声称「没有测试用例」');
 
   console.log('\n=== 5. 分数落库，重进能看到 ===');
   byId('my-code').value = '';   // 清空本地输入，必须要从后端拿回来

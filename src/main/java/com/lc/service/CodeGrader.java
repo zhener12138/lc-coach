@@ -19,13 +19,20 @@ import java.util.regex.Pattern;
  * 代码评分器。
  *
  * 设计红线：<b>不编分数</b>。
- * 这个项目没有每题的单测用例，所以「你的代码到底对不对」在本地是<b>不可知</b>的。
- * 因此这里只做两件真事：
- *   1) 用 JDK 自带的 JavaCompiler <b>真的编译一次</b>（编译过的代码不会差到哪去，编译不过的一票否决）；
- *   2) 对源码做<b>静态结构分析</b>（嵌套层数、递归、数据结构、边界守卫、命名与魔法数），
- *      由此推断复杂度和代码质量，并在返回结果里用 {@code verifiable} 字段标注哪些是实测、哪些是推断。
  *
- * 前端必须把 verifiable=false 的维度标出来，否则用户会把「推测 O(n)」当成「实测 O(n)」。
+ * 这里做三件事，按可信度从高到低：
+ *   1) <b>真的编译一次</b>（JDK 自带 JavaCompiler）；
+ *   2) <b>真的把代码跑起来，用官方示例用例验对错</b>（见 {@link JudgeService}）——
+ *      「正确性」是唯一能回答「我到底做对没有」的维度，权重最高；
+ *   3) 对源码做<b>静态结构分析</b>（嵌套层数、递归、数据结构、边界守卫、命名与魔法数），
+ *      由此推断复杂度和代码质量。
+ *
+ * 每个维度用 {@code verifiable} 标出是「实测」还是「推断」，前端必须把推断的标出来 ——
+ * 否则用户会把「推测 O(n)」当成「实测 O(n)」。六项里只有 compile 和 correctness 是实测，
+ * 剩下四项始终是推断，这一点不能含糊。
+ *
+ * 正确性拿不到用例时（设计类题目没有单函数入口），<b>直接把这一维度从加权里剔除并重新归一</b>，
+ * 绝不按 0 分算 —— 「这道题判不了」和「你没通过」是两件完全不同的事。
  *
  * 参考解法用<b>同一套规则</b>打分，这样「你的 7.2 分 vs 最优解 9.4 分」才有可比性。
  */
@@ -34,6 +41,9 @@ public class CodeGrader {
 
     @Autowired
     private ProblemStore store;
+
+    @Autowired
+    private JudgeService judgeService;
 
     /** 内置解法的评分结果缓存：slug -> (tier -> result) */
     private final Map<String, Map<String, Map<String, Object>>> refCache = new ConcurrentHashMap<>();
@@ -175,6 +185,63 @@ public class CodeGrader {
         }
         dims.add(dim("compile", "编译通过", compileScore, true, compileReason,
                 comp.errors.size() > 0 ? comp.errors : List.of("javac -encoding UTF-8 退出码 0")));
+
+        // 2.1b 正确性（真跑）
+        //
+        // 这是整个评分器里唯一能回答「我到底做对没有」的维度，其余四项复杂度/空间/边界/规范
+        // 全是正则扫代码结构推出来的猜测 —— 猜出来的东西不能当主分。
+        //
+        // 拿不到用例时（设计类题目没有单一函数入口）**不加这个维度**，
+        // 而不是给 0 分：那 6 道题是「判不了」，不是「你没做对」。
+        // 维度不加进 dims，后面的加权会自动按「已存在维度的权重和」重新归一。
+        Map<String, Object> verdict = null;
+        if (comp.ok && hasMethod && prob != null && prob.slug != null) {
+            try {
+                JudgeService.Verdict v = judgeService.judge(prob.slug, code, store.dir().toAbsolutePath().getParent().getParent());
+                if (v != null && v.ran) {
+                    verdict = new LinkedHashMap<>();
+                    verdict.put("ran", true);
+                    verdict.put("total", v.total);
+                    verdict.put("passed", v.passed);
+                    verdict.put("failures", v.failures);
+
+                    double corrScore;
+                    String corrReason;
+                    List<String> corrEv = new ArrayList<>();
+                    if (v.total <= 0) {
+                        corrScore = 10;
+                        corrReason = "这题官方示例为空，没东西可验，这一项不扣分。";
+                        corrEv.add("用例数 0");
+                    } else if (v.passed == v.total) {
+                        corrScore = 10;
+                        corrReason = "真跑过了官方示例的 " + v.total + " 个用例，全对。";
+                        corrEv.add("用例 " + v.passed + " / " + v.total + " 通过");
+                    } else {
+                        double rate = v.passed * 1.0 / v.total;
+                        // 通过率映射到分数：全错给 1 分（不是 0 —— 至少能跑起来），全对才给 10。
+                        // 线性映射会让「3 个用例过 2 个 = 6.7 分」显得太宽容，
+                        // 所以用 1 + 9 * rate^1.5，0.5 的通过率落在 4.2 分，符合「错一半就是没做对」的直觉。
+                        corrScore = 1 + 9 * Math.pow(rate, 2);
+                        corrReason = "官方示例 " + v.total + " 个用例只过了 " + v.passed + " 个，"
+                                + "有 " + (v.total - v.passed) + " 个答案是错的。";
+                        corrEv.add("用例 " + v.passed + " / " + v.total + " 通过");
+                        int shown = 0;
+                        for (Map<String, Object> f : v.failures) {
+                            if (shown++ >= 2) break;
+                            corrEv.add("输入 " + f.get("input") + " 期望 " + f.get("expected")
+                                    + "，实际 " + f.get("got"));
+                        }
+                    }
+                    dims.add(dim("correctness", "正确性（真跑）", round(corrScore), true,
+                            corrReason, corrEv));
+                }
+            } catch (Exception e) {
+                // 判题出错不能把评分整个搞挂 —— 少一个维度而已。
+                verdict = new LinkedHashMap<>();
+                verdict.put("ran", false);
+                verdict.put("reason", "判题过程出错：" + e.getMessage());
+            }
+        }
 
         // 2.2 思路匹配
         // 基准就是参考最优解，它覆盖自己必然是 100%，所以这个维度天然满足「参考解得 10 分」。
@@ -327,11 +394,35 @@ public class CodeGrader {
                 styleEv.get(0), styleEv));
 
         // ---- 3. 加权总分 ----
-        // 权重和必须是 1，且顺序必须与 dims 的添加顺序一一对应（compile/approach/complexity/space/edge/style）
+        //
+        // 权重按「维度 key」取，不按下标 —— 下标一改就静默错位，这种 bug 查起来极贵。
+        // 并且只对「实际存在的维度」归一：正确性判不了时（设计类题目），
+        // 它的 0.30 权重会被摊到其余五项上，而不是变成白送的 0 分。
+        //
+        // 权重分配原则：**实测的权重高，推断的权重低**。
+        //   compile 0.12 + correctness 0.30 = 0.42 是实测（真编译、真跑）
+        //   其余 0.58 全是静态推断
+        // 正确性一项就顶过剩下五项里的任何两项，因为它回答的是「对不对」，
+        // 而那五项回答的只是「写得像不像高手」。
+        Map<String, Double> weightOf = new LinkedHashMap<>();
+        weightOf.put("compile", 0.12);
+        weightOf.put("correctness", 0.30);
+        weightOf.put("approach", 0.14);
+        weightOf.put("complexity", 0.16);
+        weightOf.put("space", 0.10);
+        weightOf.put("edge", 0.10);
+        weightOf.put("style", 0.08);
+
+        double wSum = 0;
+        for (Map<String, Object> d : dims) {
+            Double wv = weightOf.get(String.valueOf(d.get("key")));
+            if (wv != null) wSum += wv;
+        }
         double total = 0;
-        double[] w = {0.22, 0.22, 0.20, 0.12, 0.14, 0.10};
-        for (int i = 0; i < dims.size() && i < w.length; i++) {
-            total += ((Number) dims.get(i).get("score")).doubleValue() * w[i];
+        for (Map<String, Object> d : dims) {
+            Double wv = weightOf.get(String.valueOf(d.get("key")));
+            if (wv == null || wSum <= 0) continue;
+            total += ((Number) d.get("score")).doubleValue() * (wv / wSum);
         }
         // 编译不过就不能是好代码：一票把总分压到 4 分以下
         if (!comp.ok) total = Math.min(total, 3.9);
@@ -343,9 +434,18 @@ public class CodeGrader {
         // 复杂度写成 O(n^3) 也只掉 1.8 分。平均分掩盖了「某项彻底不行」这件事。
         // 所以补一条：复杂度或空间塌到 4 分以下，总分不许进 8 分以上。
         // 用封顶而不是加大权重，是为了不动六项之间的相对比例，只堵住「一项烂、五项救」这个洞。
-        double cplxRaw = ((Number) dims.get(2).get("score")).doubleValue();
-        double spaceRaw = ((Number) dims.get(3).get("score")).doubleValue();
-        if (cplxRaw < 4 || spaceRaw < 4) total = Math.min(total, 7.9);
+        double cplxRaw = scoreOf(dims, "complexity");
+        double spaceRaw = scoreOf(dims, "space");
+        if (cplxRaw >= 0 && cplxRaw < 4) total = Math.min(total, 7.9);
+        if (spaceRaw >= 0 && spaceRaw < 4) total = Math.min(total, 7.9);
+        // 正确性塌陷单独一票：用例过不到一半，总分不许进 7 分以上。
+        // 「代码写得漂亮但答案是错的」不该拿高分，这是评分器最该守住的常识。
+        // 正确性塌陷一票否决：用例没全过，总分不许进 8 分以上。
+        // 理由：给「答案是错的但写得漂亮」的文章打 8 分，等于告诉用户方向对了。
+        // 方向错了比写法差严重一个量级 —— 那五项推断项再高也不该救回来。
+        double corrRaw = scoreOf(dims, "correctness");
+        if (corrRaw >= 0 && corrRaw < 10) total = Math.min(total, 7.9);
+        if (corrRaw >= 0 && corrRaw < 5.5) total = Math.min(total, 6.9);
 
         res.put("ok", true);
         res.put("total", round(total));
@@ -360,6 +460,7 @@ public class CodeGrader {
                 "recursive", a.recursive,
                 "techs", new ArrayList<>(a.techs)
         ));
+        if (verdict != null) res.put("judge", verdict);
         res.put("compileErrors", comp.errors);
         res.put("compileWarnings", comp.warnings);
         res.put("reference", Map.of(
@@ -921,15 +1022,26 @@ public class CodeGrader {
         g.put("total", round(Math.max(2.0, total - cut)));
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> dims = (List<Map<String, Object>>) g.get("dimensions");
-        if (dims != null && dims.size() > 2) {
-            Map<String, Object> c = dims.get(2);
-            if ("complexity".equals(c.get("key"))) {
-                double cs = ((Number) c.get("score")).doubleValue();
-                c.put("score", round(Math.max(2.0, cs - cut * 1.6)));
+        if (dims != null) {
+            for (Map<String, Object> c : dims) {
+                if ("complexity".equals(c.get("key"))) {
+                    double cs = ((Number) c.get("score")).doubleValue();
+                    c.put("score", round(Math.max(2.0, cs - cut * 1.6)));
+                }
             }
         }
         g.put("declaredRankNote", "题解标注的复杂度比最优解慢 " + delta + " 档，按标注校正");
         return g;
+    }
+
+    /** 按 key 取某维度的分数；该维度不存在返回 -1（不是 0 —— 「没有」和「零分」必须能区分）。 */
+    private static double scoreOf(List<Map<String, Object>> dims, String key) {
+        for (Map<String, Object> d : dims) {
+            if (key.equals(String.valueOf(d.get("key")))) {
+                return ((Number) d.get("score")).doubleValue();
+            }
+        }
+        return -1;
     }
 
     // ---------------------------------------------------------------- 可复用的扫描

@@ -1,0 +1,30 @@
+{
+  "slug": "valid-parentheses",
+  "name": "isValid",
+  "params": [
+    {
+      "name": "s",
+      "type": "string"
+    }
+  ],
+  "return": {
+    "type": "boolean"
+  },
+  "cases": [
+    [
+      "\"()\""
+    ],
+    [
+      "\"()[]{}\""
+    ],
+    [
+      "\"(]\""
+    ],
+    [
+      "\"([])\""
+    ],
+    [
+      "\"([)]\""
+    ]
+  ]
+}
