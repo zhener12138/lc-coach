@@ -121,11 +121,17 @@ async function waitRendered(timeout = 6000) {
   return pageText();
 }
 
-/* 视图 -> 应当出现的关键词 */
+/* 视图 -> 应当出现的关键词
+ *
+ * 这里只放「结构上一定在」的词，不放具体题名。曾经 today/mistakes 都断言
+ * 「两数之和」，那是把测试绑死在某一天的计划和某一条错题上：
+ * 计划第 1 天是两数之和，第 2 天就换成别的题了；错题本清空也就没有了。
+ * 结果同一个断言，换个日期或清个数据就红 —— 而功能其实没坏。
+ * 题库那行保留「两数之和」是对的：它固定是列表第一题。 */
 const EXPECT = {
-  today:    ['今日任务', '两数之和'],
+  today:    ['今日任务'],
   library:  ['题库', '两数之和'],
-  mistakes: ['错题本', '两数之和'],
+  mistakes: ['错题本'],
   snippets: ['模板库', 'HashMap'],
   plan:     ['路线图', 'W1'],
   account:  ['力扣'],
@@ -139,7 +145,10 @@ const EXPECT = {
   console.log('\n=== 首屏（#/today）自动渲染 ===');
   const first = await waitRendered();
   ok(first.length > 200, `首屏有内容（${first.length} 字符）`);
-  ok(first.includes('两数之和'), '首屏出现「两数之和」');
+  // 不断言具体题名：今日页显示的是「今天的计划」，第 1 天是两数之和，
+  // 第 2 天就换成别的题了 —— 断言具体题名等于让测试随日期变红。
+  // 断言渲染出了可点的题目卡（class="task" + data-slug），这才是功能判据。
+  ok(/class="task[^"]*"[^>]*data-slug="[^"]+"/.test(first), '首屏渲染出了题目卡（带 slug）');
   ok(!first.includes('加载失败'), '首屏无「加载失败」');
 
   for (const v of VIEWS) {
@@ -160,5 +169,8 @@ const EXPECT = {
   }
 
   console.log(`\n${fail === 0 ? '✅ 全部通过' : '❌ 有失败'}  ${pass} passed, ${fail} failed\n`);
-  process.exit(fail === 0 ? 0 : 1);
+  // Windows 上 process.exit() 会在句柄没关完时触发 libuv 断言
+  // （Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)），
+  // 断言明明全过却报 exit 127。用 exitCode 让 Node 自然退出。
+  process.exitCode = fail === 0 ? 0 : 1;
 })();

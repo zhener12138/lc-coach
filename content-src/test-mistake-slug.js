@@ -59,7 +59,33 @@ const ok = (n, c, e) => c ? (pass++, console.log('  ✅ ' + n)) : (fail++, conso
   } catch (e) {
     ok('GET /api/mistakes 可达', false, e.message);
   }
-  ok('错题本非空（否则这条测试没意义）', Array.isArray(list) && list.length > 0, list && list.length);
+
+  // 错题本为空是合法状态（新装环境、或用户全清了）。不能因此判失败 ——
+  // 那会把「没数据」误报成「功能坏了」，真出问题反倒没人信这条测试。
+  // 空的时候自己造一条来验链路，跑完删掉。
+  let seededMistake = null;
+  if (Array.isArray(list) && list.length === 0) {
+    console.log('  · 错题本是空的，临时造一条来验链路（跑完会删掉）');
+    try {
+      const r = await fetch(API + '/mistakes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          problemTitle: '1. 两数之和',
+          problemSlug: '',            // 故意留空，看后端能不能反查出来
+          whereStuck: '__empty_seed_probe__', oneLiner: 'probe', tag: '探针'
+        })
+      });
+      ok('空库时能造出一条测试错题', r.ok, r.status);
+      const r2 = await fetch(API + '/mistakes');
+      list = await r2.json();
+      seededMistake = list.find(m => m.whereStuck === '__empty_seed_probe__') || null;
+    } catch (e) {
+      ok('空库时造测试错题', false, e.message);
+    }
+  }
+  ok('错题本有数据可查（真实数据或临时造的）', Array.isArray(list) && list.length > 0,
+     list && list.length);
 
   if (Array.isArray(list)) {
     const noSlug = list.filter(m => !m.problemSlug || !String(m.problemSlug).trim());
@@ -111,6 +137,14 @@ const ok = (n, c, e) => c ? (pass++, console.log('  ✅ ' + n)) : (fail++, conso
     const r3 = await fetch(API + '/mistakes');
     const l3 = await r3.json();
     ok('探针已清理干净', !l3.some(m => m.id === newId));
+  }
+
+  // 临时造的那条也要清理，否则空库跑一次就多一条假错题
+  if (seededMistake && seededMistake.id) {
+    await fetch(API + '/mistakes/' + seededMistake.id, { method: 'DELETE' });
+    const r4 = await fetch(API + '/mistakes');
+    const l4 = await r4.json();
+    ok('临时造的错题已清理干净', !l4.some(m => m.id === seededMistake.id));
   }
 
   console.log(`\n通过 ${pass} / 失败 ${fail}`);

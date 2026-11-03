@@ -429,6 +429,55 @@ spring:
 
 找不到任何可写位置时不硬崩，而是打一行警告让服务继续起 —— **编译评分用不了是少一个功能，服务打不开是整个项目不能用，这两个后果差太远。**
 
+## 数据备份与恢复
+
+### 为什么会做这个
+
+曾经因为一次清理操作把 `data/lccoach.mv.db` 删了，打卡记录、错题本、力扣绑定全部归零，而且**没有任何备份可以恢复**。
+
+一个存着个人学习数据的工具没有备份，是设计缺陷，不是运维疏忽。所以现在 `BackupService` 会自动做这件事。
+
+### 什么时候备份
+
+| 时机 | 说明 |
+| --- | --- |
+| 启动后立刻 | 库里最干净、最能反映「启动那一刻」的状态 |
+| 每 6 小时 | 服务长期开着时，中途的数据同样需要保护 |
+
+备份文件落在 `data/backup/`，文件名形如 `lccoach-20261103-092844-startup.zip`，**只保留最近 7 份**，多了删最旧的。
+
+### 怎么备份的
+
+用 H2 自己的 `BACKUP TO`，**不是直接拷 `.mv.db` 文件**。原因：直接拷的时候数据库可能正在写，拷出来的是撕裂的；`BACKUP TO` 是一致性快照。
+
+备份失败只写日志，不抛异常 —— 少一层保险可以，但让业务因此挂掉是本末倒置。
+
+### 怎么恢复
+
+```bash
+# 1. 停服务（否则文件被占用）
+powershell -NoProfile -Command "Get-Process java,javaw -ErrorAction SilentlyContinue | Stop-Process -Force"
+
+# 2. 挪走坏掉的库，别覆盖它 —— 万一还能救
+mv data/lccoach.mv.db data/lccoach.mv.db.broken
+
+# 3. 用 H2 自带的 Restore 还原（<h2.jar> 换成你本机路径）
+java -cp "<h2.jar>" org.h2.tools.Restore \
+     -file data/backup/lccoach-<时间戳>-startup.zip -dir data
+
+# 4. 启动，确认数据回来了
+java -jar target/lc-coach-1.0.0.jar
+```
+
+**两个不能用的方式**（都实测过报错）：
+
+| 错误做法 | 为什么不行 |
+| --- | --- |
+| `RUNSCRIPT FROM 'xxx.zip'` | 那是给纯 SQL 脚本用的；`BACKUP TO` 产出的是装 `.mv.db` 的二进制 zip |
+| 手工 `unzip` 再拷文件 | 名字能对上，但绕过了 H2 的校验；`org.h2.tools.Restore` 才是设计上的入口 |
+
+`org.h2.tools.Restore` 还原出来的库文件是完整的 131072 字节，能直接当数据库查询 —— 这一点已实测确认。
+
 ## 模板库的「可直接用 / 片段」是怎么判出来的
 
 模板库里的代码有两种，用同一把尺子量会得出错误结论：

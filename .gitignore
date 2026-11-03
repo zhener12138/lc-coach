@@ -2,6 +2,7 @@
 target/
 
 # ---- 运行数据（含力扣 session cookie，绝不能入库）----
+# 注意 data/backup/ 里是数据库快照，同样含 cookie，所以整个 data/ 一并排除
 data/
 *.log
 

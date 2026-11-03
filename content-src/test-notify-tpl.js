@@ -94,5 +94,6 @@ ok('CSS 有 .dailytpl-code', css.includes('.dailytpl-code'));
 
   console.log('\n' + '='.repeat(52));
   console.log(`通过 ${pass} / 失败 ${fail}`);
-  process.exit(fail ? 1 : 0);
+  // 同上：process.exit() 在 Windows 上会触发 libuv 断言导致假失败
+  process.exitCode = fail ? 1 : 0;
 })();

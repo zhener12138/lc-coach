@@ -257,11 +257,18 @@ const ST = () => vm.runInContext('State', ctx);
   console.log('=== 5. 点箭头真的换路由 ===');
   ctx.location.hash = '#/today/3';
   nodes['day-prev'].click();
-  ok('点左箭头去第 2 天', ctx.location.hash === '#/today/2', ctx.location.hash);
+  // 第 2 天是不是「真实今天」取决于跑测试的日期，不能写死 '#/today/2'。
+  // goDay() 的规则是：落到真实今天就用 '#/today'（不写死天数，明天才不用改），
+  // 否则用 '#/today/N'。这里按本次拿到的 realDayNo 判断。
+  const wantPrev = t0.realDayNo === 2 ? '#/today' : '#/today/2';
+  ok('点左箭头去第 2 天', ctx.location.hash === wantPrev,
+    ctx.location.hash + '（期望 ' + wantPrev + '，realDayNo=' + t0.realDayNo + '）');
   ctx.location.hash = '#/today/3';
   await ctx.render();
   nodes['day-next'].click();
-  ok('点右箭头去第 4 天', ctx.location.hash === '#/today/4', ctx.location.hash);
+  const wantNext = t0.realDayNo === 4 ? '#/today' : '#/today/4';
+  ok('点右箭头去第 4 天', ctx.location.hash === wantNext,
+    ctx.location.hash + '（期望 ' + wantNext + '）');
 
   ctx.location.hash = '#/today/1';
   await ctx.render();
