@@ -725,9 +725,38 @@ async function viewProblem(main, slug, reviewMistakeId) {
     });
   }
 
-  // 复习模式到此为止 —— 后面的笔记/完成/错题按钮只存在于看题模式，
-  // 复习模式的 DOM 里根本没有这些节点，直接绑会 TypeError。
-  if (reviewMistakeId) return;
+  // 复习模式专属按钮（复习 +1 / 保存复习代码）必须在这里绑、绑完就 return ——
+  // 上个版本把绑定写在了下面 early-return 之后，函数先 return 了，
+  // 两个按钮永远没绑上：保存点了没反应、+1 也点了没反应（两个 bug 的同一根因）。
+  if (reviewMistakeId) {
+    // 复习 +1：记一次复习计数，然后回错题本（列表重新拉，复习次数自然会刷新）。
+    $('#btn-review-plus').addEventListener('click', async () => {
+      try {
+        await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review', { method: 'POST' });
+        toast('已记一次复习');
+        go('#/mistakes');
+      } catch (e) { toast(e.message, true); }
+    });
+    // 复习代码存自己的表（review_code），与看题页的 my_code 完全隔离。
+    // 复习重写 ≠ 覆盖第一遍 —— 两份都有回看价值。
+    $('#btn-save-review-code').addEventListener('click', async () => {
+      const code = $('#review-code').value;
+      if (!code.trim()) { toast('先写点代码再保存', true); return; }
+      const b = $('#btn-save-review-code');
+      b.disabled = true; b.textContent = '保存中…';
+      try {
+        await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-code', {
+          method: 'POST', body: { code }
+        });
+        $('#review-code-stamp').textContent = '已保存 ' + new Date().toLocaleTimeString();
+        toast('复习代码已保存（不影响看题页那份）');
+      } catch (e) { toast(e.message, true); }
+      finally { b.disabled = false; b.textContent = '保存复习代码'; }
+    });
+    // 复习模式到此为止 —— 后面的笔记/完成/错题按钮只存在于看题模式，
+    // 复习模式的 DOM 里根本没有这些节点，直接绑会 TypeError。
+    return;
+  }
 
   // 笔记
   $('#btn-save-note').addEventListener('click', async () => {
@@ -766,33 +795,7 @@ async function viewProblem(main, slug, reviewMistakeId) {
     });
   });
 
-  // ---- 复习模式专属：复习 +1 ----
-  // 记一次复习计数，然后回错题本（列表重新拉，复习次数自然会刷新）。
-  if (reviewMistakeId) {
-    $('#btn-review-plus').addEventListener('click', async () => {
-      try {
-        await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review', { method: 'POST' });
-        toast('已记一次复习');
-        go('#/mistakes');
-      } catch (e) { toast(e.message, true); }
-    });
-    // 复习代码存自己的表（review_code），与看题页的 my_code 完全隔离。
-    // 复习重写 ≠ 覆盖第一遍 —— 两份都有回看价值。
-    $('#btn-save-review-code').addEventListener('click', async () => {
-      const code = $('#review-code').value;
-      if (!code.trim()) { toast('先写点代码再保存', true); return; }
-      const b = $('#btn-save-review-code');
-      b.disabled = true; b.textContent = '保存中…';
-      try {
-        await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-code', {
-          method: 'POST', body: { code }
-        });
-        $('#review-code-stamp').textContent = '已保存 ' + new Date().toLocaleTimeString();
-        toast('复习代码已保存（不影响看题页那份）');
-      } catch (e) { toast(e.message, true); }
-      finally { b.disabled = false; b.textContent = '保存复习代码'; }
-    });
-  }
+  // ---- 复习模式专属按钮已在前面的复习分支绑定（那里绑完直接 return）----
 }
 
 /* ============================ 我的代码 + 评分 ============================ */
