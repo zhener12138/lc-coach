@@ -5,7 +5,10 @@
  *   1. 翻到别的日子，看到的是那天的安排（不是今天的）
  *   2. 翻页**不能**改掉 State.today —— 侧栏统计、计划页、真实打卡都只认今天
  *   3. 第 1 天没有「上一天」、第 112 天没有「下一天」，按钮是 disabled 而不是点了没反应
- *   4. 翻到历史/未来时打卡按钮停用，否则等于让人偷偷改今天的进度
+ *   4. 翻到历史/未来时打卡按钮**照样能点** —— 打卡记的是「这道题做没做过」
+ *      （progress 表主键是 slug，done_date 只记第一次完成日），没有按日切账，
+ *      所以不存在「在历史页点勾会改今天」这回事。曾经第 4 条写成「停用」，
+ *      那是把 bug 当规格钉住了，现在反过来防它复发。
  *
  * DOM stub 说明见 test-mistake-fill-e2e.js —— 同一套，
  * 关键是 innerHTML setter 里要 hydrate 出真实节点，否则 $('#day-prev') 永远是 null。
@@ -217,7 +220,12 @@ const ST = () => vm.runInContext('State', ctx);
   ok('有前后两个箭头按钮', /id="day-prev"/.test(app) && /id="day-next"/.test(app));
   ok('箭头按后端 hasPrev/hasNext 禁用，前端不自己算 112', /t\.hasPrev \? '' : ' disabled'/.test(app) && /t\.hasNext \? '' : ' disabled'/.test(app));
   ok('换页时清掉全局左右键监听', /document\.onkeydown = null/.test(app));
-  ok('翻到别的日子时打卡按钮停用', /const canCheck = t\.isToday !== false/.test(app));
+  // 曾经这里断言「翻到别的日子时打卡按钮停用」，那是把 bug 当成规格写进测试。
+  // 打卡记的是「这道题做没做过」（progress 主键是 slug），不分哪天，
+  // 所以在历史/未来页都能勾。现在反过来钉死：不能再有按日期拦路的闸。
+  ok('打卡按钮不再按日期停用（check 不再被 isToday 拦住）',
+     !/const canCheck = t\.isToday !== false/.test(app)
+     && /\[data-check\]', main\)\.forEach/.test(app));
   ok('有「回到今天」按钮', /id="back-today"/.test(app));
 
   // ---------- 3. 真实渲染：今天 ----------
@@ -249,7 +257,9 @@ const ST = () => vm.runInContext('State', ctx);
   ok('翻页没有污染 State.today', afterJson === todaySnapshot, 'State.today 被改了');
   ok('今天的 dayNo 还是原来那个', ST().today.dayNo === t0.dayNo, ST().today.dayNo);
   ok('todayView 指向第 3 天', ST().todayView && ST().todayView.dayNo === 3, ST().todayView && ST().todayView.dayNo);
-  ok('历史页打卡按钮全部禁用', qAll(main, 'btn-check').every(b => b.disabled) || qAll(main, 'btn-check').length === 0);
+  ok('历史页打卡按钮全部可点（不再被禁用）',
+     qAll(main, 'btn-check').every(b => !b.disabled) || qAll(main, 'btn-check').length === 0,
+     '有 disabled 的按钮');
   ok('第 3 天左箭头可点', nodes['day-prev'].disabled === false);
   ok('第 3 天右箭头可点', nodes['day-next'].disabled === false);
 

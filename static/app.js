@@ -347,7 +347,7 @@ async function viewToday(main, dayParam) {
 
     ${t.isToday === false ? `<div class="notice notice-view">
       <b>你在看第 ${t.dayNo} 天（${esc(t.date || '')}）的安排，不是今天。</b>
-      这里的勾选记账本上的真实今天，不会改历史。
+      打卡记的是「这道题做没做过」，不分哪天，所以在任意一天都能勾。
       <button class="btn small ghost" id="back-today">回到今天</button>
     </div>` : ''}
 
@@ -422,36 +422,46 @@ async function viewToday(main, dayParam) {
     });
   });
 
-  // 翻到别的日子时打卡按钮要停用：那个勾写进的是真实今天的进度，
-  // 在历史页面上点它等于偷偷改今天 —— 宁可点不了，也不能让人以为在补卡。
-  const canCheck = t.isToday !== false;
+  // 打卡就是「把这道题标记成做完了」，和它在计划里排第几天无关。
+  // 曾经这里有一道 canCheck = t.isToday !== false 的闸，理由是「在历史页
+  // 点勾等于偷偷改今天的进度」—— 那个理由站不住：progress 表的主键是
+  // slug，done_date 只记第一次完成的日期，压根没有「哪天做了多少」这种
+  // 按日切分的账。给第 3 天的题打卡，就是把那道题标记成做完，天经地义。
+  // 结果是昨天/明天的题点了没反应，而按钮看上去是能点的，纯属骗人。
   $$('[data-check]', main).forEach(btn => {
-    if (!canCheck) {
-      btn.disabled = true;
-      btn.title = '这是历史/未来的安排，切回今天才能打卡';
-      btn.addEventListener('click', e => { e.stopPropagation(); toast('这是第 ' + t.dayNo + ' 天的安排，切回今天才能打卡'); });
-      return;
-    }
     btn.addEventListener('click', async e => {
       e.stopPropagation();
       const slug = btn.dataset.check;
       const row = btn.closest('.task');
       const nowDone = !row.classList.contains('done');
+      // 先锁住按钮，防连点造成两次相反的请求互相覆盖
+      if (btn.disabled) return;
+      btn.disabled = true;
       try {
         await api('/progress/' + encodeURIComponent(slug), {
           method: 'POST',
           body: { status: nowDone ? 'done' : 'todo' }
         });
         row.classList.toggle('done', nowDone);
-        await refreshToday(null);
-        const pct2 = State.today.totalCount
-          ? Math.round(State.today.doneCount / State.today.totalCount * 100) : 0;
+        // 只刷新「当前正在看的这一天」，不强行跳回今天：
+        // 在后端刷新真实今天会覆盖 State.today，而这里在看的可能是历史，
+        // 那会让进度条的数字和页面上的题对不上。
+        const fresh = await refreshToday(t.isToday === false ? t.dayNo : null);
+        const shown = fresh || t;
+        const pct2 = shown.totalCount
+          ? Math.round(shown.doneCount / shown.totalCount * 100) : 0;
         const bar = $('.bar > i', main);
         if (bar) bar.style.width = pct2 + '%';
         const cnt = $('.bar-top span:last-child', main);
-        if (cnt) cnt.textContent = `${State.today.doneCount} / ${State.today.totalCount}`;
+        if (cnt) cnt.textContent = `${shown.doneCount} / ${shown.totalCount}`;
         toast(nowDone ? '打卡完成' : '已取消');
-      } catch (err) { toast(err.message, true); }
+      } catch (err) {
+        // 失败要把界面还原，否则会出现「显示已打卡但服务器没收到」
+        row.classList.toggle('done', !nowDone);
+        toast(err.message, true);
+      } finally {
+        btn.disabled = false;
+      }
     });
   });
 }
