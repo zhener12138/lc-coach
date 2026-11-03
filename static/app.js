@@ -220,13 +220,19 @@ function parseHash() {
   const h = (location.hash || '#/today').replace(/^#\/?/, '');
   const parts = h.split('/').filter(Boolean);
   if (!parts.length) return { view: 'today' };
-  return { view: parts[0], param: parts[1] ? decodeURIComponent(parts[1]) : null };
+  return {
+    view: parts[0],
+    param: parts[1] ? decodeURIComponent(parts[1]) : null,
+    // 第三段只在复习模式用到：#/review/:slug/:mistakeId，带上是哪条错题，
+    // 「复习 +1」才知道往哪条错题上记数。其他路由用不到这个字段。
+    param2: parts[2] ? decodeURIComponent(parts[2]) : null
+  };
 }
 
 function go(hash) { location.hash = hash; }
 
 async function render() {
-  const { view, param } = parseHash();
+  const { view, param, param2 } = parseHash();
   State.view = view;
   // 今日页装的左右键翻页是全局监听，换页必须清掉，
   // 否则在题库里按 ← 会莫名其妙跳去前一天。
@@ -237,7 +243,9 @@ async function render() {
 
   try {
     if (view === 'today')        await viewToday(main, param);
+    // 复习模式和看题共用 viewProblem，只多带一个错题 id，界面按 id 是否存在切换
     else if (view === 'problem') await viewProblem(main, param);
+    else if (view === 'review')  await viewProblem(main, param, param2);
     else if (view === 'library') await viewLibrary(main, param);
     else if (view === 'mistakes')await viewMistakes(main);
     else if (view === 'snippets')await viewSnippets(main);
@@ -468,12 +476,17 @@ async function viewToday(main, dayParam) {
 
 /* ============================ 题目详情 ============================ */
 
-async function viewProblem(main, slug) {
+async function viewProblem(main, slug, reviewMistakeId) {
   if (!slug) { go('#/today'); return; }
+  // 复习模式：带错题 id 进来，只给题面 + 我的代码 + 一个「复习 +1」按钮。
+  // 不带 id 的看题路径（#/problem/:slug）一个字节都不能变 —— 两条入口同题同数据。
 
   let p;
   try {
-    p = await api('/problem/' + encodeURIComponent(slug));
+    // 复习模式带 mistakeId：后端会在题目数据里附上这条例题的复习代码（reviewCode 字段），
+    // 看题请求不带这个参数，返回里就没有 reviewCode —— 两条路径各回各的数据。
+    p = await api('/problem/' + encodeURIComponent(slug)
+      + (reviewMistakeId ? '?mistakeId=' + encodeURIComponent(reviewMistakeId) : ''));
   } catch (e) {
     main.innerHTML = `
       <button class="back-link" onclick="location.hash='#/today'">← 返回</button>
@@ -506,7 +519,7 @@ async function viewProblem(main, slug) {
     .map(x => `<span class="chip">${esc(x)}</span>`).join('');
 
   main.innerHTML = `
-    <button class="back-link" id="btn-back">← 返回今日任务</button>
+    <button class="back-link" id="btn-back">${reviewMistakeId ? '← 返回错题本' : '← 返回今日任务'}</button>
 
     <div class="prob-head">
       <div class="prob-fid">#${esc(p.frontendId || '')} · ${diffLabel(p.difficulty)}</div>
@@ -517,24 +530,39 @@ async function viewProblem(main, slug) {
 
     <div class="prob-body" id="prob-body"></div>
 
-    <h2 class="sec">三种解法 <span class="cnt">${sols.length} 种 · 从暴力到最优</span></h2>
-    ${sols.length ? renderSolTabs(sols, slug, p.refGrades) : '<div class="empty">还没有解法内容</div>'}
+    ${reviewMistakeId ? `
+      <h2 class="sec">我的代码 <span class="cnt">复习专用 · 和看题页存的代码是两份，互不影响</span></h2>
+      <div class="mycode-wrap">
+        <textarea id="review-code" class="code-input" spellcheck="false"
+          placeholder="复习重写一遍，粘在这里 —— 不会覆盖看题页那份">${esc(p.reviewCode || '')}</textarea>
+        <div class="row" style="margin-top:var(--s3)">
+          <div class="fixed"><button class="btn" id="btn-save-review-code">保存复习代码</button></div>
+          <div class="fixed"><span class="mono-sm" id="review-code-stamp"></span></div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:var(--s5)">
+        <div class="fixed"><button class="btn" id="btn-review-plus">复习 +1</button></div>
+      </div>
+    ` : `
+      <h2 class="sec">三种解法 <span class="cnt">${sols.length} 种 · 从暴力到最优</span></h2>
+      ${sols.length ? renderSolTabs(sols, slug, p.refGrades) : '<div class="empty">还没有解法内容</div>'}
 
-    <h2 class="sec">我的代码 <span class="cnt">粘贴上来，给你打分</span></h2>
-    ${renderMyCodeArea(p, slug)}
+      <h2 class="sec">我的代码 <span class="cnt">粘贴上来，给你打分</span></h2>
+      ${renderMyCodeArea(p, slug)}
 
-    <h2 class="sec">我的记录</h2>
-    <label class="field">
-      <span>这道题我卡在哪（一句话）</span>
-      <textarea id="my-note" placeholder="例：想到哈希但不会写 containsKey 的返回值判断">${esc(p.myNote || '')}</textarea>
-    </label>
-    <div class="row" style="margin-bottom:var(--s5)">
-      <div class="fixed"><button class="btn" id="btn-save-note">保存笔记</button></div>
-      <div class="fixed"><button class="btn ghost" id="btn-done">${p.status === 'done' ? '取消完成' : '标记完成'}</button></div>
-      <div class="fixed"><button class="btn ghost" id="btn-mistake">记入错题本</button></div>
-      <div class="fixed"><a class="btn ghost" target="_blank" rel="noopener"
-         href="https://leetcode.cn/problems/${escAttr(slug)}/">去力扣提交 ↗</a></div>
-    </div>
+      <h2 class="sec">我的记录</h2>
+      <label class="field">
+        <span>这道题我卡在哪（一句话）</span>
+        <textarea id="my-note" placeholder="例：想到哈希但不会写 containsKey 的返回值判断">${esc(p.myNote || '')}</textarea>
+      </label>
+      <div class="row" style="margin-bottom:var(--s5)">
+        <div class="fixed"><button class="btn" id="btn-save-note">保存笔记</button></div>
+        <div class="fixed"><button class="btn ghost" id="btn-done">${p.status === 'done' ? '取消完成' : '标记完成'}</button></div>
+        <div class="fixed"><button class="btn ghost" id="btn-mistake">记入错题本</button></div>
+        <div class="fixed"><a class="btn ghost" target="_blank" rel="noopener"
+           href="https://leetcode.cn/problems/${escAttr(slug)}/">去力扣提交 ↗</a></div>
+      </div>
+    `}
   `;
 
   // 题面
@@ -542,10 +570,10 @@ async function viewProblem(main, slug) {
   const html = p.contentCnHtml || p.contentHtml || '';
   body.innerHTML = html || '<p class="mono-sm">（无题面内容）</p>';
 
-  $('#btn-back').addEventListener('click', () => go('#/today'));
+  $('#btn-back').addEventListener('click', () => go(reviewMistakeId ? '#/mistakes' : '#/today'));
 
-  // 解法 tab + 上锁解锁
-  if (sols.length) {
+  // 解法 tab + 上锁解锁（仅看题模式；复习模式没渲染这块 DOM，别去绑）
+  if (sols.length && !reviewMistakeId) {
     // 渲染单个 panel 的内容（锁着就画锁屏卡，解锁就画正文）
     function paintPanel(idx) {
       const panel = $('#' + 'sol-' + idx, main);
@@ -697,6 +725,10 @@ async function viewProblem(main, slug) {
     });
   }
 
+  // 复习模式到此为止 —— 后面的笔记/完成/错题按钮只存在于看题模式，
+  // 复习模式的 DOM 里根本没有这些节点，直接绑会 TypeError。
+  if (reviewMistakeId) return;
+
   // 笔记
   $('#btn-save-note').addEventListener('click', async () => {
     try {
@@ -733,6 +765,34 @@ async function viewProblem(main, slug) {
       refGrades: p.refGrades
     });
   });
+
+  // ---- 复习模式专属：复习 +1 ----
+  // 记一次复习计数，然后回错题本（列表重新拉，复习次数自然会刷新）。
+  if (reviewMistakeId) {
+    $('#btn-review-plus').addEventListener('click', async () => {
+      try {
+        await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review', { method: 'POST' });
+        toast('已记一次复习');
+        go('#/mistakes');
+      } catch (e) { toast(e.message, true); }
+    });
+    // 复习代码存自己的表（review_code），与看题页的 my_code 完全隔离。
+    // 复习重写 ≠ 覆盖第一遍 —— 两份都有回看价值。
+    $('#btn-save-review-code').addEventListener('click', async () => {
+      const code = $('#review-code').value;
+      if (!code.trim()) { toast('先写点代码再保存', true); return; }
+      const b = $('#btn-save-review-code');
+      b.disabled = true; b.textContent = '保存中…';
+      try {
+        await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-code', {
+          method: 'POST', body: { code }
+        });
+        $('#review-code-stamp').textContent = '已保存 ' + new Date().toLocaleTimeString();
+        toast('复习代码已保存（不影响看题页那份）');
+      } catch (e) { toast(e.message, true); }
+      finally { b.disabled = false; b.textContent = '保存复习代码'; }
+    });
+  }
 }
 
 /* ============================ 我的代码 + 评分 ============================ */
@@ -1115,7 +1175,7 @@ function renderMistakeList(list) {
             /* 没关联到题库的，按钮也得在 —— 但点进去要有用。
                直接带着题名跳题库搜索，比一个点了没反应的死按钮强。 */
             : `<button class="btn small ghost" data-find="${escAttr(m.problemTitle || '')}" title="题库里没找到同名的题，去题库搜一下">去题库找</button>`}
-          <button class="btn small ghost" data-review="${m.id}">+1 复习</button>
+          <button class="btn small ghost" data-review="${m.id}" data-review-slug="${escAttr(m.problemSlug || '')}">复习</button>
           <button class="btn small ghost" data-master="${m.id}" data-cur="${m.mastered ? 1 : 0}">
             ${m.mastered ? '标记未掌握' : '标记已掌握'}
           </button>
@@ -1130,9 +1190,19 @@ function renderMistakeList(list) {
     go('#/library/' + encodeURIComponent(b.dataset.find || ''));
   }));
 
-  $$('[data-review]', box).forEach(b => b.addEventListener('click', async () => {
-    try { await api('/mistakes/' + b.dataset.review + '/review', { method: 'POST' }); toast('复习次数 +1'); viewMistakes($('#main')); }
-    catch (e) { toast(e.message, true); }
+  $$('[data-review]', box).forEach(b => b.addEventListener('click', () => {
+    // 「复习」跳进复习界面：题面 + 我的代码 + 复习 +1。
+    // 需要两个值：题目 slug（渲染题面）和错题 id（复习 +1 记数用）。
+    // 没关联题库的错题没 slug，复习界面没题面可看 —— 这种留在原地 +1 更有用。
+    const mid = b.dataset.review;
+    const slug = b.dataset.reviewSlug;
+    if (!slug) {
+      api('/mistakes/' + encodeURIComponent(mid) + '/review', { method: 'POST' })
+        .then(() => { toast('复习次数 +1'); viewMistakes($('#main')); })
+        .catch(e => toast(e.message, true));
+      return;
+    }
+    go('#/review/' + encodeURIComponent(slug) + '/' + encodeURIComponent(mid));
   }));
 
   $$('[data-master]', box).forEach(b => b.addEventListener('click', async () => {

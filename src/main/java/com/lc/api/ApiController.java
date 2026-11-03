@@ -24,6 +24,7 @@ public class ApiController {
     @Autowired private ReminderService reminder;
     @Autowired private com.lc.service.CodeGrader grader;
     @Autowired private AihotService aihot;
+    @Autowired private javax.servlet.http.HttpServletRequest servletRequest;
 
     // ---------------- 提醒 ----------------
 
@@ -200,6 +201,13 @@ public class ApiController {
         Map<String, Object> mine = db.getMyCode(slug);
         out.put("myCode", mine == null ? null : mine.get("code"));
         out.put("myScore", mine == null ? null : mine.get("totalScore"));
+        // 复习模式用：把带 mistakeId 的请求转成该错题的复习代码（独立于 my_code）。
+        // query 参数 mistakeId 只在复习界面出现；看题请求不带，行为完全不变。
+        String mid = servletRequest.getParameter("mistakeId");
+        if (mid != null && mid.matches("\\d+")) {
+            String rc = db.getReviewCode(Long.parseLong(mid));
+            out.put("reviewCode", rc == null ? "" : rc);
+        }
         // 参考解法也用同一套标准打分，前端好横向对比
         out.put("refGrades", grader.gradeReference(slug));
         return ResponseEntity.ok(out);
@@ -413,6 +421,33 @@ public class ApiController {
     public Map<String, Object> reviewMistake(@PathVariable long id) {
         db.reviewMistake(id);
         return Map.of("ok", true);
+    }
+
+    // ---------------- 复习模式的代码（独立于看题页的 my_code） ----------------
+
+    /** 复习时保存代码：按错题 id 隔离存储，绝不写进 my_code。请求体 { code: "..." } */
+    @PostMapping("/mistakes/{id}/review-code")
+    public Map<String, Object> saveReviewCode(@PathVariable long id,
+                                              @RequestBody Map<String, String> body) {
+        String code = body.getOrDefault("code", "");
+        if (code.isBlank()) {
+            return Map.of("error", "先写点代码再保存");
+        }
+        // 带上 slug 是为了复习记录能反查是哪道题（错题删了代码也还在，只是没了题面入口）
+        Map<String, Object> mk = db.listMistakes().stream()
+                .filter(m -> ((Number) m.get("id")).longValue() == id)
+                .findFirst().orElse(null);
+        String slug = mk == null ? null : String.valueOf(mk.get("problemSlug"));
+        db.saveReviewCode(id, slug, code);
+        return Map.of("ok", true);
+    }
+
+    /** 取某条错题复习时写的代码（前端进复习界面时回填）。 */
+    @GetMapping("/mistakes/{id}/review-code")
+    public Map<String, Object> getReviewCode(@PathVariable long id) {
+        String code = db.getReviewCode(id);
+        if (code == null) return Map.of("saved", false);
+        return Map.of("saved", true, "code", code);
     }
 
     @PostMapping("/mistakes/{id}/mastered")

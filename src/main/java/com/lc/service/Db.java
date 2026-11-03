@@ -68,7 +68,14 @@ public class Db {
                 "  slug VARCHAR(128) PRIMARY KEY," +
                 "  title VARCHAR(256)," +
                 "  difficulty VARCHAR(16)," +
-                "  synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
+                "  synced_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+            // 复习模式下单独写的代码：和看题页的 my_code 完全隔离，
+            // 复习时重写一遍不该覆盖当初第一次写的那份 —— 两份都有回看价值。
+            "CREATE TABLE IF NOT EXISTS review_code(" +
+                "  mistake_id BIGINT PRIMARY KEY," +
+                "  slug VARCHAR(128)," +
+                "  code CLOB," +
+                "  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
         };
         try (Connection c = conn(); Statement s = c.createStatement()) {
             for (String sql : ddl) s.execute(sql);
@@ -423,8 +430,31 @@ public class Db {
         } catch (SQLException e) { throw new RuntimeException(e); }
     }
 
-    /** 所有写过代码的题：slug -> 分数。给题库列表显示「我拿了几分」。 */
-    public Map<String, Double> allMyScores() {
+    // ---------------- 复习模式的代码（按错题隔离，不碰 my_code） ----------------
+
+    /** 保存复习时写的代码。PK 是 mistake_id：一条错题一份，与看题页的 my_code 互不影响。 */
+    public void saveReviewCode(long mistakeId, String slug, String code) {
+        int n = update("UPDATE review_code SET code = ?, slug = ?, "
+                + "updated_at = CURRENT_TIMESTAMP WHERE mistake_id = ?", code, slug, mistakeId);
+        if (n == 0) {
+            update("INSERT INTO review_code(mistake_id, slug, code) VALUES(?,?,?)",
+                    mistakeId, slug, code);
+        }
+    }
+
+    /** 取某条错题复习时写的代码；没写过返回 null。 */
+    public String getReviewCode(long mistakeId) {
+        try (Connection c = conn();
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT code FROM review_code WHERE mistake_id = ?")) {
+            ps.setLong(1, mistakeId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString(1) : null;
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    /** 所有写过代码的题：slug -> 分数。给题库列表显示「我拿了几分」。 */    public Map<String, Double> allMyScores() {
         Map<String, Double> m = new LinkedHashMap<>();
         each("SELECT slug, total_score FROM my_code", rs -> {
             m.put(rs.getString(1), rs.getDouble(2));
