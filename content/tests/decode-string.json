@@ -19,6 +19,16 @@
     ],
     [
       "\"2[abc]3[cd]ef\""
+    ],
+    [
+      "\"abc3[cd]xyz\""
     ]
-  ]
+  ],
+  "expected": [
+    "\"aaabcbc\"",
+    "\"accaccacc\"",
+    "\"abcabccdcdcdef\"",
+    "\"abccdcdcdxyz\""
+  ],
+  "source": "题面解析"
 }

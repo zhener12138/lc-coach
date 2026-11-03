@@ -15,10 +15,16 @@
       "\"the sky is blue\""
     ],
     [
-      "\"  hello world  \""
+      "\" hello world \""
     ],
     [
-      "\"a good   example\""
+      "\"a good example\""
     ]
-  ]
+  ],
+  "expected": [
+    "\"blue is sky the\"",
+    "\"world hello\"",
+    "\"example good a\""
+  ],
+  "source": "题面解析"
 }

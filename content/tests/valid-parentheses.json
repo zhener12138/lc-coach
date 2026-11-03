@@ -26,5 +26,13 @@
     [
       "\"([)]\""
     ]
-  ]
+  ],
+  "expected": [
+    "true",
+    "true",
+    "false",
+    "true",
+    "false"
+  ],
+  "source": "题面解析"
 }

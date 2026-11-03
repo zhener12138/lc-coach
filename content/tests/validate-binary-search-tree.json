@@ -17,5 +17,10 @@
     [
       "[5,1,4,null,null,3,6]"
     ]
-  ]
+  ],
+  "expected": [
+    "true",
+    "false"
+  ],
+  "source": "题面解析"
 }

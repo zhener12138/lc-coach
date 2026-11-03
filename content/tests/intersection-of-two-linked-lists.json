@@ -48,5 +48,11 @@
       "3",
       "2"
     ]
-  ]
+  ],
+  "expected": [
+    "Intersected at \"8\"",
+    "Intersected at \"2\"",
+    "No intersection"
+  ],
+  "source": "题面解析"
 }

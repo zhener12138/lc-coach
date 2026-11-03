@@ -17,15 +17,21 @@
   "cases": [
     [
       "\"leetcode\"",
-      "[\"leet\",\"code\"]"
+      "[\"leet\", \"code\"]"
     ],
     [
       "\"applepenapple\"",
-      "[\"apple\",\"pen\"]"
+      "[\"apple\", \"pen\"]"
     ],
     [
       "\"catsandog\"",
-      "[\"cats\",\"dog\",\"sand\",\"and\",\"cat\"]"
+      "[\"cats\", \"dog\", \"sand\", \"and\", \"cat\"]"
     ]
-  ]
+  ],
+  "expected": [
+    "true",
+    "true",
+    "false"
+  ],
+  "source": "题面解析"
 }

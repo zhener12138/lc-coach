@@ -20,5 +20,11 @@
     [
       "10"
     ]
-  ]
+  ],
+  "expected": [
+    "true",
+    "false",
+    "false"
+  ],
+  "source": "题面解析"
 }

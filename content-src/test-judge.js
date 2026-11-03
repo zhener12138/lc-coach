@@ -130,6 +130,74 @@ const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
       (lru.dimensions || []).map(d => d.key).join(','));
     ok('判不了不按 0 分算（参考解仍拿高分）', lru.total >= 9.5, '总分 ' + lru.total);
   }
+  console.log('\n【8】期望值只能来自题面，不能靠参考解自证');
+  // 事故：count-primes 的 exampleTestcases 返回 "0\n1\n2"，题面示例却是 n=10/n=0/n=1。
+  // 而期望值当时是「参考解跑一遍」算出来的 —— 参考解判自己永远全过，循环论证，
+  // 结果用户正确的代码被判 0/3。这条不变量必须钉死。
+  const jsvc2 = read('src/main/java/com/lc/service/JudgeService.java');
+  ok('期望值从用例文件的 expected[] 读', /path\("expected"\)/.test(jsvc2));
+  ok('不再用参考解输出填 expected', !/j\.expected\.addAll\(v\.outputs\)/.test(jsvc2));
+  ok('参考解仍交叉校验（不一致时记 refNote）', /refNote\s*=/.test(jsvc2));
+  ok('用例与期望条数不等时拒绝判题', /j\.expected\.size\(\) != j\.inputs\.size\(\)/.test(jsvc2));
+
+  // 逐题核对：题面期望 vs 用例文件，抽查几道已知答案的题
+  const known = {
+    'count-primes': { first: '4', note: 'n=10 的质数个数是 4（2,3,5,7）' },
+    'longest-consecutive-sequence': { first: '4', note: '[100,4,200,1,3,2] 最长连续序列是 1,2,3,4' },
+    'two-sum': { first: '[0,1]', note: '[2,7,11,15] target 9 → 下标 0 和 1' },
+    'unique-paths': { first: '28', note: '3×7 网格共 28 条路径' },
+  };
+  for (const [slug, want] of Object.entries(known)) {
+    const r = await fetch(API + '/api/problem/' + slug);
+    if (!r.ok) { ok(slug + ' 可访问', false); continue; }
+    // 用例文件里第一条的期望值，就是判题时用的标准
+    const tf = path.join(ROOT, 'content', 'tests', slug + '.json');
+    let first = null;
+    try {
+      const t = JSON.parse(fs.readFileSync(tf, 'utf8'));
+      first = (t.expected || [])[0];
+      ok(slug + ' 用例来自题面解析', t.source === '题面解析', 'source=' + t.source);
+    } catch (e) { ok(slug + ' 用例文件可读', false, e.message); }
+    ok(slug + ' 期望值正确（' + want.note + '）', first === want.first,
+      '实际 ' + JSON.stringify(first) + '，应为 ' + JSON.stringify(want.first));
+  }
+
+  // 用户实测过的那道「我打败了 90% 的人」的题：正确答案必须全过
+  const lcs = await getJson('/api/problem/longest-consecutive-sequence');
+  const lcsRef = lcs.solutions.find(x => x.tier === 'optimal');
+  const lcsGot = await post('longest-consecutive-sequence', lcsRef.codeJava);
+  ok('longest-consecutive-sequence 参考解自己全过', lcsGot.judge && lcsGot.judge.passed === lcsGot.judge.total,
+    JSON.stringify(lcsGot.judge));
+
+  console.log('\n【9】判题器不许冤枉人（都是真实踩过的坑）');
+  // 树题曾经因为 ArrayDeque 不收 null 而静默返回 "[]"，每道树题都判错
+  ok('树序列化不再用 ArrayDeque（会 NPE）', !/Deque<Object> q = new ArrayDeque/.test(jsvc2));
+  ok('序列化失败不再伪装成空树', !/return "\[\]";\s*\n\s*\}\s*\n\s*return "\["/.test(jsvc2));
+  // 浮点题曾经把 1024.00000 和 1024.0 判成不同
+  ok('浮点允许误差比较', /1e-5/.test(jsvc2));
+  // 空链表返回 null、题面写 []，曾经判成不同
+  ok('null 与 [] 等价', /gEmpty && wEmpty/.test(jsvc2));
+  // void 题曾经把所有入参拼一起当答案
+  ok('void 题只挑一个入参照', /j\.peekExpected\(\)/.test(jsvc2));
+  // 答案不唯一的题要老实说不判
+  ok('答案不唯一的题标为判不了', /UNJUDGEABLE/.test(jsvc2));
+  ok('判不了时说明原因而不是说答案错', /机器没法判|判不了|构不出/.test(jsvc2));
+
+  const tree = await getJson('/api/problem/invert-binary-tree');
+  const treeRef = tree.solutions.find(x => x.tier === 'optimal');
+  const treeGot = await post('invert-binary-tree', treeRef.codeJava);
+  ok('树题参考解全过（序列化没坏）', treeGot.judge && treeGot.judge.passed === treeGot.judge.total,
+    JSON.stringify(treeGot.judge));
+
+  const rot = await getJson('/api/problem/rotate-array');
+  const rotRef = rot.solutions.find(x => x.tier === 'optimal');
+  const rotGot = await post('rotate-array', rotRef.codeJava);
+  ok('void 题参考解全过（答案从入参取）', rotGot.judge && rotGot.judge.passed === rotGot.judge.total,
+    JSON.stringify(rotGot.judge));
+
+  const lc = await post('linked-list-cycle', 'class Solution {\n  public boolean hasCycle(ListNode head) { return false; }\n}');
+  ok('判不了的题不返回 judge', !lc.judge || lc.judge.ran !== true, JSON.stringify(lc.judge));
+
   console.log('\n【7】前端能显示判题结果');
   const app = read('static/app.js');
   ok('前端读 judge 字段', /\.judge\b/.test(app));

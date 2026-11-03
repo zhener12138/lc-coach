@@ -172,9 +172,22 @@ out.put("hasNext", dayNo < totalDays());
 
 力扣的 GraphQL 接口 `question(titleSlug:){exampleTestcases metaData}` 能拿到**官方示例输入**（`[2,7,11,15]\n9\n[3,2,4]\n6`）和**方法签名**（`{"name":"twoSum","params":[{"name":"nums","type":"integer[]"},{"name":"target","type":"integer"}],"return":{"type":"integer[]"}}`）。
 
-但**期望输出它不给**。解法是：拿我们自己写的参考最优解跑一遍，跑出来的就是标准答案。这个做法有个前提 —— 参考解必须自己是对的。所以判题服务启动时对每道题做一次自检：**参考解必须能跑通全部用例**，跑不通就把这道题标记成「参考解有问题」并停止判题，而不是拿一个错答案去判你。
+但**期望输出它不给**。这里我犯过一个错，必须写下来：
 
-拉下来的用例存在 `content/tests/<slug>.json`，116 个文件随代码分发。
+> 第一版是「拿我们自己写的参考最优解跑一遍，跑出来的就是标准答案」。听起来合理，实际是**循环论证** —— 参考解判自己永远全过，这个比较永远量不出任何东西。
+
+它一直没露馅，直到用户拿一段在力扣击败 97.82% 的正确代码提交上来，被判 0/3。查下去发现两件事：
+
+1. `longest-consecutive-sequence` 的 optimal 参考解**自己就是错的**（`map.put(x + 1 + right, len)` 多加了 1，右端点错位一格）
+2. 更根本的是 —— **力扣 `exampleTestcases` 返回的输入和题面示例对不上**。`count-primes` 题面示例是 `n = 10 / 0 / 1`，接口返回 `"0\n1\n2"`。这类错位查出来 10 题
+
+所以现在的做法是：**期望值和输入都从题面 HTML 解析**（题面本来就写着「示例 1：输入：… 输出：4」），`exampleTestcases` 只在题面解析不出来时兜底。
+
+解析器在 `content-src/_probe-coverage.js`：先把 HTML 转纯文本（`<br>` 换行、剥标签、还原 `&lt;` `&nbsp;` 这些实体），再用 `输入[：:](...?)输出[：:](...?)` 匹配，输出边界靠「示例 N / 提示 / 解释 / 进阶」这些哨兵词判定 —— 早期版本用换行当边界太松，会把「示例 2：输入：…」整段吸进输出里。
+
+**117/120 题解析成功**，重建成 `content/tests/<slug>.json`（115 题）。参考解现在只做**交叉校验**：它要是在某个用例上和题面期望不一致，会记一条 `refNote`「错的是参考解，你的提交按题面判」，而不是拿它当标准。
+
+拉下来的用例存在 `content/tests/<slug>.json`，随代码分发。
 
 ### 坎二：用户代码在哪跑
 
@@ -195,19 +208,43 @@ ProcessBuilder.start()        → CreatePipe error=5, 拒绝访问
 
 ### 坎三：判不了怎么办
 
-116 题里 **110 题能真判**。剩下 6 题不是逻辑问题，是**类型系统表达不了**：
+120 题里 **108 题能真判**，12 题判不了。原因全是**类型系统表达不了**，不是逻辑问题：
 
 | 题目 | 为什么判不了 |
 | --- | --- |
-| `lru-cache` / `min-stack` 等设计类 | 没有单一 `Solution` 函数，是一整个类 |
-| `linked-list-cycle` / `linked-list-cycle-ii` | 比的是「返回的节点是不是同一个引用」，不是值 |
-| `intersection-of-two-linked-lists` | 同上，比节点引用 |
+| `lru-cache` / `min-stack` / `implement-queue-using-stacks` / `implement-trie-prefix-tree` / `find-median-from-data-stream` | 设计类题，是一整个类，没有单一 `Solution` 函数 |
+| `linked-list-cycle` / `linked-list-cycle-ii` | 比的是「返回的节点是不是同一个引用」，不是值；而且用例只给节点数组，构不出环 |
+| `intersection-of-two-linked-lists` | 要求返回两条链表的交点节点，用例造不出共享节点 |
 | `lowest-common-ancestor-of-a-binary-tree` | 传入的是树里的节点对象，不是可序列化的值 |
-| `clone-graph` | 需要 `Node` 类定义，题面里没给 |
+| `clone-graph` | 需要题目自带的 `Node` 类定义，判题器里没有 |
+| `convert-sorted-array-to-binary-search-tree` | 正确答案不唯一，形状不一样也算对 |
+| `course-schedule-ii` | 拓扑排序的正确顺序不止一种 |
 
-这 6 题的处理是**把「正确性」维度整个剔除**，总分按剩下六项重新归一，前端明确显示「这题不支持真跑判题，已从加权里剔除，不是按 0 分算」。
+最后两行和上面的原因不同：不是**表达不了**，是**答案不唯一**。这类题硬判只会把对的判成错的 —— 那比不判更害人。所以有一张 `UNJUDGEABLE` 表，命中就不判，并明确告诉你为什么。
+
+这 12 题的处理是**把「正确性」维度整个剔除**，总分按剩下六项重新归一，前端明确显示「这题不支持真跑判题，已从加权里剔除，不是按 0 分算」。
 
 **不给 0 分是有意的**：判不了是我这边能力不足，不该记在你头上。
+
+### 判题器踩过的坑（每一条都曾经把对的判成错的）
+
+修这些的时候，27 题报「参考解写错」，逐题查完发现 **25 题是判题器的 bug，只有 2 题是参考解真错**：
+
+| 坑 | 症状 | 修法 |
+| --- | --- | --- |
+| `ArrayDeque` 不收 null | 树题的 `serializeTree` 静默抛 NPE 被 catch 成 `[]`，**每道树题都判答案错** | 换 `java.util.LinkedList`；catch 里不再返回 `"[]"` 而是报「判题器出错，这一条不算你的错」 |
+| 浮点按字符串比 | `1024.00000` 和 `1024.0` 判成不同 | `same()` 里加 `1e-5` 相对误差比较 |
+| 空值两种写法 | 题面写 `[]`、代码返回 `null`，判成不同 | 都归一成「空」 |
+| void 题把入参拼一起 | `rotate-array` 期望 `[5,6,7,1,2,3,4]`，实际 `[[5,6,7,1,2,3,4],3]` | 逐个入参试，挑跟期望一致的那个 |
+| 多解顺序 | `group-anagrams` 组内组间顺序都不唯一 | `deepSortedForm()` 两层排序后比 |
+| `orderFree` 赋值太晚 | 比对时恒为 `false`，等于没开 | 挪到参考解执行**之前** |
+| 题面用单引号表示字符 | `['1','1']` 不是合法 JSON | `JSON.parse` → 改内容 → `JSON.stringify` 写回（直接文本替换会把文件弄坏） |
+| `spiral-matrix` 收边界 | 单行时多收一行，3×4 矩阵第 2 圈多一个 `6` | 下边只在 `top < bottom` 时收、左边只在 `left < right` 时收 |
+
+还有两个是**参考解自己写错了**，属于内容 bug 不是判题器 bug：
+
+- `longest-consecutive-sequence`：`map.put(x + 1 + right, len)` → `map.put(x + right, len)`
+- `binary-tree-maximum-path-sum`：按「根右左」压栈后注释写「倒着遍历」，代码却是正着 `for` —— 孩子还没算就算父亲，答案退回单节点值。改成倒序下标循环
 
 ### 效果
 
@@ -218,6 +255,14 @@ ProcessBuilder.start()        → CreatePipe error=5, 拒绝访问
 | LRU 缓存，参考解 | — | 10.0（判不了，正确性维度剔除） |
 
 第二行是这次改造最直接的证据：一段**根本没解题**的代码，从 9.5 掉到 6.9，还附上了具体错在哪 —— 用例 2 输入 `[3,2,4], 6`，期望 `[1,2]`，你给了 `[0,1]`。
+
+还有一条来自用户的真实反馈，是这轮改造的起点：他在力扣击败 97.82% 的 `longest-consecutive-sequence` 写法，在这里被判 0/3。修完之后同一段代码 **3/3 全过，总分 9.7**。
+
+### 为什么 run-all.sh 要数两种勾
+
+`test-judge.js` 和 `test-judge-ui.js` 用的是 `✔/✘`，其余脚本用 `✅/❌`。跑批脚本一开始只数 `✅`，这两个脚本就显示「0 条断言」还打绿勾 —— **看起来通过了，实际一条都没统计到**。这比测试失败更糟：失败至少会红。
+
+现在两种都数，并且断言总数为 0 时直接判失败，不让它混在全绿里。
 
 ### 内置三个解法也用同一套标准打分
 
@@ -737,8 +782,8 @@ H2 文件库：`data/lccoach.mv.db`（MODE=MySQL，AUTO_SERVER=TRUE）。删掉�
 | 模板可用性标记 | `test-snippet-kinds.js` 18 项断言；`snippet-kinds.json` 判定数与库内条数一致、无漏判 |
 | AI 资讯接入 | `test-aihot.js` 37 项断言（三个接口通 / 缓存真拦请求 6ms / 日期乱写不崩 / 前端渲染 / 后端 If-None-Match、304、429 冷却、single-flight 全在） |
 | AI 资讯渲染 | `.probe/ViewProbe.js` 用真实 app.js 渲染，实测 23210 字符、20 条精选、10 条热点、无裸露 undefined/null |
-| 全量回归 | 22 个脚本 593 项断言全过（`bash content-src/run-all.sh` 一条命令跑完） |
-| 评分真跑判题 | `test-judge.js` 35 项断言（打真实接口：正确解法 3/3 拿满分 / 写死返回值被抓到 2/3 且总分 ≤7.9 / 失败项列出输入与期望 / 设计类题剔除 correctness 而不是给 0 分） |
+| 全量回归 | 22 个脚本 670 项断言全过（`bash content-src/run-all.sh` 一条命令跑完） |
+| 评分真跑判题 | `test-judge.js` 58 项断言（打真实接口：正确解法 3/3 拿满分 / 写死返回值被抓到 2/3 且总分 ≤7.9 / 失败项列出输入与期望 / 设计类题剔除 correctness 而不是给 0 分 / **期望值只能来自题面的 expected[]，不能靠参考解自证** / 判题器 8 个历史坑逐个复查） |
 | 判题前端渲染 | `test-judge-ui.js` 19 项断言（全过显示绿框 / 有失败逐条列输入期望实际 / 判不了显示剔除说明 / 免责声明不再声称「没有测试用例」/ 判题出错不崩） |
 | 任意日期打卡 | `test-check-any-day.js` 26 项（昨天/今天/之后三个日期交替 done⇄todo，验后端真的记下）/ `test-check-click.js` 12 项（真实渲染后点按钮，验真的发出 POST 且界面翻转）/ `test-check-no-pollute.js` 8 项（历史页打卡不污染 `State.today`） |
 | 临时目录降级 | `test-tmpdir.js` 21 项断言（App 在 Spring 启动前探测 tmpdir / 真建目录探测而非只看存在 / 探针用完即删 / 同时改 Tomcat basedir / 评分器多候选降级 / 报错说人话 / 编译垃圾不残留 / `.jtmp` 已 gitignore） |
