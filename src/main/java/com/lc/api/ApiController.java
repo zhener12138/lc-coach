@@ -450,6 +450,48 @@ public class ApiController {
         return Map.of("saved", true, "code", code);
     }
 
+    // ---------------- 复习卡片（一次复习一张卡，历史各自留痕，永不覆盖） ----------------
+
+    /** 某条错题的全部复习卡片，最新在前。 */
+    @GetMapping("/mistakes/{id}/review-cards")
+    public Map<String, Object> listReviewCards(@PathVariable long id) {
+        List<Map<String, Object>> cards = db.listReviewCards(id);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("cards", cards);
+        out.put("count", cards.size());
+        return out;
+    }
+
+    /** 新增一张复习卡片。只 INSERT，不动任何已有卡片。请求体 { code: "..." } */
+    @PostMapping("/mistakes/{id}/review-cards")
+    public Map<String, Object> addReviewCard(@PathVariable long id,
+                                             @RequestBody Map<String, String> body) {
+        String code = body.getOrDefault("code", "");
+        if (code.isBlank()) {
+            return Map.of("error", "先写点代码再保存");
+        }
+        Map<String, Object> mk = db.listMistakes().stream()
+                .filter(m -> ((Number) m.get("id")).longValue() == id)
+                .findFirst().orElse(null);
+        String slug = mk == null ? null : String.valueOf(mk.get("problemSlug"));
+        long cardId = db.addReviewCard(id, slug, code);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("ok", true);
+        out.put("cardId", cardId);
+        out.put("count", db.countReviewCards(id));
+        return out;
+    }
+
+    /** 删一张卡片。路径里带 mistakeId 是为了不让人拿别的错题的 cardId 越权删。 */
+    @DeleteMapping("/mistakes/{id}/review-cards/{cardId}")
+    public Map<String, Object> deleteReviewCard(@PathVariable long id, @PathVariable long cardId) {
+        boolean gone = db.deleteReviewCard(id, cardId);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("ok", gone);
+        out.put("count", db.countReviewCards(id));
+        return out;
+    }
+
     @PostMapping("/mistakes/{id}/mastered")
     public Map<String, Object> masterMistake(@PathVariable long id, @RequestBody Map<String, Boolean> b) {
         db.setMastered(id, b.getOrDefault("mastered", true));

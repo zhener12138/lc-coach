@@ -646,6 +646,81 @@ label.field > span {
 
 /* ============================ 我的代码 + 评分 ============================ */
 
+/* ---- 复习卡片堆叠 ----
+   一张卡 = 一次复习。新的草稿卡在上，历史卡往下层叠：
+   相邻卡用负 margin 咬合，看起来像一摞纸，而不是十个独立文本框。
+   展开时抬 z-index + 加阴影，让「正在看哪张」一眼可见。 */
+.rc-deck { margin-bottom: var(--s6); }
+
+.rc-card {
+  position: relative;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  margin-bottom: calc(-1 * var(--s2));
+  transition: transform .18s var(--ease), box-shadow .18s var(--ease);
+}
+.rc-card:last-child { margin-bottom: 0; }
+.rc-card:hover { transform: translateY(-2px); }
+.rc-card.rc-open,
+.rc-card.rc-draft {
+  z-index: 2;
+  margin-bottom: var(--s3);
+  box-shadow: 0 6px 22px -12px rgba(0, 0, 0, .35);
+}
+
+/* 草稿卡：唯一可写的那张，边框用 accent 标出来 */
+.rc-draft { border-color: var(--accent-soft); }
+.rc-draft .rc-body { padding: var(--s4); }
+
+/* 历史卡的头：整条可点，收起时就是一条窄条 */
+.rc-head {
+  display: flex; align-items: center; gap: var(--s3);
+  width: 100%; text-align: left;
+  padding: var(--s3) var(--s4);
+  background: none; border: 0; cursor: pointer;
+  font: inherit; color: inherit;
+}
+.rc-draft .rc-head { cursor: default; padding-bottom: 0; }
+.rc-seq {
+  font-family: var(--f-mono); font-size: var(--t-xs);
+  letter-spacing: .06em; color: var(--accent);
+  white-space: nowrap;
+}
+.rc-time {
+  font-family: var(--f-mono); font-size: var(--t-xs);
+  color: var(--ink-4); white-space: nowrap;
+}
+.rc-preview {
+  flex: 1; min-width: 0;
+  font-family: var(--f-mono); font-size: var(--t-xs);
+  color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rc-caret { color: var(--ink-4); font-size: var(--t-xs); transition: transform .18s var(--ease); }
+.rc-card.rc-open .rc-caret { transform: rotate(180deg); }
+
+.rc-old .rc-body { padding: 0 var(--s4) var(--s4); }
+
+/* 历史代码只读展示：用 pre 保原样缩进，不给人「能改」的错觉 */
+.rc-code {
+  margin: 0;
+  max-height: 420px; overflow: auto;
+  font-family: var(--f-mono); font-size: var(--t-sm); line-height: 1.7;
+  color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: var(--s3); tab-size: 2;
+  white-space: pre; overflow-x: auto;
+}
+
+.rc-empty {
+  padding: var(--s5) var(--s4);
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-4); font-size: var(--t-sm); line-height: 1.8;
+  text-align: center;
+}
+
 .mycode-wrap {
   border: 1px solid var(--rule);
   border-radius: var(--radius);

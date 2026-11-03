@@ -75,12 +75,29 @@ public class Db {
                 "  mistake_id BIGINT PRIMARY KEY," +
                 "  slug VARCHAR(128)," +
                 "  code CLOB," +
+                "  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+            // 复习卡片：一次复习 = 一张卡，一条错题可以有很多张。
+            // review_code 是「一对一」，每次保存都把上一份盖掉 —— 那正是要修的病。
+            // 这张表是一对多，历史各自留痕，谁也不覆盖谁。
+            "CREATE TABLE IF NOT EXISTS review_card(" +
+                "  id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                "  mistake_id BIGINT NOT NULL," +
+                "  slug VARCHAR(128)," +
+                "  code CLOB," +
+                "  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                 "  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
         };
         try (Connection c = conn(); Statement s = c.createStatement()) {
             for (String sql : ddl) s.execute(sql);
         } catch (SQLException e) {
             throw new RuntimeException("建表失败: " + e.getMessage(), e);
+        }
+        // 建完表顺手把一对一时代的老数据搬成卡片：只搬一次，之后靠「已有卡就不搬」兜住。
+        try {
+            migrateReviewCodeToCards();
+        } catch (RuntimeException e) {
+            // 迁移失败不该拦住整个应用启动 —— 老数据还在 review_code 里，下次启动再试。
+            System.err.println("复习卡片迁移跳过: " + e.getMessage());
         }
     }
 
@@ -452,6 +469,79 @@ public class Db {
                 return rs.next() ? rs.getString(1) : null;
             }
         } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    // ---------------- 复习卡片（一次复习一张卡，一对多，永不覆盖） ----------------
+
+    /**
+     * 某条错题的全部复习卡片，最新的在最前面。
+     * seq 是「第几次复习」的人话编号：按 created_at 正序数出来的位置，
+     * 删了中间一张也不会让后面的编号错位 —— 前端只拿它做展示，不当主键用。
+     */
+    public List<Map<String, Object>> listReviewCards(long mistakeId) {
+        List<Map<String, Object>> asc = new ArrayList<>();
+        each("SELECT id, code, created_at, updated_at FROM review_card "
+                + "WHERE mistake_id = ? ORDER BY created_at ASC, id ASC", rs -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", rs.getLong(1));
+            m.put("code", rs.getString(2) == null ? "" : rs.getString(2));
+            Timestamp c = rs.getTimestamp(3);
+            m.put("createdAt", c == null ? null : c.toString());
+            Timestamp u = rs.getTimestamp(4);
+            m.put("updatedAt", u == null ? null : u.toString());
+            asc.add(m);
+        }, mistakeId);
+        // 编号按时间正序发，返回时倒序 —— 展示要「最新的压在最上面」。
+        List<Map<String, Object>> desc = new ArrayList<>(asc.size());
+        for (int i = asc.size() - 1; i >= 0; i--) {
+            Map<String, Object> m = asc.get(i);
+            m.put("seq", i + 1);
+            desc.add(m);
+        }
+        return desc;
+    }
+
+    /** 新增一张复习卡片，返回它的 id。只 INSERT，绝不 UPDATE 别人。 */
+    public long addReviewCard(long mistakeId, String slug, String code) {
+        try (Connection c = conn();
+             PreparedStatement ps = c.prepareStatement(
+                     "INSERT INTO review_card(mistake_id, slug, code) VALUES(?,?,?)",
+                     Statement.RETURN_GENERATED_KEYS)) {
+            ps.setLong(1, mistakeId);
+            ps.setString(2, slug);
+            ps.setString(3, code);
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                return rs.next() ? rs.getLong(1) : -1L;
+            }
+        } catch (SQLException e) { throw new RuntimeException(e); }
+    }
+
+    /** 删一张卡片；带上 mistakeId 是防止拿别人的 cardId 越权删。返回是否真的删掉了。 */
+    public boolean deleteReviewCard(long mistakeId, long cardId) {
+        return update("DELETE FROM review_card WHERE id = ? AND mistake_id = ?",
+                cardId, mistakeId) > 0;
+    }
+
+    public long countReviewCards(long mistakeId) {
+        return queryLong("SELECT COUNT(*) FROM review_card WHERE mistake_id = ?", mistakeId);
+    }
+
+    /**
+     * 老数据迁移：review_code 里已有的那份代码（一对一时代存的）转成第 1 张卡片。
+     * 只在该错题一张卡都没有时做，避免每次启动都插一份重复的。
+     * 老表不删 —— 万一迁移出问题还能回退。
+     */
+    public void migrateReviewCodeToCards() {
+        // 先把老表整份读进内存，再逐条插入 —— 不能在 each() 的 ResultSet 迭代里再开连接写库。
+        List<Object[]> pending = new ArrayList<>();
+        each("SELECT mistake_id, slug, code FROM review_code",
+                rs -> pending.add(new Object[]{rs.getLong(1), rs.getString(2), rs.getString(3)}));
+        for (Object[] row : pending) {
+            long mid = (Long) row[0];
+            if (countReviewCards(mid) > 0) continue;
+            addReviewCard(mid, (String) row[1], (String) row[2]);
+        }
     }
 
     /** 所有写过代码的题：slug -> 分数。给题库列表显示「我拿了几分」。 */    public Map<String, Double> allMyScores() {

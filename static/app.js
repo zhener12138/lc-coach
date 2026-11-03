@@ -148,7 +148,10 @@ const State = {
   // 最近一次评分结果 + 是哪道题的。
   // 记错题时要拿它和最优解比差距，所以必须带着 slug 存 —— 只看内容分不清是哪一题。
   lastGrade: null,
-  lastGradeSlug: null
+  lastGradeSlug: null,
+  // 当前正在复习的错题 id。删卡片要用它拼路径 —— 卡片自己只带 cardId，
+  // 不能靠 DOM 里翻 hash 现解析，那种耦合一改路由就断。
+  rcMistakeId: null
 };
 
 const TIER_LABEL = { brute: '暴力', better: '较好', optimal: '最优' };
@@ -481,12 +484,25 @@ async function viewProblem(main, slug, reviewMistakeId) {
   // 复习模式：带错题 id 进来，只给题面 + 我的代码 + 一个「复习 +1」按钮。
   // 不带 id 的看题路径（#/problem/:slug）一个字节都不能变 —— 两条入口同题同数据。
 
+  // 记进全局：卡堆里的「删除这张」要拿它拼路径。离开复习页时要清掉，
+  // 否则下次进看题页删卡片会拼到上一题的 id 上。
+  State.rcMistakeId = reviewMistakeId || null;
+
   let p;
+  // 复习卡片：只有复习模式才拉。看题模式这里保持 undefined，DOM 里也就没有这块。
+  let rcCards = [];
   try {
     // 复习模式带 mistakeId：后端会在题目数据里附上这条例题的复习代码（reviewCode 字段），
     // 看题请求不带这个参数，返回里就没有 reviewCode —— 两条路径各回各的数据。
     p = await api('/problem/' + encodeURIComponent(slug)
       + (reviewMistakeId ? '?mistakeId=' + encodeURIComponent(reviewMistakeId) : ''));
+    if (reviewMistakeId) {
+      // 卡片拉失败不该把整个复习页打挂 —— 顶多这次看不到历史，草稿照写。
+      try {
+        const r = await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-cards');
+        rcCards = r.cards || [];
+      } catch (e2) { rcCards = []; }
+    }
   } catch (e) {
     main.innerHTML = `
       <button class="back-link" onclick="location.hash='#/today'">← 返回</button>
@@ -531,14 +547,23 @@ async function viewProblem(main, slug, reviewMistakeId) {
     <div class="prob-body" id="prob-body"></div>
 
     ${reviewMistakeId ? `
-      <h2 class="sec">我的代码 <span class="cnt">复习专用 · 和看题页存的代码是两份，互不影响</span></h2>
-      <div class="mycode-wrap">
-        <textarea id="review-code" class="code-input" spellcheck="false"
-          placeholder="复习重写一遍，粘在这里 —— 不会覆盖看题页那份">${esc(p.reviewCode || '')}</textarea>
-        <div class="row" style="margin-top:var(--s3)">
-          <div class="fixed"><button class="btn" id="btn-save-review-code">保存复习代码</button></div>
-          <div class="fixed"><span class="mono-sm" id="review-code-stamp"></span></div>
+      <h2 class="sec">我的代码 <span class="cnt">复习专用 · 每次复习一张卡，历史各自留痕，互不覆盖</span></h2>
+      <div class="rc-deck">
+        <div class="rc-card rc-draft">
+          <div class="rc-head">
+            <span class="rc-seq">新的这次</span>
+            <span class="rc-time">写完点下面保存，它会压进下面那一摞</span>
+          </div>
+          <div class="rc-body">
+            <textarea id="review-code" class="code-input" spellcheck="false"
+              placeholder="复习重写一遍，粘在这里 —— 不会覆盖看题页那份，也不会覆盖你以前复习写过的"></textarea>
+            <div class="row" style="margin-top:var(--s3)">
+              <div class="fixed"><button class="btn" id="btn-save-review-code">保存这次复习</button></div>
+              <div class="fixed"><span class="mono-sm" id="review-code-stamp"></span></div>
+            </div>
+          </div>
         </div>
+        <div class="rc-hist" id="rc-hist">${renderRcHist(rcCards)}</div>
       </div>
       <div class="row" style="margin-top:var(--s5)">
         <div class="fixed"><button class="btn" id="btn-review-plus">复习 +1</button></div>
@@ -737,22 +762,30 @@ async function viewProblem(main, slug, reviewMistakeId) {
         go('#/mistakes');
       } catch (e) { toast(e.message, true); }
     });
-    // 复习代码存自己的表（review_code），与看题页的 my_code 完全隔离。
-    // 复习重写 ≠ 覆盖第一遍 —— 两份都有回看价值。
+    // 保存这次复习 = 新建一张卡片（POST review-cards），不是覆盖上一张。
+    // 老的一对一接口 /review-code 保留在服务端，但前端不再走它 —— 覆盖就是那个接口的病根。
     $('#btn-save-review-code').addEventListener('click', async () => {
       const code = $('#review-code').value;
       if (!code.trim()) { toast('先写点代码再保存', true); return; }
       const b = $('#btn-save-review-code');
       b.disabled = true; b.textContent = '保存中…';
       try {
-        await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-code', {
+        const r = await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-cards', {
           method: 'POST', body: { code }
         });
         $('#review-code-stamp').textContent = '已保存 ' + new Date().toLocaleTimeString();
-        toast('复习代码已保存（不影响看题页那份）');
+        $('#review-code').value = '';
+        // 保存完立刻把新卡压进堆里，不用等刷新 —— 用户要看见「多了一张」。
+        try {
+          const fresh = await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-cards');
+          $('#rc-hist').innerHTML = renderRcHist(fresh.cards || []);
+          bindRcHist();
+        } catch (e2) { /* 拉失败就保持旧堆，不影响保存已成功这个事实 */ }
+        toast('已存成第 ' + (r.count || 0) + ' 张复习卡');
       } catch (e) { toast(e.message, true); }
-      finally { b.disabled = false; b.textContent = '保存复习代码'; }
+      finally { b.disabled = false; b.textContent = '保存这次复习'; }
     });
+    bindRcHist();
     // 复习模式到此为止 —— 后面的笔记/完成/错题按钮只存在于看题模式，
     // 复习模式的 DOM 里根本没有这些节点，直接绑会 TypeError。
     return;
@@ -808,6 +841,90 @@ async function viewProblem(main, slug, reviewMistakeId) {
  *   ② 静态结构分析推断复杂度/规范（推断，前端必须标出来）
  * 没有测试用例，所以没有「对不对」这一项，页面也不该假装有。
  */
+/* ---------------------- 复习卡片堆叠 ---------------------- */
+
+/**
+ * 历史复习卡堆：一张卡 = 一次复习写的代码。
+ *
+ * 收起态只露一条窄条（第几次 + 时间 + 首行预览），点开才铺满整个代码区。
+ * 之所以默认收起：复习到第十次时，十份完整代码同时展开会把题面挤到看不见，
+ * 而复习时最常做的是「扫一眼当时怎么写的」，不是逐字重读。
+ */
+function renderRcHist(cards) {
+  if (!cards || !cards.length) {
+    return `
+      <div class="rc-empty">
+        还没有历史复习卡。上面写完点「保存这次复习」，它会成为第 1 张压在这里。
+      </div>`;
+  }
+  return cards.map(c => {
+    const firstLine = (c.code || '').split('\n').find(l => l.trim()) || '（空）';
+    const preview = firstLine.trim().slice(0, 60);
+    const lines = (c.code || '').split('\n').length;
+    return `
+      <div class="rc-card rc-old" data-card="${c.id}">
+        <button class="rc-head rc-toggle" type="button" aria-expanded="false">
+          <span class="rc-seq">第 ${c.seq} 次</span>
+          <span class="rc-time">${esc(fmtRcTime(c.createdAt))} · ${lines} 行</span>
+          <span class="rc-preview">${esc(preview)}</span>
+          <span class="rc-caret">▾</span>
+        </button>
+        <div class="rc-body" hidden>
+          <pre class="rc-code">${esc(c.code || '')}</pre>
+          <div class="row" style="margin-top:var(--s3)">
+            <div class="fixed"><button class="btn ghost rc-del" type="button" data-card="${c.id}">删除这张</button></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function fmtRcTime(s) {
+  if (!s) return '';
+  // 后端给的是 java.sql.Timestamp.toString()：2026-11-03 20:52:40.123
+  // 只留到分钟，秒和毫秒对复习场景没意义。
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}` : String(s);
+}
+
+/** 卡堆的事件绑定：展开/收起 + 删除。每次重渲染卡堆后必须重绑。 */
+function bindRcHist() {
+  const hist = $('#rc-hist');
+  if (!hist) return;
+
+  hist.querySelectorAll('.rc-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.rc-card');
+      const body = card.querySelector('.rc-body');
+      const open = !body.hidden;
+      body.hidden = open;
+      btn.setAttribute('aria-expanded', String(!open));
+      card.classList.toggle('rc-open', !open);
+    });
+  });
+
+  hist.querySelectorAll('.rc-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const cardId = btn.dataset.card;
+      if (!confirm('删掉这张复习卡？删了就找不回来了。')) return;
+      const mid = State.rcMistakeId;
+      if (!mid) return;
+      btn.disabled = true; btn.textContent = '删除中…';
+      try {
+        await api('/mistakes/' + encodeURIComponent(mid) + '/review-cards/' + encodeURIComponent(cardId),
+          { method: 'DELETE' });
+        const fresh = await api('/mistakes/' + encodeURIComponent(mid) + '/review-cards');
+        hist.innerHTML = renderRcHist(fresh.cards || []);
+        bindRcHist();
+        toast('已删掉一张');
+      } catch (e) {
+        toast(e.message, true);
+        btn.disabled = false; btn.textContent = '删除这张';
+      }
+    });
+  });
+}
+
 function renderMyCodeArea(p, slug) {
   const mine = p.myCode || '';
 
