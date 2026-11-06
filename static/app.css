@@ -544,6 +544,29 @@ label.field > span {
 }
 .empty .big { font-size: var(--t-2xl); color: var(--rule); display: block; margin-bottom: var(--s3); }
 
+/* 错题本分页条 */
+.pager {
+  display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap;
+  margin-top: var(--s5); padding-top: var(--s4);
+  border-top: 1px solid var(--rule);
+}
+.pager-nums { display: flex; align-items: center; gap: 4px; }
+.pager-btn {
+  min-width: 30px; height: 30px; padding: 0 8px;
+  font-family: var(--f-mono); font-size: var(--t-xs);
+  color: var(--ink-3); background: transparent;
+  border: 1px solid var(--rule); border-radius: 2px; cursor: pointer;
+}
+.pager-btn:hover:not(:disabled):not(.cur) { color: var(--ink); border-color: var(--ink-3); }
+.pager-btn.cur { color: var(--paper-raised); background: var(--ink); border-color: var(--ink); cursor: default; }
+.pager-btn:disabled { opacity: .28; cursor: not-allowed; }
+.pager-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pager-gap { color: var(--ink-4); font-family: var(--f-mono); font-size: var(--t-xs); padding: 0 2px; }
+.pager-info { margin-left: auto; color: var(--ink-4); font-family: var(--f-mono); font-size: var(--t-xs); }
+@media (max-width: 640px) {
+  .pager-info { margin-left: 0; width: 100%; }
+}
+
 .toast {
   position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
   background: var(--ink); color: var(--paper);

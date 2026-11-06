@@ -144,6 +144,10 @@ const State = {
   todayView: null,
   account: null,
   mistakes: [],
+  // 错题本当前页码（从 1 开始）。只存在内存里 —— 错题本没有自己的路由，
+  // 刷新回到第 1 页是可接受的；硬塞进 hash 会让 #/mistakes 变成一个带状态的地址，
+  // 删除/标记后还得同步 hash，多一处能对不上的东西。
+  mistakesPage: 1,
   snippets: [],
   // 最近一次评分结果 + 是哪道题的。
   // 记错题时要拿它和最优解比差距，所以必须带着 slug 存 —— 只看内容分不清是哪一题。
@@ -1270,13 +1274,57 @@ async function viewMistakes(main) {
   $('#btn-add-mistake').addEventListener('click', () => openMistakeModal({}));
 }
 
+// 错题本一页几道。写在这里而不是散在 renderMistakeList 里，
+// 因为翻页逻辑和它必须一致 —— 两处各写一个数字迟早对不上。
+const MISTAKE_PAGE_SIZE = 6;
+
+/**
+ * 分页条。只有一页时返回空串 —— 一条错题都没有还画个「1 / 1」是噪音。
+ * 页码超过 7 个时用省略号收中间，否则一屏就撑爆了。
+ */
+function pagerHtml(page, totalPages, totalItems) {
+  if (totalPages <= 1) return '';
+
+  const btn = (to, label, opts = {}) =>
+    `<button class="pager-btn${opts.cur ? ' cur' : ''}" data-mpage="${to}"${opts.disabled ? ' disabled' : ''}>${label}</button>`;
+
+  // 页码序列：首页、末页必留，当前页前后各留一个，中间用 …
+  const nums = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - page) <= 1) nums.push(i);
+    else if (nums[nums.length - 1] !== '…') nums.push('…');
+  }
+
+  return `
+    <div class="pager">
+      ${btn('prev', '← 上一页', { disabled: page <= 1 })}
+      <div class="pager-nums">
+        ${nums.map(n => n === '…'
+          ? '<span class="pager-gap">…</span>'
+          : btn(n, String(n), { cur: n === page })).join('')}
+      </div>
+      ${btn('next', '下一页 →', { disabled: page >= totalPages })}
+      <span class="pager-info">第 ${page} / ${totalPages} 页 · 共 ${totalItems} 条</span>
+    </div>`;
+}
+
 function renderMistakeList(list) {
   const box = $('#mistake-list');
   if (!list || !list.length) {
     box.innerHTML = '<div class="empty"><span class="big">✕</span>还没有错题。做错了就记一条，比刷十道新题有用</div>';
     return;
   }
-  box.innerHTML = list.map(m => {
+
+  const totalPages = Math.max(1, Math.ceil(list.length / MISTAKE_PAGE_SIZE));
+  // 夹住页码：删掉最后一页的最后一条后，原页码就指到空气里了。
+  // 这里夹而不是让 render 报错，是因为「删到空页」是正常操作，不是异常。
+  const page = Math.min(Math.max(1, State.mistakesPage || 1), totalPages);
+  State.mistakesPage = page;
+
+  const from = (page - 1) * MISTAKE_PAGE_SIZE;
+  const pageItems = list.slice(from, from + MISTAKE_PAGE_SIZE);
+
+  box.innerHTML = pageItems.map(m => {
     const d = m.createdAt ? String(m.createdAt).slice(0, 10) : '';
     return `
       <div class="mistake-card ${m.mastered ? 'mastered' : ''}">
@@ -1302,7 +1350,20 @@ function renderMistakeList(list) {
           <button class="btn small danger" data-del="${m.id}">删除</button>
         </div>
       </div>`;
-  }).join('');
+  }).join('') + pagerHtml(page, totalPages, list.length);
+
+  // 翻页按钮：只换页码重画列表，不重新拉接口。
+  // 错题数据在 State.mistakes 里已经是完整的，为了翻页再打一次网络纯属浪费。
+  $$('[data-mpage]', box).forEach(b => b.addEventListener('click', () => {
+    const to = b.dataset.mpage;
+    if (to === 'prev') State.mistakesPage = page - 1;
+    else if (to === 'next') State.mistakesPage = page + 1;
+    else State.mistakesPage = parseInt(to, 10) || 1;
+    renderMistakeList(State.mistakes);
+    // 翻完滚回列表顶部 —— 否则在第 3 页点「下一页」，眼睛还停在页面底部。
+    const top = $('#mistake-list');
+    if (top && top.scrollIntoView) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
 
   $$('[data-open]', box).forEach(b => b.addEventListener('click', () => go('#/problem/' + b.dataset.open)));
   // 没关联题库的错题：带去题库页并把题名填进搜索框，用户自己决定拉哪道

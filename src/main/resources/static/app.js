@@ -144,11 +144,18 @@ const State = {
   todayView: null,
   account: null,
   mistakes: [],
+  // 错题本当前页码（从 1 开始）。只存在内存里 —— 错题本没有自己的路由，
+  // 刷新回到第 1 页是可接受的；硬塞进 hash 会让 #/mistakes 变成一个带状态的地址，
+  // 删除/标记后还得同步 hash，多一处能对不上的东西。
+  mistakesPage: 1,
   snippets: [],
   // 最近一次评分结果 + 是哪道题的。
   // 记错题时要拿它和最优解比差距，所以必须带着 slug 存 —— 只看内容分不清是哪一题。
   lastGrade: null,
-  lastGradeSlug: null
+  lastGradeSlug: null,
+  // 当前正在复习的错题 id。删卡片要用它拼路径 —— 卡片自己只带 cardId，
+  // 不能靠 DOM 里翻 hash 现解析，那种耦合一改路由就断。
+  rcMistakeId: null
 };
 
 const TIER_LABEL = { brute: '暴力', better: '较好', optimal: '最优' };
@@ -220,13 +227,19 @@ function parseHash() {
   const h = (location.hash || '#/today').replace(/^#\/?/, '');
   const parts = h.split('/').filter(Boolean);
   if (!parts.length) return { view: 'today' };
-  return { view: parts[0], param: parts[1] ? decodeURIComponent(parts[1]) : null };
+  return {
+    view: parts[0],
+    param: parts[1] ? decodeURIComponent(parts[1]) : null,
+    // 第三段只在复习模式用到：#/review/:slug/:mistakeId，带上是哪条错题，
+    // 「复习 +1」才知道往哪条错题上记数。其他路由用不到这个字段。
+    param2: parts[2] ? decodeURIComponent(parts[2]) : null
+  };
 }
 
 function go(hash) { location.hash = hash; }
 
 async function render() {
-  const { view, param } = parseHash();
+  const { view, param, param2 } = parseHash();
   State.view = view;
   // 今日页装的左右键翻页是全局监听，换页必须清掉，
   // 否则在题库里按 ← 会莫名其妙跳去前一天。
@@ -237,7 +250,9 @@ async function render() {
 
   try {
     if (view === 'today')        await viewToday(main, param);
+    // 复习模式和看题共用 viewProblem，只多带一个错题 id，界面按 id 是否存在切换
     else if (view === 'problem') await viewProblem(main, param);
+    else if (view === 'review')  await viewProblem(main, param, param2);
     else if (view === 'library') await viewLibrary(main, param);
     else if (view === 'mistakes')await viewMistakes(main);
     else if (view === 'snippets')await viewSnippets(main);
@@ -468,12 +483,30 @@ async function viewToday(main, dayParam) {
 
 /* ============================ 题目详情 ============================ */
 
-async function viewProblem(main, slug) {
+async function viewProblem(main, slug, reviewMistakeId) {
   if (!slug) { go('#/today'); return; }
+  // 复习模式：带错题 id 进来，只给题面 + 我的代码 + 一个「复习 +1」按钮。
+  // 不带 id 的看题路径（#/problem/:slug）一个字节都不能变 —— 两条入口同题同数据。
+
+  // 记进全局：卡堆里的「删除这张」要拿它拼路径。离开复习页时要清掉，
+  // 否则下次进看题页删卡片会拼到上一题的 id 上。
+  State.rcMistakeId = reviewMistakeId || null;
 
   let p;
+  // 复习卡片：只有复习模式才拉。看题模式这里保持 undefined，DOM 里也就没有这块。
+  let rcCards = [];
   try {
-    p = await api('/problem/' + encodeURIComponent(slug));
+    // 复习模式带 mistakeId：后端会在题目数据里附上这条例题的复习代码（reviewCode 字段），
+    // 看题请求不带这个参数，返回里就没有 reviewCode —— 两条路径各回各的数据。
+    p = await api('/problem/' + encodeURIComponent(slug)
+      + (reviewMistakeId ? '?mistakeId=' + encodeURIComponent(reviewMistakeId) : ''));
+    if (reviewMistakeId) {
+      // 卡片拉失败不该把整个复习页打挂 —— 顶多这次看不到历史，草稿照写。
+      try {
+        const r = await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-cards');
+        rcCards = r.cards || [];
+      } catch (e2) { rcCards = []; }
+    }
   } catch (e) {
     main.innerHTML = `
       <button class="back-link" onclick="location.hash='#/today'">← 返回</button>
@@ -506,7 +539,7 @@ async function viewProblem(main, slug) {
     .map(x => `<span class="chip">${esc(x)}</span>`).join('');
 
   main.innerHTML = `
-    <button class="back-link" id="btn-back">← 返回今日任务</button>
+    <button class="back-link" id="btn-back">${reviewMistakeId ? '← 返回错题本' : '← 返回今日任务'}</button>
 
     <div class="prob-head">
       <div class="prob-fid">#${esc(p.frontendId || '')} · ${diffLabel(p.difficulty)}</div>
@@ -517,24 +550,48 @@ async function viewProblem(main, slug) {
 
     <div class="prob-body" id="prob-body"></div>
 
-    <h2 class="sec">三种解法 <span class="cnt">${sols.length} 种 · 从暴力到最优</span></h2>
-    ${sols.length ? renderSolTabs(sols, slug, p.refGrades) : '<div class="empty">还没有解法内容</div>'}
+    ${reviewMistakeId ? `
+      <h2 class="sec">我的代码 <span class="cnt">复习专用 · 每次复习一张卡，历史各自留痕，互不覆盖</span></h2>
+      <div class="rc-deck">
+        <div class="rc-card rc-draft">
+          <div class="rc-head">
+            <span class="rc-seq">新的这次</span>
+            <span class="rc-time">写完点下面保存，它会压进下面那一摞</span>
+          </div>
+          <div class="rc-body">
+            <textarea id="review-code" class="code-input" spellcheck="false"
+              placeholder="复习重写一遍，粘在这里 —— 不会覆盖看题页那份，也不会覆盖你以前复习写过的"></textarea>
+            <div class="row" style="margin-top:var(--s3)">
+              <div class="fixed"><button class="btn" id="btn-save-review-code">保存这次复习</button></div>
+              <div class="fixed"><span class="mono-sm" id="review-code-stamp"></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="rc-hist" id="rc-hist">${renderRcHist(rcCards)}</div>
+      </div>
+      <div class="row" style="margin-top:var(--s5)">
+        <div class="fixed"><button class="btn" id="btn-review-plus">复习 +1</button></div>
+      </div>
+    ` : `
+      <h2 class="sec">三种解法 <span class="cnt">${sols.length} 种 · 从暴力到最优</span></h2>
+      ${sols.length ? renderSolTabs(sols, slug, p.refGrades) : '<div class="empty">还没有解法内容</div>'}
 
-    <h2 class="sec">我的代码 <span class="cnt">粘贴上来，给你打分</span></h2>
-    ${renderMyCodeArea(p, slug)}
+      <h2 class="sec">我的代码 <span class="cnt">粘贴上来，给你打分</span></h2>
+      ${renderMyCodeArea(p, slug)}
 
-    <h2 class="sec">我的记录</h2>
-    <label class="field">
-      <span>这道题我卡在哪（一句话）</span>
-      <textarea id="my-note" placeholder="例：想到哈希但不会写 containsKey 的返回值判断">${esc(p.myNote || '')}</textarea>
-    </label>
-    <div class="row" style="margin-bottom:var(--s5)">
-      <div class="fixed"><button class="btn" id="btn-save-note">保存笔记</button></div>
-      <div class="fixed"><button class="btn ghost" id="btn-done">${p.status === 'done' ? '取消完成' : '标记完成'}</button></div>
-      <div class="fixed"><button class="btn ghost" id="btn-mistake">记入错题本</button></div>
-      <div class="fixed"><a class="btn ghost" target="_blank" rel="noopener"
-         href="https://leetcode.cn/problems/${escAttr(slug)}/">去力扣提交 ↗</a></div>
-    </div>
+      <h2 class="sec">我的记录</h2>
+      <label class="field">
+        <span>这道题我卡在哪（一句话）</span>
+        <textarea id="my-note" placeholder="例：想到哈希但不会写 containsKey 的返回值判断">${esc(p.myNote || '')}</textarea>
+      </label>
+      <div class="row" style="margin-bottom:var(--s5)">
+        <div class="fixed"><button class="btn" id="btn-save-note">保存笔记</button></div>
+        <div class="fixed"><button class="btn ghost" id="btn-done">${p.status === 'done' ? '取消完成' : '标记完成'}</button></div>
+        <div class="fixed"><button class="btn ghost" id="btn-mistake">记入错题本</button></div>
+        <div class="fixed"><a class="btn ghost" target="_blank" rel="noopener"
+           href="https://leetcode.cn/problems/${escAttr(slug)}/">去力扣提交 ↗</a></div>
+      </div>
+    `}
   `;
 
   // 题面
@@ -542,10 +599,10 @@ async function viewProblem(main, slug) {
   const html = p.contentCnHtml || p.contentHtml || '';
   body.innerHTML = html || '<p class="mono-sm">（无题面内容）</p>';
 
-  $('#btn-back').addEventListener('click', () => go('#/today'));
+  $('#btn-back').addEventListener('click', () => go(reviewMistakeId ? '#/mistakes' : '#/today'));
 
-  // 解法 tab + 上锁解锁
-  if (sols.length) {
+  // 解法 tab + 上锁解锁（仅看题模式；复习模式没渲染这块 DOM，别去绑）
+  if (sols.length && !reviewMistakeId) {
     // 渲染单个 panel 的内容（锁着就画锁屏卡，解锁就画正文）
     function paintPanel(idx) {
       const panel = $('#' + 'sol-' + idx, main);
@@ -697,6 +754,47 @@ async function viewProblem(main, slug) {
     });
   }
 
+  // 复习模式专属按钮（复习 +1 / 保存复习代码）必须在这里绑、绑完就 return ——
+  // 上个版本把绑定写在了下面 early-return 之后，函数先 return 了，
+  // 两个按钮永远没绑上：保存点了没反应、+1 也点了没反应（两个 bug 的同一根因）。
+  if (reviewMistakeId) {
+    // 复习 +1：记一次复习计数，然后回错题本（列表重新拉，复习次数自然会刷新）。
+    $('#btn-review-plus').addEventListener('click', async () => {
+      try {
+        await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review', { method: 'POST' });
+        toast('已记一次复习');
+        go('#/mistakes');
+      } catch (e) { toast(e.message, true); }
+    });
+    // 保存这次复习 = 新建一张卡片（POST review-cards），不是覆盖上一张。
+    // 老的一对一接口 /review-code 保留在服务端，但前端不再走它 —— 覆盖就是那个接口的病根。
+    $('#btn-save-review-code').addEventListener('click', async () => {
+      const code = $('#review-code').value;
+      if (!code.trim()) { toast('先写点代码再保存', true); return; }
+      const b = $('#btn-save-review-code');
+      b.disabled = true; b.textContent = '保存中…';
+      try {
+        const r = await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-cards', {
+          method: 'POST', body: { code }
+        });
+        $('#review-code-stamp').textContent = '已保存 ' + new Date().toLocaleTimeString();
+        $('#review-code').value = '';
+        // 保存完立刻把新卡压进堆里，不用等刷新 —— 用户要看见「多了一张」。
+        try {
+          const fresh = await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-cards');
+          $('#rc-hist').innerHTML = renderRcHist(fresh.cards || []);
+          bindRcHist();
+        } catch (e2) { /* 拉失败就保持旧堆，不影响保存已成功这个事实 */ }
+        toast('已存成第 ' + (r.count || 0) + ' 张复习卡');
+      } catch (e) { toast(e.message, true); }
+      finally { b.disabled = false; b.textContent = '保存这次复习'; }
+    });
+    bindRcHist();
+    // 复习模式到此为止 —— 后面的笔记/完成/错题按钮只存在于看题模式，
+    // 复习模式的 DOM 里根本没有这些节点，直接绑会 TypeError。
+    return;
+  }
+
   // 笔记
   $('#btn-save-note').addEventListener('click', async () => {
     try {
@@ -733,6 +831,8 @@ async function viewProblem(main, slug) {
       refGrades: p.refGrades
     });
   });
+
+  // ---- 复习模式专属按钮已在前面的复习分支绑定（那里绑完直接 return）----
 }
 
 /* ============================ 我的代码 + 评分 ============================ */
@@ -745,6 +845,90 @@ async function viewProblem(main, slug) {
  *   ② 静态结构分析推断复杂度/规范（推断，前端必须标出来）
  * 没有测试用例，所以没有「对不对」这一项，页面也不该假装有。
  */
+/* ---------------------- 复习卡片堆叠 ---------------------- */
+
+/**
+ * 历史复习卡堆：一张卡 = 一次复习写的代码。
+ *
+ * 收起态只露一条窄条（第几次 + 时间 + 首行预览），点开才铺满整个代码区。
+ * 之所以默认收起：复习到第十次时，十份完整代码同时展开会把题面挤到看不见，
+ * 而复习时最常做的是「扫一眼当时怎么写的」，不是逐字重读。
+ */
+function renderRcHist(cards) {
+  if (!cards || !cards.length) {
+    return `
+      <div class="rc-empty">
+        还没有历史复习卡。上面写完点「保存这次复习」，它会成为第 1 张压在这里。
+      </div>`;
+  }
+  return cards.map(c => {
+    const firstLine = (c.code || '').split('\n').find(l => l.trim()) || '（空）';
+    const preview = firstLine.trim().slice(0, 60);
+    const lines = (c.code || '').split('\n').length;
+    return `
+      <div class="rc-card rc-old" data-card="${c.id}">
+        <button class="rc-head rc-toggle" type="button" aria-expanded="false">
+          <span class="rc-seq">第 ${c.seq} 次</span>
+          <span class="rc-time">${esc(fmtRcTime(c.createdAt))} · ${lines} 行</span>
+          <span class="rc-preview">${esc(preview)}</span>
+          <span class="rc-caret">▾</span>
+        </button>
+        <div class="rc-body" hidden>
+          <pre class="rc-code">${esc(c.code || '')}</pre>
+          <div class="row" style="margin-top:var(--s3)">
+            <div class="fixed"><button class="btn ghost rc-del" type="button" data-card="${c.id}">删除这张</button></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function fmtRcTime(s) {
+  if (!s) return '';
+  // 后端给的是 java.sql.Timestamp.toString()：2026-11-03 20:52:40.123
+  // 只留到分钟，秒和毫秒对复习场景没意义。
+  const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}` : String(s);
+}
+
+/** 卡堆的事件绑定：展开/收起 + 删除。每次重渲染卡堆后必须重绑。 */
+function bindRcHist() {
+  const hist = $('#rc-hist');
+  if (!hist) return;
+
+  hist.querySelectorAll('.rc-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.rc-card');
+      const body = card.querySelector('.rc-body');
+      const open = !body.hidden;
+      body.hidden = open;
+      btn.setAttribute('aria-expanded', String(!open));
+      card.classList.toggle('rc-open', !open);
+    });
+  });
+
+  hist.querySelectorAll('.rc-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const cardId = btn.dataset.card;
+      if (!confirm('删掉这张复习卡？删了就找不回来了。')) return;
+      const mid = State.rcMistakeId;
+      if (!mid) return;
+      btn.disabled = true; btn.textContent = '删除中…';
+      try {
+        await api('/mistakes/' + encodeURIComponent(mid) + '/review-cards/' + encodeURIComponent(cardId),
+          { method: 'DELETE' });
+        const fresh = await api('/mistakes/' + encodeURIComponent(mid) + '/review-cards');
+        hist.innerHTML = renderRcHist(fresh.cards || []);
+        bindRcHist();
+        toast('已删掉一张');
+      } catch (e) {
+        toast(e.message, true);
+        btn.disabled = false; btn.textContent = '删除这张';
+      }
+    });
+  });
+}
+
 function renderMyCodeArea(p, slug) {
   const mine = p.myCode || '';
 
@@ -1090,13 +1274,57 @@ async function viewMistakes(main) {
   $('#btn-add-mistake').addEventListener('click', () => openMistakeModal({}));
 }
 
+// 错题本一页几道。写在这里而不是散在 renderMistakeList 里，
+// 因为翻页逻辑和它必须一致 —— 两处各写一个数字迟早对不上。
+const MISTAKE_PAGE_SIZE = 6;
+
+/**
+ * 分页条。只有一页时返回空串 —— 一条错题都没有还画个「1 / 1」是噪音。
+ * 页码超过 7 个时用省略号收中间，否则一屏就撑爆了。
+ */
+function pagerHtml(page, totalPages, totalItems) {
+  if (totalPages <= 1) return '';
+
+  const btn = (to, label, opts = {}) =>
+    `<button class="pager-btn${opts.cur ? ' cur' : ''}" data-mpage="${to}"${opts.disabled ? ' disabled' : ''}>${label}</button>`;
+
+  // 页码序列：首页、末页必留，当前页前后各留一个，中间用 …
+  const nums = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - page) <= 1) nums.push(i);
+    else if (nums[nums.length - 1] !== '…') nums.push('…');
+  }
+
+  return `
+    <div class="pager">
+      ${btn('prev', '← 上一页', { disabled: page <= 1 })}
+      <div class="pager-nums">
+        ${nums.map(n => n === '…'
+          ? '<span class="pager-gap">…</span>'
+          : btn(n, String(n), { cur: n === page })).join('')}
+      </div>
+      ${btn('next', '下一页 →', { disabled: page >= totalPages })}
+      <span class="pager-info">第 ${page} / ${totalPages} 页 · 共 ${totalItems} 条</span>
+    </div>`;
+}
+
 function renderMistakeList(list) {
   const box = $('#mistake-list');
   if (!list || !list.length) {
     box.innerHTML = '<div class="empty"><span class="big">✕</span>还没有错题。做错了就记一条，比刷十道新题有用</div>';
     return;
   }
-  box.innerHTML = list.map(m => {
+
+  const totalPages = Math.max(1, Math.ceil(list.length / MISTAKE_PAGE_SIZE));
+  // 夹住页码：删掉最后一页的最后一条后，原页码就指到空气里了。
+  // 这里夹而不是让 render 报错，是因为「删到空页」是正常操作，不是异常。
+  const page = Math.min(Math.max(1, State.mistakesPage || 1), totalPages);
+  State.mistakesPage = page;
+
+  const from = (page - 1) * MISTAKE_PAGE_SIZE;
+  const pageItems = list.slice(from, from + MISTAKE_PAGE_SIZE);
+
+  box.innerHTML = pageItems.map(m => {
     const d = m.createdAt ? String(m.createdAt).slice(0, 10) : '';
     return `
       <div class="mistake-card ${m.mastered ? 'mastered' : ''}">
@@ -1115,14 +1343,27 @@ function renderMistakeList(list) {
             /* 没关联到题库的，按钮也得在 —— 但点进去要有用。
                直接带着题名跳题库搜索，比一个点了没反应的死按钮强。 */
             : `<button class="btn small ghost" data-find="${escAttr(m.problemTitle || '')}" title="题库里没找到同名的题，去题库搜一下">去题库找</button>`}
-          <button class="btn small ghost" data-review="${m.id}">+1 复习</button>
+          <button class="btn small ghost" data-review="${m.id}" data-review-slug="${escAttr(m.problemSlug || '')}">复习</button>
           <button class="btn small ghost" data-master="${m.id}" data-cur="${m.mastered ? 1 : 0}">
             ${m.mastered ? '标记未掌握' : '标记已掌握'}
           </button>
           <button class="btn small danger" data-del="${m.id}">删除</button>
         </div>
       </div>`;
-  }).join('');
+  }).join('') + pagerHtml(page, totalPages, list.length);
+
+  // 翻页按钮：只换页码重画列表，不重新拉接口。
+  // 错题数据在 State.mistakes 里已经是完整的，为了翻页再打一次网络纯属浪费。
+  $$('[data-mpage]', box).forEach(b => b.addEventListener('click', () => {
+    const to = b.dataset.mpage;
+    if (to === 'prev') State.mistakesPage = page - 1;
+    else if (to === 'next') State.mistakesPage = page + 1;
+    else State.mistakesPage = parseInt(to, 10) || 1;
+    renderMistakeList(State.mistakes);
+    // 翻完滚回列表顶部 —— 否则在第 3 页点「下一页」，眼睛还停在页面底部。
+    const top = $('#mistake-list');
+    if (top && top.scrollIntoView) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
 
   $$('[data-open]', box).forEach(b => b.addEventListener('click', () => go('#/problem/' + b.dataset.open)));
   // 没关联题库的错题：带去题库页并把题名填进搜索框，用户自己决定拉哪道
@@ -1130,9 +1371,19 @@ function renderMistakeList(list) {
     go('#/library/' + encodeURIComponent(b.dataset.find || ''));
   }));
 
-  $$('[data-review]', box).forEach(b => b.addEventListener('click', async () => {
-    try { await api('/mistakes/' + b.dataset.review + '/review', { method: 'POST' }); toast('复习次数 +1'); viewMistakes($('#main')); }
-    catch (e) { toast(e.message, true); }
+  $$('[data-review]', box).forEach(b => b.addEventListener('click', () => {
+    // 「复习」跳进复习界面：题面 + 我的代码 + 复习 +1。
+    // 需要两个值：题目 slug（渲染题面）和错题 id（复习 +1 记数用）。
+    // 没关联题库的错题没 slug，复习界面没题面可看 —— 这种留在原地 +1 更有用。
+    const mid = b.dataset.review;
+    const slug = b.dataset.reviewSlug;
+    if (!slug) {
+      api('/mistakes/' + encodeURIComponent(mid) + '/review', { method: 'POST' })
+        .then(() => { toast('复习次数 +1'); viewMistakes($('#main')); })
+        .catch(e => toast(e.message, true));
+      return;
+    }
+    go('#/review/' + encodeURIComponent(slug) + '/' + encodeURIComponent(mid));
   }));
 
   $$('[data-master]', box).forEach(b => b.addEventListener('click', async () => {
