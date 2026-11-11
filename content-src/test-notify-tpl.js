@@ -72,7 +72,10 @@ ok('CSS 有 .dailytpl-code', css.includes('.dailytpl-code'));
 
   console.log('\n=== 4. 提醒接口（不重复、可标已读） ===');
   const n = await (await fetch(B + '/api/notify?limit=50')).json();
-  ok('提醒条数已收敛（<=5）', n.items.length <= 5);
+  // 不能写死条数：多用一天就多一条，那是正常积累，不是 bug。
+  // 真正的不变量是「每条都得有日期和类型」—— 字段漏了才说明代码坏了。
+  ok('每条提醒都有日期和类型', n.items.every(i => i.date && i.kind),
+    n.items.filter(i => !i.date || !i.kind).length + ' 条缺字段');
   console.log('     unread：' + n.unread + ' | 条数：' + n.items.length);
 
   // 同一 (day_date, kind) 不应有多条

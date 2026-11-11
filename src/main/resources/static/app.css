@@ -723,6 +723,65 @@ label.field > span {
 .rc-caret { color: var(--ink-4); font-size: var(--t-xs); transition: transform .18s var(--ease); }
 .rc-card.rc-open .rc-caret { transform: rotate(180deg); }
 
+/* 复习卡上的分数：一眼能看出「第 1 次 6.2 → 第 2 次 8.4」这条线 */
+.rc-score {
+  font-family: var(--f-mono); font-size: var(--t-xs); font-weight: 600;
+  padding: 1px 6px; border-radius: 2px; white-space: nowrap;
+}
+.rc-score.good { color: var(--ok); background: var(--ok-soft); }
+.rc-score.mid  { color: var(--warn); background: var(--warn-soft); }
+.rc-score.bad  { color: var(--accent-deep); background: var(--accent-soft); }
+.rc-noscore {
+  font-family: var(--f-mono); font-size: var(--t-xs);
+  color: var(--ink-4); white-space: nowrap;
+}
+
+/* 复习判题的结果块：只回答「这次比上次好还是差」 */
+.rc-grade-out:not(:empty) { margin-top: var(--s4); }
+.rg-box {
+  padding: var(--s4);
+  border-left: 3px solid var(--rule);
+  border-radius: 0 2px 2px 0;
+  background: var(--paper-2);
+}
+.rg-box.good { border-left-color: var(--ok); }
+.rg-box.mid  { border-left-color: var(--warn); }
+.rg-box.bad  { border-left-color: var(--accent); }
+.rg-head { display: flex; align-items: baseline; gap: var(--s2); flex-wrap: wrap; }
+.rg-score { font-family: var(--f-serif); font-size: var(--t-xl); font-weight: 600; }
+.rg-of { font-family: var(--f-mono); font-size: var(--t-xs); color: var(--ink-4); }
+.rg-delta {
+  margin-left: auto;
+  font-family: var(--f-mono); font-size: var(--t-xs);
+  padding: 1px 7px; border-radius: 2px; white-space: nowrap;
+}
+.rg-delta.first { color: var(--ink-3); background: var(--paper-raised); }
+.rg-delta.up    { color: var(--ok); background: var(--ok-soft); }
+.rg-delta.down  { color: var(--accent-deep); background: var(--accent-soft); }
+.rg-delta.same  { color: var(--ink-3); background: var(--paper-raised); }
+.rg-judge {
+  margin-top: var(--s3);
+  font-family: var(--f-mono); font-size: var(--t-xs);
+}
+.rg-judge.ok   { color: var(--ok); }
+.rg-judge.no   { color: var(--accent-deep); }
+.rg-judge.skip { color: var(--ink-3); }
+.rg-fails { margin-top: var(--s2); display: flex; flex-direction: column; gap: 4px; }
+.rg-fail {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  font-family: var(--f-mono); font-size: var(--t-xs);
+}
+.rg-fail code {
+  background: var(--paper-raised); padding: 1px 5px; border-radius: 2px;
+  max-width: 100%; overflow-wrap: anywhere;
+}
+.rgf-k { color: var(--ink-4); }
+.rgf-got { color: var(--accent-deep); }
+.rg-more {
+  margin-top: var(--s2);
+  font-family: var(--f-mono); font-size: var(--t-xs); color: var(--ink-4);
+}
+
 .rc-old .rc-body { padding: 0 var(--s4) var(--s4); }
 
 /* 历史代码只读展示：用 pre 保原样缩进，不给人「能改」的错觉 */

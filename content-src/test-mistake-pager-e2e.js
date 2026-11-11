@@ -154,9 +154,13 @@ load('lock.js'); load('roast.js'); load('mistake-fill.js'); load('app.js');
 
   console.log(`\n【1】真实数据渲染（${list.length} 条错题）`);
   ok('拉到全部错题', list.length > 0, String(list.length));
+  // 页数按实际条数算。原来写死「2 页」，用户多记两道错题就挂，
+  // 挂的不是产品，是测试自己偷懒。
+  const PAGES = Math.max(1, Math.ceil(list.length / 6));
+  const SECOND_PAGE = Math.min(6, list.length - 6);
   ok('一页最多 6 张卡', (html.match(/class="mistake-card/g) || []).length === Math.min(6, list.length),
     String((html.match(/class="mistake-card/g) || []).length));
-  ok(`${list.length} 条 → 2 页`, list.length <= 6 || /第 1 \/ 2 页/.test(html), (html.match(/第 \d+ \/ \d+ 页[^<]*/) || [''])[0]);
+  ok(`${list.length} 条 → ${PAGES} 页`, new RegExp('第 1 / ' + PAGES + ' 页').test(html), (html.match(/第 \d+ \/ \d+ 页[^<]*/) || [''])[0]);
   ok('显示了总条数', new RegExp('共 ' + list.length + ' 条').test(html), (html.match(/共 \d+ 条/) || [''])[0]);
   ok('第一页上一页禁用', /data-mpage="prev" disabled/.test(html));
   ok('第一页下一页可点', !/data-mpage="next" disabled/.test(html));
@@ -166,10 +170,13 @@ load('lock.js'); load('roast.js'); load('mistake-fill.js'); load('app.js');
   ok('找到了下一页按钮', !!nextBtn);
   nextBtn.click();
   const html2 = nodes['mistake-list'].innerHTML;
-  ok('页码变成第 2 页', /第 2 \/ 2 页/.test(html2), (html2.match(/第 \d+ \/ \d+ 页[^<]*/) || [''])[0]);
+  ok('页码变成第 2 页', new RegExp('第 2 / ' + PAGES + ' 页').test(html2), (html2.match(/第 \d+ \/ \d+ 页[^<]*/) || [''])[0]);
   const cardCount2 = (html2.match(/class="mistake-card/g) || []).length;
-  ok(`第 2 页剩 ${list.length - 6} 张卡`, cardCount2 === list.length - 6, String(cardCount2));
-  ok('第 2 页下一页禁用', /data-mpage="next" disabled/.test(html2));
+  ok(`第 2 页剩 ${SECOND_PAGE} 张卡`, cardCount2 === SECOND_PAGE, String(cardCount2));
+  // 只有两页时下一页才该禁用；三页以上它必须可点，否则翻不到最后一页。
+  ok('第 2 页的下一页按钮状态和总页数一致',
+    PAGES === 2 ? /data-mpage="next" disabled/.test(html2) : !/data-mpage="next" disabled/.test(html2),
+    '共 ' + PAGES + ' 页');
   ok('第 2 页上一页可点', !/data-mpage="prev" disabled/.test(html2));
   ok('第 2 页换了内容（不是同一批卡）',
     (html2.match(/data-del="(\d+)"/g) || []).join() !== (html.match(/data-del="(\d+)"/g) || []).join());
@@ -180,7 +187,7 @@ load('lock.js'); load('roast.js'); load('mistake-fill.js'); load('app.js');
   console.log('\n【4】点「上一页」回到第 1 页');
   const prevBtn = (box._buttons || []).find(b => b.dataset.mpage === 'prev');
   prevBtn.click();
-  ok('回到第 1 页', /第 1 \/ 2 页/.test(nodes['mistake-list'].innerHTML));
+  ok('回到第 1 页', new RegExp('第 1 / ' + PAGES + ' 页').test(nodes['mistake-list'].innerHTML));
   ok('卡片数恢复 6', (nodes['mistake-list'].innerHTML.match(/class="mistake-card/g) || []).length === 6);
 
   console.log(`\n通过 ${pass} / 失败 ${fail}`);

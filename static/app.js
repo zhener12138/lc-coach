@@ -556,15 +556,17 @@ async function viewProblem(main, slug, reviewMistakeId) {
         <div class="rc-card rc-draft">
           <div class="rc-head">
             <span class="rc-seq">新的这次</span>
-            <span class="rc-time">写完点下面保存，它会压进下面那一摞</span>
+            <span class="rc-time">写完点「检查」—— 会真跑一遍用例，对错当场知道，同时存成一张卡</span>
           </div>
           <div class="rc-body">
             <textarea id="review-code" class="code-input" spellcheck="false"
               placeholder="复习重写一遍，粘在这里 —— 不会覆盖看题页那份，也不会覆盖你以前复习写过的"></textarea>
             <div class="row" style="margin-top:var(--s3)">
-              <div class="fixed"><button class="btn" id="btn-save-review-code">保存这次复习</button></div>
+              <div class="fixed"><button class="btn" id="btn-grade-review">检查这次写得对不对</button></div>
+              <div class="fixed"><button class="btn ghost" id="btn-save-review-code">只保存不检查</button></div>
               <div class="fixed"><span class="mono-sm" id="review-code-stamp"></span></div>
             </div>
+            <div id="review-grade-out" class="rc-grade-out"></div>
           </div>
         </div>
         <div class="rc-hist" id="rc-hist">${renderRcHist(rcCards)}</div>
@@ -766,6 +768,32 @@ async function viewProblem(main, slug, reviewMistakeId) {
         go('#/mistakes');
       } catch (e) { toast(e.message, true); }
     });
+    // 复习判题：写完真跑一遍，对错当场知道。
+    // 判完后端顺手存成一张带分数的卡 —— 复习的价值就在「马上知道对不对」，
+    // 再让用户点一次保存，多半就忘了，那条带分数的记录也就没了。
+    $('#btn-grade-review').addEventListener('click', async () => {
+      const code = $('#review-code').value;
+      if (!code.trim()) { toast('先写点代码再检查', true); return; }
+      const b = $('#btn-grade-review');
+      b.disabled = true; b.textContent = '检查中…';
+      try {
+        const g = await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-cards/grade', {
+          method: 'POST', body: { code }
+        });
+        // 和上次比：上一张卡的分数就是「上次复习的成绩」，差值为负说明退步了。
+        const prev = rcCards.length ? rcCards[0].totalScore : null;
+        $('#review-grade-out').innerHTML = renderReviewGrade(g, prev);
+        $('#review-code-stamp').textContent = '已存成第 ' + (g.count || 0) + ' 张';
+        $('#review-code').value = '';
+        try {
+          const fresh = await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-cards');
+          rcCards = fresh.cards || [];
+          $('#rc-hist').innerHTML = renderRcHist(rcCards);
+          bindRcHist();
+        } catch (e2) { /* 拉失败不影响「已判完并保存」这个事实 */ }
+      } catch (e) { toast(e.message, true); }
+      finally { b.disabled = false; b.textContent = '检查这次写得对不对'; }
+    });
     // 保存这次复习 = 新建一张卡片（POST review-cards），不是覆盖上一张。
     // 老的一对一接口 /review-code 保留在服务端，但前端不再走它 —— 覆盖就是那个接口的病根。
     $('#btn-save-review-code').addEventListener('click', async () => {
@@ -782,12 +810,13 @@ async function viewProblem(main, slug, reviewMistakeId) {
         // 保存完立刻把新卡压进堆里，不用等刷新 —— 用户要看见「多了一张」。
         try {
           const fresh = await api('/mistakes/' + encodeURIComponent(reviewMistakeId) + '/review-cards');
-          $('#rc-hist').innerHTML = renderRcHist(fresh.cards || []);
+          rcCards = fresh.cards || [];
+          $('#rc-hist').innerHTML = renderRcHist(rcCards);
           bindRcHist();
         } catch (e2) { /* 拉失败就保持旧堆，不影响保存已成功这个事实 */ }
         toast('已存成第 ' + (r.count || 0) + ' 张复习卡');
       } catch (e) { toast(e.message, true); }
-      finally { b.disabled = false; b.textContent = '保存这次复习'; }
+      finally { b.disabled = false; b.textContent = '只保存不检查'; }
     });
     bindRcHist();
     // 复习模式到此为止 —— 后面的笔记/完成/错题按钮只存在于看题模式，
@@ -854,11 +883,68 @@ async function viewProblem(main, slug, reviewMistakeId) {
  * 之所以默认收起：复习到第十次时，十份完整代码同时展开会把题面挤到看不见，
  * 而复习时最常做的是「扫一眼当时怎么写的」，不是逐字重读。
  */
+/**
+ * 复习判题的结果块。
+ * 和看题页的评分卡不同：这里不铺开七个维度，只回答一个问题 ——
+ * 「我这次写的，比上次好还是差」。复习时人只关心这个。
+ */
+function renderReviewGrade(g, prevScore) {
+  const total = Number(g.total || 0);
+  const cls = total >= 8.5 ? 'good' : total >= 6.5 ? 'mid' : 'bad';
+
+  // prevScore 为空 = 第 1 次复习，没有可比对象。不能凭空说「进步了」。
+  let deltaHtml;
+  if (prevScore == null) {
+    deltaHtml = '<span class="rg-delta first">第 1 次复习，先记下这个分数当基准</span>';
+  } else {
+    const d = total - Number(prevScore);
+    const word = d > 0.05 ? `比上次高 ${d.toFixed(1)}`
+      : d < -0.05 ? `比上次低 ${Math.abs(d).toFixed(1)}`
+      : '和上次持平';
+    const arrow = d > 0.05 ? '↑' : d < -0.05 ? '↓' : '=';
+    const kind = d > 0.05 ? 'up' : d < -0.05 ? 'down' : 'same';
+    deltaHtml = `<span class="rg-delta ${kind}">${arrow} ${word}（上次 ${Number(prevScore).toFixed(1)}）</span>`;
+  }
+
+  // 判题结果才是这次复习的关键：编译过了但用例错，说明思路有漏洞。
+  let judgeHtml = '';
+  const j = g.judge;
+  if (j && j.ran) {
+    const ok = j.passed === j.total;
+    const fails = ok ? '' : (j.failures || []).slice(0, 2).map(f => `
+      <div class="rg-fail">
+        <span class="rgf-k">输入</span> <code>${esc(String(f.input || ''))}</code>
+        <span class="rgf-k">期望</span> <code>${esc(String(f.expected || ''))}</code>
+        <span class="rgf-k">你的</span> <code class="rgf-got">${esc(String(f.got || ''))}</code>
+      </div>`).join('');
+    judgeHtml = `
+      <div class="rg-judge ${ok ? 'ok' : 'no'}">用例 ${j.passed} / ${j.total} ${ok ? '全过' : '有错的'}</div>
+      ${fails ? `<div class="rg-fails">${fails}</div>` : ''}
+      ${!ok && (j.failures || []).length > 2 ? `<div class="rg-more">还有 ${j.failures.length - 2} 个用例没过</div>` : ''}`;
+  } else if (g.compiled === false) {
+    // 编译不过必须排在「判不了」前面：代码没编译时判题器当然也没跑，
+    // 但把这个显示成「这题不支持真跑判题」是在骗人 —— 那是题目的事，
+    // 这是你自己代码的事，而且下一句就能改。顺序反了会把人指向错的方向。
+    judgeHtml = `<div class="rg-judge no">编译没过，先修语法${g.compileErrors && g.compileErrors[0] ? '：' + esc(g.compileErrors[0]) : ''}</div>`;
+  } else if (j && j.ran === false) {
+    judgeHtml = `<div class="rg-judge skip">这题不支持真跑判题${j.reason ? '：' + esc(j.reason) : ''} —— 分数只按静态分析算</div>`;
+  }
+
+  return `
+    <div class="rg-box ${cls}">
+      <div class="rg-head">
+        <span class="rg-score">${total.toFixed(1)}</span><span class="rg-of"> / 10</span>
+        ${deltaHtml}
+      </div>
+      ${judgeHtml}
+    </div>`;
+}
+
 function renderRcHist(cards) {
   if (!cards || !cards.length) {
     return `
       <div class="rc-empty">
-        还没有历史复习卡。上面写完点「保存这次复习」，它会成为第 1 张压在这里。
+        还没有历史复习卡。上面写完点「检查」，它会成为第 1 张压在这里。
       </div>`;
   }
   return cards.map(c => {
@@ -869,6 +955,9 @@ function renderRcHist(cards) {
       <div class="rc-card rc-old" data-card="${c.id}">
         <button class="rc-head rc-toggle" type="button" aria-expanded="false">
           <span class="rc-seq">第 ${c.seq} 次</span>
+          ${c.totalScore == null
+            ? '<span class="rc-noscore">未判题</span>'
+            : `<span class="rc-score ${c.totalScore >= 8.5 ? 'good' : c.totalScore >= 6.5 ? 'mid' : 'bad'}">${Number(c.totalScore).toFixed(1)}</span>`}
           <span class="rc-time">${esc(fmtRcTime(c.createdAt))} · ${lines} 行</span>
           <span class="rc-preview">${esc(preview)}</span>
           <span class="rc-caret">▾</span>

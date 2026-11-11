@@ -65,7 +65,12 @@ ok('禁用态有样式', /\.pager-btn:disabled/.test(CSS));
 ok('窄屏下总条数换行', /\.pager-info\s*\{ margin-left: 0; width: 100%; \}/.test(CSS));
 
 console.log('\n【4】版本号（不提用户刷新拿不到新 JS）');
-ok('index.html 用了 20261106a', /app\.js\?v=20261106a/.test(HTML));
+// 断言「所有静态资源用同一个版本号」，而不是钉死某个具体日期。
+// 写死版本的测试每发一次版就挂一次 —— 那不是测出了问题，是测试自己在偷懒。
+const verAll = [...HTML.matchAll(/\?v=([0-9a-z]+)/g)].map(m => m[1]);
+ok('index.html 里所有静态资源用同一个版本号', new Set(verAll).size === 1,
+  [...new Set(verAll)].join(' / ') || '一个都没找到');
+ok('app.js 带了版本号（不提版本用户刷新拿不到新 JS）', /app\.js\?v=/.test(HTML));
 ok('没有残留旧版本号', !/v=20261103e/.test(HTML));
 
 console.log(`\n通过 ${pass} / 失败 ${fail}`);

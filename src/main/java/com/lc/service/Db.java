@@ -84,6 +84,10 @@ public class Db {
                 "  mistake_id BIGINT NOT NULL," +
                 "  slug VARCHAR(128)," +
                 "  code CLOB," +
+                // 这次复习的判题快照。复习写完不判对错等于白写 ——
+                // 存下来才能回答「和上次比是进步还是退了」。
+                "  grade_json CLOB," +
+                "  total_score DOUBLE," +
                 "  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
                 "  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"
         };
@@ -91,6 +95,22 @@ public class Db {
             for (String sql : ddl) s.execute(sql);
         } catch (SQLException e) {
             throw new RuntimeException("建表失败: " + e.getMessage(), e);
+        }
+        // 补列：建表语句里的 IF NOT EXISTS 只对「表不存在」生效，
+        // 老库里的 review_card 还是会缺这两个新列，必须单独补一次。
+        // 先查 INFORMATION_SCHEMA 再决定要不要 ALTER —— H2 各版本对
+        // 「ADD COLUMN IF NOT EXISTS」的支持不一致，查一下最稳。
+        try (Connection c = conn(); Statement s = c.createStatement()) {
+            java.util.Set<String> cols = new java.util.HashSet<>();
+            try (ResultSet rs = s.executeQuery(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'REVIEW_CARD'")) {
+                while (rs.next()) cols.add(rs.getString(1).toUpperCase(java.util.Locale.ROOT));
+            }
+            if (!cols.contains("GRADE_JSON")) s.execute("ALTER TABLE review_card ADD COLUMN grade_json CLOB");
+            if (!cols.contains("TOTAL_SCORE")) s.execute("ALTER TABLE review_card ADD COLUMN total_score DOUBLE");
+        } catch (SQLException e) {
+            // 补列失败不该拦住启动：老的复习卡还能看，只是没有分数。
+            System.err.println("复习卡补列跳过: " + e.getMessage());
         }
         // 建完表顺手把一对一时代的老数据搬成卡片：只搬一次，之后靠「已有卡就不搬」兜住。
         try {
@@ -480,14 +500,17 @@ public class Db {
      */
     public List<Map<String, Object>> listReviewCards(long mistakeId) {
         List<Map<String, Object>> asc = new ArrayList<>();
-        each("SELECT id, code, created_at, updated_at FROM review_card "
+        each("SELECT id, code, grade_json, total_score, created_at, updated_at FROM review_card "
                 + "WHERE mistake_id = ? ORDER BY created_at ASC, id ASC", rs -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", rs.getLong(1));
             m.put("code", rs.getString(2) == null ? "" : rs.getString(2));
-            Timestamp c = rs.getTimestamp(3);
+            m.put("gradeJson", rs.getString(3));
+            double ts = rs.getDouble(4);
+            m.put("totalScore", rs.wasNull() ? null : ts);
+            Timestamp c = rs.getTimestamp(5);
             m.put("createdAt", c == null ? null : c.toString());
-            Timestamp u = rs.getTimestamp(4);
+            Timestamp u = rs.getTimestamp(6);
             m.put("updatedAt", u == null ? null : u.toString());
             asc.add(m);
         }, mistakeId);
@@ -503,13 +526,22 @@ public class Db {
 
     /** 新增一张复习卡片，返回它的 id。只 INSERT，绝不 UPDATE 别人。 */
     public long addReviewCard(long mistakeId, String slug, String code) {
+        return addReviewCard(mistakeId, slug, code, null, null);
+    }
+
+    /** 带判题快照的版本：复习时真跑一遍，把分数和明细一起存进这张卡。 */
+    public long addReviewCard(long mistakeId, String slug, String code,
+                              String gradeJson, Double totalScore) {
         try (Connection c = conn();
              PreparedStatement ps = c.prepareStatement(
-                     "INSERT INTO review_card(mistake_id, slug, code) VALUES(?,?,?)",
+                     "INSERT INTO review_card(mistake_id, slug, code, grade_json, total_score) VALUES(?,?,?,?,?)",
                      Statement.RETURN_GENERATED_KEYS)) {
             ps.setLong(1, mistakeId);
             ps.setString(2, slug);
             ps.setString(3, code);
+            ps.setString(4, gradeJson);
+            if (totalScore == null) ps.setNull(5, java.sql.Types.DOUBLE);
+            else ps.setDouble(5, totalScore);
             ps.executeUpdate();
             try (ResultSet rs = ps.getGeneratedKeys()) {
                 return rs.next() ? rs.getLong(1) : -1L;

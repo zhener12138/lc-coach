@@ -482,6 +482,47 @@ public class ApiController {
         return out;
     }
 
+    /**
+     * 复习判题：把这次复习写的代码真跑一遍，再存成一张带分数的卡。
+     * 和看题页的 /grade 复用同一个评分器，但结果只写进 review_card，
+     * 绝不碰 my_code —— 复习重写不该覆盖当初第一次写的那份。
+     */
+    @PostMapping("/mistakes/{id}/review-cards/grade")
+    public ResponseEntity<?> gradeReviewCard(@PathVariable long id,
+                                             @RequestBody Map<String, String> body) {
+        String code = body.getOrDefault("code", "");
+        if (code.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "先写点代码再检查"));
+        }
+        Map<String, Object> mk = db.listMistakes().stream()
+                .filter(m -> ((Number) m.get("id")).longValue() == id)
+                .findFirst().orElse(null);
+        if (mk == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "这条错题已经不在了"));
+        }
+        String slug = String.valueOf(mk.get("problemSlug"));
+        if (slug == null || slug.isBlank() || "null".equals(slug)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "这条错题没关联到题库里的题，判不了"));
+        }
+        Map<String, Object> r = grader.gradeUser(slug, code);
+        if (!Boolean.TRUE.equals(r.get("ok"))) {
+            return ResponseEntity.badRequest().body(r);
+        }
+        // 判完立刻落成一张卡：复习的价值就在「写完马上知道对不对」，
+        // 让用户再点一次保存，多半就忘了，那张带分数的记录也就没了。
+        String json = null;
+        Double total = null;
+        try {
+            json = MAPPER.writeValueAsString(r);
+            total = ((Number) r.get("total")).doubleValue();
+        } catch (Exception ignore) { }
+        long cardId = db.addReviewCard(id, slug, code, json, total);
+        Map<String, Object> out = new LinkedHashMap<>(r);
+        out.put("cardId", cardId);
+        out.put("count", db.countReviewCards(id));
+        return ResponseEntity.ok(out);
+    }
+
     /** 删一张卡片。路径里带 mistakeId 是为了不让人拿别的错题的 cardId 越权删。 */
     @DeleteMapping("/mistakes/{id}/review-cards/{cardId}")
     public Map<String, Object> deleteReviewCard(@PathVariable long id, @PathVariable long cardId) {
