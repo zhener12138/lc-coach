@@ -1447,3 +1447,140 @@ label.field > span {
   color: var(--ink-faint);
 }
 .judge-more { margin-top: var(--s2); font-size: 11px; color: var(--ink-faint); }
+
+/* ============================ 填空练习 ============================ */
+
+/* 题目页里那个入口按钮，别把标题挤歪 */
+.prob-act { margin-top: var(--s3); }
+
+.fill-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s4);
+  margin-bottom: var(--s4);
+}
+.fill-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.fbtn {
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  padding: 5px 10px;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  cursor: pointer;
+}
+.fbtn:hover { border-color: var(--ink-soft); color: var(--ink); }
+.fbtn.cur {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper-raised);
+}
+.fbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.fill-meta {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: var(--ink-faint);
+  margin-bottom: var(--s2);
+}
+
+/* 卷面。等宽 + 不换行，缩进才对得上 —— 换个字体缩进就全乱了，人没法填。 */
+.fill-code {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: var(--s4);
+  overflow-x: auto;
+  font-family: var(--f-mono);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.fl-row { display: flex; align-items: center; min-height: 1.7em; }
+.fl-txt {
+  margin: 0;
+  white-space: pre;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  flex: none;
+}
+.fl-hole { gap: 0; }
+.fl-input {
+  flex: 1 1 auto;
+  min-width: 160px;
+  font-family: var(--f-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 1px 6px;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: none;
+  border-bottom: 1px dashed var(--accent);
+  outline: none;
+}
+.fl-input:focus {
+  background: #fff;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+}
+.fl-input::placeholder { color: var(--ink-faint); opacity: .7; }
+.fl-tag {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  color: var(--accent-deep);
+  margin-left: 6px;
+  flex: none;
+}
+
+.fill-hints {
+  margin-top: var(--s3);
+  font-size: var(--t-sm);
+  color: var(--ink-soft);
+}
+.fill-hints summary { cursor: pointer; font-family: var(--f-mono); font-size: 11px; }
+.fill-hints ul { margin: var(--s2) 0 0; padding-left: 1.2em; }
+.fill-hints li { margin-bottom: 4px; line-height: 1.6; }
+.fl-around { display: block; font-family: var(--f-mono); font-size: 11px; color: var(--ink-faint); }
+
+/* 交卷结果。故意不带锐评 —— 这里的代码大半是参考解，锐评会夸得莫名其妙。 */
+.fill-res {
+  margin-top: var(--s5);
+  padding: var(--s4) var(--s5);
+  background: var(--paper-2);
+  border-left: 3px solid var(--rule);
+  border-radius: 0 3px 3px 0;
+}
+.fill-res.good { border-left-color: var(--ok); }
+.fill-res.bad { border-left-color: var(--accent-deep); }
+.fr-head { font-family: var(--f-serif); font-size: var(--t-lg); margin-bottom: var(--s2); }
+.fr-line { margin: var(--s2) 0; line-height: 1.7; }
+.fr-line.good { color: var(--ok); }
+.fr-line.bad { color: var(--accent-deep); }
+.fr-fails { margin: var(--s3) 0; }
+.fr-fail {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  line-height: 1.9;
+  padding: 4px 0;
+  border-top: 1px dashed var(--rule);
+}
+.fr-fail code { background: var(--paper-raised); padding: 1px 4px; border-radius: 2px; }
+.fr-fail code.bad { color: var(--accent-deep); }
+.frf-k {
+  display: inline-block;
+  min-width: 2.4em;
+  color: var(--ink-faint);
+}
+.fr-more { font-size: 11px; color: var(--ink-faint); margin-top: var(--s2); }
+.fr-note {
+  margin-top: var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px dashed var(--rule);
+  font-size: 11px;
+  color: var(--ink-faint);
+  line-height: 1.7;
+}
+.fr-note b { color: var(--ink); font-family: var(--f-mono); }

@@ -23,6 +23,7 @@ public class ApiController {
     @Autowired private LeetCodeService lc;
     @Autowired private ReminderService reminder;
     @Autowired private com.lc.service.CodeGrader grader;
+    @Autowired private PracticeService practice;
     @Autowired private AihotService aihot;
     @Autowired private javax.servlet.http.HttpServletRequest servletRequest;
 
@@ -218,7 +219,8 @@ public class ApiController {
     /**
      * 给我的代码打分。
      * 请求体 { code: "..." }；返回各维度分数、总分、编译报错。
-     * 注意：没有测试用例，所以没有「正确性」这一项 —— 只有编译（实测）+ 静态分析（推断）。
+     * 实测两项：编译（javac 真跑）+ 正确性（用例真跑）；其余五项是静态推断。
+     * 判不了题的题会把正确性从加权里剔除再重新归一，不按 0 分算。
      */
     @PostMapping("/problem/{slug}/grade")
     public ResponseEntity<?> grade(@PathVariable String slug, @RequestBody Map<String, String> body) {
@@ -239,6 +241,107 @@ public class ApiController {
             // 存不进不该影响评分结果的返回
         }
         return ResponseEntity.ok(r);
+    }
+
+    // ---------------- 填空练习 ----------------
+
+    /**
+     * 出一道填空题：把参考解挖掉几行，只留骨架。
+     *
+     * <p>tier 取 brute/better/optimal（默认 optimal），level 取 easy/medium/hard（默认 easy）。
+     * 返回的 template 里空位是 {@code @@HOLE:n@@}，前端换成输入框。
+     *
+     * <p><b>正确答案不下发。</b>连「这空该填什么」的提示都不给 —— 想看原文走题目页的解锁流程。
+     */
+    @GetMapping("/problem/{slug}/fill")
+    public ResponseEntity<?> fill(@PathVariable String slug,
+                                  @RequestParam(defaultValue = "optimal") String tier,
+                                  @RequestParam(defaultValue = "easy") String level) {
+        if (store.get(slug) == null) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "题库里还没有这道题的内容",
+                    "slug", slug,
+                    "hint", "去「题库」页面点「拉取并生成」补上"));
+        }
+        PracticeService.Sheet s = practice.sheet(slug, tier, level);
+        if (s == null) {
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "这道题出不了填空题",
+                    "hint", "参考解的代码里没有可挖的逻辑行"));
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("slug", s.slug);
+        out.put("tier", s.tier);
+        out.put("tierName", s.tierName);
+        out.put("level", s.level);
+        out.put("template", s.template);
+        out.put("totalLines", s.totalLines);
+        List<Map<String, Object>> blanks = new ArrayList<>();
+        for (PracticeService.Blank b : s.blanks) {
+            Map<String, Object> one = new LinkedHashMap<>();
+            one.put("id", b.id);
+            one.put("line", b.line);
+            one.put("indent", b.indent);
+            one.put("shape", b.shape);
+            one.put("around", b.around);
+            blanks.add(one);   // 刻意不带 answer
+        }
+        out.put("blanks", blanks);
+        out.put("levels", PracticeService.LEVELS);
+        out.put("tiers", PracticeService.TIERS);
+        return ResponseEntity.ok(out);
+    }
+
+    /**
+     * 交卷：把填的行拼回完整代码，走真正的判题。
+     *
+     * <p><b>对错以「用例跑不跑得过」为准，不以「和参考解一字不差」为准。</b>
+     * 写法不同但跑得通，就是学会了；照抄才算学会是反的。
+     * 逐空比对只用来告诉人「这个空和参考写法不一样」，不当判分依据。
+     */
+    @SuppressWarnings("unchecked")
+    @PostMapping("/problem/{slug}/fill/check")
+    public ResponseEntity<?> fillCheck(@PathVariable String slug, @RequestBody Map<String, Object> body) {
+        String tier = body.get("tier") == null ? "optimal" : String.valueOf(body.get("tier"));
+        String level = body.get("level") == null ? "easy" : String.valueOf(body.get("level"));
+
+        Map<String, String> answers = new LinkedHashMap<>();
+        Object raw = body.get("answers");
+        if (raw instanceof Map) {
+            for (Map.Entry<String, Object> e : ((Map<String, Object>) raw).entrySet()) {
+                answers.put(e.getKey(), e.getValue() == null ? "" : String.valueOf(e.getValue()));
+            }
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>(practice.check(slug, tier, level, answers));
+        if (!Boolean.TRUE.equals(out.get("ok"))) {
+            return ResponseEntity.badRequest().body(out);
+        }
+        if (!Boolean.TRUE.equals(out.get("rebuilt"))) {
+            // 没填完就别送去编译 —— 报「语法错」会让人以为自己写错了
+            return ResponseEntity.ok(out);
+        }
+
+        String code = practice.rebuild(slug, tier, level, answers);
+        if (code == null) {
+            return ResponseEntity.ok(out);
+        }
+        Map<String, Object> g = grader.gradeUser(slug, code);
+        out.put("grade", g);
+
+        boolean passed = false;
+        Object judgeObj = g.get("judge");
+        if (judgeObj instanceof Map) {
+            Map<String, Object> jm = (Map<String, Object>) judgeObj;
+            Object total = jm.get("total");
+            Object ok = jm.get("passed");
+            if (total instanceof Number && ok instanceof Number) {
+                passed = ((Number) total).intValue() > 0
+                        && ((Number) ok).intValue() == ((Number) total).intValue();
+            }
+        }
+        out.put("passedJudge", passed);
+        return ResponseEntity.ok(out);
     }
 
     /** 只取上次的评分（不重新算），用于页面初始化时直接展示历史分数 */

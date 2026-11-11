@@ -126,7 +126,12 @@ ok('有 .rc-noscore', /\.rc-noscore\s*\{/.test(CSS));
 ok('有 .rg-box', /\.rg-box\s*\{/.test(CSS));
 ok('有 .rg-delta', /\.rg-delta\s*\{/.test(CSS));
 ok('有 .rg-judge', /\.rg-judge\s*\{/.test(CSS));
-ok('版本参数已提到 20261111a', /\?v=20261111a/.test(HTML));
+// 别钉死具体版本号 —— 每改一次前端就得改一次测试，改到后来没人愿意动它。
+// 钉两件真正重要的事：一是所有资源版本一致（不一致会出现 js/css 新旧混搭），
+// 二是版本不早于引入这个功能那天的版本（没提版本，浏览器会一直拿旧缓存）。
+const vers = [...HTML.matchAll(/\?v=([0-9a-z]+)/g)].map(m => m[1]);
+ok('所有静态资源用同一个版本号', new Set(vers).size === 1, vers.join(','));
+ok('版本参数不早于 20261111a', vers[0] >= '20261111a', vers[0]);
 
 console.log('\n【5】真服务端到端（这条最能说明问题）');
 (async () => {

@@ -252,6 +252,7 @@ async function render() {
     if (view === 'today')        await viewToday(main, param);
     // 复习模式和看题共用 viewProblem，只多带一个错题 id，界面按 id 是否存在切换
     else if (view === 'problem') await viewProblem(main, param);
+    else if (view === 'fill')    await viewFill(main, param);
     else if (view === 'review')  await viewProblem(main, param, param2);
     else if (view === 'library') await viewLibrary(main, param);
     else if (view === 'mistakes')await viewMistakes(main);
@@ -546,6 +547,9 @@ async function viewProblem(main, slug, reviewMistakeId) {
       <div class="prob-title">${esc(p.title || p.titleCn || p.titleEn || slug)}</div>
       ${p.titleEn ? `<div class="prob-en">${esc(p.titleEn)}</div>` : ''}
       <div class="prob-tags">${tags}</div>
+      ${reviewMistakeId ? '' : `<div class="prob-act">
+        <a class="btn small" href="#/fill/${escAttr(slug)}">填空练习 · 从骨架上把代码补出来</a>
+      </div>`}
     </div>
 
     <div class="prob-body" id="prob-body"></div>
@@ -862,6 +866,232 @@ async function viewProblem(main, slug, reviewMistakeId) {
   });
 
   // ---- 复习模式专属按钮已在前面的复习分支绑定（那里绑完直接 return）----
+}
+
+/* ============================ 填空练习 ============================ */
+
+/**
+ * 把参考解挖掉几行，让人把那一行填回来。
+ *
+ * 为什么是「填空」而不是「从零写」：能想出思路但写不出代码的人，缺的不是整体思路，
+ * 是「这一行到底该怎么写」。给空白框他下不去手，给完整答案他看完还是不会；
+ * 骨架搭好、只补那几行，是这个问题的最小台阶。
+ *
+ * 对错走真跑（后端 JudgeService），不跟参考解比字面 —— 写法不同但用例全过就是学会了。
+ */
+async function viewFill(main, slug) {
+  const TIERS = [['brute', '暴力解'], ['better', '进阶解'], ['optimal', '最优解']];
+  const LEVELS = [['easy', '简单 · 挖 1 行'], ['medium', '中等 · 挖 3-5 行'], ['hard', '困难 · 只留骨架']];
+
+  let p;
+  try {
+    p = await api('/problem/' + encodeURIComponent(slug));
+  } catch (e) {
+    main.innerHTML = `<a class="back-link" href="#/library">← 回题库</a>
+      <div class="notice">${esc(e.message)}</div>`;
+    return;
+  }
+
+  const st = { tier: 'brute', level: 'easy', sheet: null, answers: {} };
+
+  main.innerHTML = `
+    <a class="back-link" href="#/problem/${escAttr(slug)}">← 回到题目</a>
+    <div class="page-head">
+      <div class="eyebrow">填空练习 · #${esc(p.frontendId || '')} · ${diffLabel(p.difficulty)}</div>
+      <h1>${esc(p.title || slug)}</h1>
+      <p class="sub">骨架已经搭好，把挖掉的那几行填回来。交卷会用官方示例真跑一遍 —— <b>写法跟我不同但跑得通，就算你对</b>。</p>
+    </div>
+    <div class="fill-bar">
+      <div class="fill-pick" id="fill-tiers"></div>
+      <div class="fill-pick" id="fill-levels"></div>
+    </div>
+    <div id="fill-body"><div class="loading">正在出题…</div></div>
+    <div id="fill-out"></div>
+  `;
+
+  const drawPicks = () => {
+    $('#fill-tiers').innerHTML = TIERS.map(([k, label]) =>
+      `<button class="fbtn${st.tier === k ? ' cur' : ''}" data-tier="${k}">${label}</button>`).join('');
+    $('#fill-levels').innerHTML = LEVELS.map(([k, label]) =>
+      `<button class="fbtn${st.level === k ? ' cur' : ''}" data-level="${k}">${label}</button>`).join('');
+  };
+
+  async function load() {
+    $('#fill-body').innerHTML = '<div class="loading">正在出题…</div>';
+    $('#fill-out').innerHTML = '';
+    st.answers = {};
+    try {
+      st.sheet = await api('/problem/' + encodeURIComponent(slug) +
+        '/fill?tier=' + encodeURIComponent(st.tier) + '&level=' + encodeURIComponent(st.level));
+    } catch (e) {
+      $('#fill-body').innerHTML = `<div class="notice">${esc(e.message)}</div>`;
+      return;
+    }
+    paint();
+  }
+
+  function paint() {
+    $('#fill-body').innerHTML = fillSheetHtml(st.sheet, st.answers);
+    const inputs = $$('.fl-input', $('#fill-body'));
+    inputs.forEach(inp => {
+      // 只记答案、不重绘：重绘会把光标和已输入的内容顶掉
+      inp.addEventListener('input', () => { st.answers[inp.dataset.hole] = inp.value; });
+      inp.addEventListener('keydown', e => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const i = inputs.indexOf(inp);
+        if (i >= 0 && i < inputs.length - 1) inputs[i + 1].focus();
+        else submit();
+      });
+    });
+    if (inputs.length) inputs[0].focus();
+    $('#btn-fill-check').addEventListener('click', submit);
+    $('#btn-fill-reset').addEventListener('click', () => {
+      st.answers = {};
+      $('#fill-out').innerHTML = '';
+      paint();
+    });
+  }
+
+  async function submit() {
+    const btn = $('#btn-fill-check');
+    const old = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '判题中…';
+    try {
+      const res = await api('/problem/' + encodeURIComponent(slug) + '/fill/check', {
+        method: 'POST',
+        body: { tier: st.tier, level: st.level, answers: st.answers },
+      });
+      $('#fill-out').innerHTML = renderFillResult(res, st.sheet);
+      $('#fill-out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+  }
+
+  drawPicks();
+  $('#fill-tiers').addEventListener('click', e => {
+    const b = e.target.closest('[data-tier]');
+    if (!b || b.dataset.tier === st.tier) return;
+    st.tier = b.dataset.tier;
+    drawPicks();
+    load();
+  });
+  $('#fill-levels').addEventListener('click', e => {
+    const b = e.target.closest('[data-level]');
+    if (!b || b.dataset.level === st.level) return;
+    st.level = b.dataset.level;
+    drawPicks();
+    load();
+  });
+
+  await load();
+}
+
+/**
+ * 画出卷面。空位换成输入框，其余行原样等宽显示 ——
+ * 这里刻意不做语法高亮：逐行高亮会把跨行的块注释状态切断，反而更容易看错。
+ */
+function fillSheetHtml(sheet, answers) {
+  const lines = String(sheet.template || '').replace(/\r\n/g, '\n').split('\n');
+  const byId = {};
+  (sheet.blanks || []).forEach(b => { byId[b.id] = b; });
+
+  const rows = lines.map(line => {
+    const m = line.match(/@@HOLE:(\d+)@@/);
+    if (!m) return `<div class="fl-row"><pre class="fl-txt">${esc(line) || ' '}</pre></div>`;
+    const id = m[1];
+    const b = byId[id] || {};
+    const indent = line.slice(0, line.indexOf('@@HOLE'));
+    const val = (answers && answers[id]) || '';
+    const tip = [b.shape, b.around].filter(Boolean).join(' · ');
+    return `<div class="fl-row fl-hole">
+      <pre class="fl-txt">${esc(indent)}</pre>
+      <input class="fl-input" data-hole="${escAttr(id)}" value="${escAttr(val)}"
+        spellcheck="false" autocomplete="off" placeholder="填这一行" title="${escAttr(tip)}">
+      <span class="fl-tag">#${esc(id)}</span>
+    </div>`;
+  }).join('');
+
+  const hints = (sheet.blanks || []).map(b => `<li><b>#${b.id}</b> 第 ${b.line} 行 · ${esc(b.shape || '')}
+      ${b.around ? `<span class="fl-around">${esc(b.around)}</span>` : ''}</li>`).join('');
+
+  return `
+    <div class="fill-meta">${esc(sheet.tierName || '')} · 共 ${sheet.totalLines} 行 · 挖了 ${(sheet.blanks || []).length} 个空</div>
+    <div class="fill-code">${rows}</div>
+    <details class="fill-hints">
+      <summary>看不出该填什么？这里有位置提示（不含答案）</summary>
+      <ul>${hints}</ul>
+    </details>
+    <div class="row" style="margin-top:var(--s4)">
+      <div class="fixed"><button class="btn" id="btn-fill-check">交卷，检查对不对</button></div>
+      <div class="fixed"><button class="btn ghost" id="btn-fill-reset">清空重填</button></div>
+      <div class="fixed"><span class="mono-sm">回车跳下一个空</span></div>
+    </div>`;
+}
+
+/**
+ * 交卷结果。刻意不调用 renderGradeResult —— 那张卡带锐评，
+ * 而这里的代码八成是参考解，锐评就会说「这题你是真懂了」，那是假的。
+ * 只回答三件事：用例过没过、哪个空跟参考写法不一样、这套解法本身值几分。
+ */
+function renderFillResult(res, sheet) {
+  if (!res || res.ok === false) {
+    return `<div class="notice">${esc((res && (res.error || res.message)) || '出错了')}</div>`;
+  }
+  if (!res.rebuilt) {
+    const miss = (res.missing || []).map(id => '#' + id).join('、');
+    return `<div class="fill-res">
+      <div class="fr-head">还差点</div>
+      <p>${esc(res.message || '有空没填')}${miss ? `（${esc(miss)}）` : ''}</p>
+    </div>`;
+  }
+
+  const g = res.grade || {};
+  const j = g.judge || null;
+  const passed = !!res.passedJudge;
+
+  let judgeLine;
+  if (g.compiled === false) {
+    judgeLine = `<div class="fr-line bad">编译没过：${esc((g.compileErrors && g.compileErrors[0]) || '看看括号和分号')}</div>`;
+  } else if (!j) {
+    judgeLine = `<div class="fr-line">这题不支持真跑判题，所以只确认了能编译过。</div>`;
+  } else if (j.ran === false) {
+    judgeLine = `<div class="fr-line">这题判不了：${esc(j.reason || '')}</div>`;
+  } else {
+    judgeLine = `<div class="fr-line ${passed ? 'good' : 'bad'}">官方示例用例 ${j.passed} / ${j.total}${passed ? ' 全过' : ' —— 还有没过的'}</div>`;
+    const fails = j.failures || [];
+    if (fails.length) {
+      judgeLine += `<div class="fr-fails">` + fails.slice(0, 3).map(f =>
+        `<div class="fr-fail"><span class="frf-k">输入</span><code>${esc(f.input || '')}</code>
+          <span class="frf-k">期望</span><code>${esc(f.expected || '')}</code>
+          <span class="frf-k">你的</span><code class="bad">${esc(f.got || '')}</code></div>`).join('')
+        + (fails.length > 3 ? `<div class="fr-more">还有 ${fails.length - 3} 个没过</div>` : '')
+        + `</div>`;
+    }
+  }
+
+  const bad = (res.blanks || []).filter(b => !b.matches).map(b => '#' + b.id);
+  let mismatchLine;
+  if (bad.length === 0) {
+    mismatchLine = `<div class="fr-line good">每个空都和参考写法一致。</div>`;
+  } else if (passed) {
+    mismatchLine = `<div class="fr-line good">你填的和参考写法不一样（${esc(bad.join('、'))}），但用例跑通了 —— 那就是对的，不用改成我的写法。</div>`;
+  } else {
+    mismatchLine = `<div class="fr-line bad">这几个空和参考写法不一致：${esc(bad.join('、'))}。先改这几个试试。</div>`;
+  }
+
+  const total = g.total == null ? '-' : g.total;
+  return `<div class="fill-res ${passed ? 'good' : 'bad'}">
+    <div class="fr-head">${passed ? '过了' : '还没过'}</div>
+    ${judgeLine}
+    ${mismatchLine}
+    <div class="fr-note">下面这个分数是「这套解法本身」的分数，不是你填空的分数（你填的是${esc((sheet && sheet.tierName) || '参考解')}）：<b>${esc(String(total))}</b> / 10</div>
+  </div>`;
 }
 
 /* ============================ 我的代码 + 评分 ============================ */
