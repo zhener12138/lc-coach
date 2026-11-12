@@ -190,6 +190,9 @@ public class ApiController {
         out.put("tags", p.tags);
         out.put("contentHtml", p.contentHtml);
         out.put("contentCnHtml", p.contentCnHtml);
+        // 力扣给的初始模板（class + public 方法 + 空方法体）。
+        // 空白解法档直接拿它当卷面 —— 跟力扣编辑器里打开一模一样，不用我再拼一遍。
+        out.put("javaTemplate", p.javaTemplate);
         out.put("solutions", p.solutions);
         Map<String, String[]> pr = db.allProgress();
         String[] st = pr.get(slug);
@@ -309,6 +312,40 @@ public class ApiController {
     public ResponseEntity<?> fillCheck(@PathVariable String slug, @RequestBody Map<String, Object> body) {
         String tier = body.get("tier") == null ? "optimal" : String.valueOf(body.get("tier"));
         String level = body.get("level") == null ? "easy" : String.valueOf(body.get("level"));
+
+        // 空白档：没有参考解可比，用户发的是自己拼好的整段代码。
+        // 不比对、不算 missing —— 直接拿去真跑判题。
+        // 输出和下面保持一致（grade + passedJudge），前端不用分两个渲染函数。
+        //
+        // 为什么不直接调 /grade：/grade 会写 my_code，覆盖用户上次交的代码，
+        // 而填空练习的红线之一就是「不碰 my_code」。所以仍走 fill/check，
+        // 只是这个分支里不做比对。
+        if ("blank".equals(tier)) {
+            String code = body.get("code") == null ? "" : String.valueOf(body.get("code"));
+            Map<String, Object> res = practice.checkBlank(slug, code);
+            if (!Boolean.TRUE.equals(res.get("rebuilt"))) {
+                return ResponseEntity.ok(res);
+            }
+            Map<String, Object> ok = new LinkedHashMap<>(res);
+            try {
+                Map<String, Object> g = grader.gradeUser(slug, code);
+                ok.put("grade", g);
+                boolean passed = false;
+                Object jm = g.get("judge");
+                if (jm instanceof Map) {
+                    Object tot = ((Map<?, ?>) jm).get("total");
+                    Object psd = ((Map<?, ?>) jm).get("passed");
+                    if (tot instanceof Number && psd instanceof Number) {
+                        passed = ((Number) tot).intValue() > 0
+                                && ((Number) psd).intValue() == ((Number) tot).intValue();
+                    }
+                }
+                ok.put("passedJudge", passed);
+            } catch (Exception e) {
+                ok.put("error", "判题失败：" + e.getMessage());
+            }
+            return ResponseEntity.ok(ok);
+        }
 
         Map<String, String> answers = new LinkedHashMap<>();
         Object raw = body.get("answers");

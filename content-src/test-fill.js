@@ -104,11 +104,11 @@ function balanced(src) {
   ok('PracticeService 是 @Service', /@Service/.test(svc));
   // 空白档排在第一位：只留 class 和 public 方法签名，方法体全留白。
   // 那才是力扣编辑器刚打开的样子 —— 考「能不能从零写出来」，不是「记不记得某一行」。
-  ok('有四档难度，空白档最前',
-    /LEVELS\s*=\s*Arrays\.asList\("blank",\s*"easy",\s*"medium",\s*"hard"\)/.test(svc));
+  ok('难度只剩三档（空白已经搬去解法档了）',
+    /LEVELS\s*=\s*Arrays\.asList\("hard",\s*"medium",\s*"easy"\)/.test(svc));
   ok('空白档有独立的挖空逻辑', /blankEveryLine\(/.test(svc));
   ok('空白档留方法签名', /isSignature\(/.test(svc));
-  ok('有三种解法档', /TIERS\s*=\s*Arrays\.asList\("brute",\s*"better",\s*"optimal"\)/.test(svc));
+  ok('空白解是独立的一档，排在第一个', /TIERS\s*=\s*Arrays\.asList\("blank",\s*"brute",\s*"better",\s*"optimal"\)/.test(svc));
   // 挖空的三条红线，每一条都对应一次真实事故：
   ok('行尾注释先剥掉再判断（否则带注释的控制流头会被挖走）',
     /stripComment\(/.test(svc) && /String code = stripComment\(s\)\.trim\(\)/.test(svc));
@@ -131,28 +131,46 @@ function balanced(src) {
   ok('服务在跑（后面的断言都依赖它）', up, '连不上 ' + API);
   if (!up) { console.log('\n通过 ' + pass + ' / 失败 ' + fail); process.exitCode = fail ? 1 : 0; return; }
 
-  const blank = await getJson('/api/problem/two-sum/fill?tier=brute&level=blank');
+  // 空白解现在是解法档，不是难度档 —— 它的 level 无所谓，传什么都返回同一份骨架
+  const blank = await getJson('/api/problem/two-sum/fill?tier=blank&level=hard');
   const easy = await getJson('/api/problem/two-sum/fill?tier=brute&level=easy');
   const medium = await getJson('/api/problem/two-sum/fill?tier=brute&level=medium');
   const hard = await getJson('/api/problem/two-sum/fill?tier=optimal&level=hard');
 
-  ok('空白档挖得比困难档多', blank.blanks.length > hard.blanks.length,
-    `blank ${blank.blanks.length} vs hard ${hard.blanks.length}`);
+  // 空白解不是「挖得多」，是「挖得对」—— 它给的就是力扣打开题目的那张纸：
+  // class + public 方法 + 方法体里三行可写。所以验的是这个契约，不是数量比大小。
+  ok('空白解固定给三行可写', blank.blanks.length === 3, '实际 ' + blank.blanks.length);
+  ok('空白解的名字叫「空白解」', /空白/.test(blank.tierName || ''), blank.tierName);
+  ok('空白解只留 class 和 public 方法（没别的）',
+    (() => {
+      const keep = blank.template.split('\n')
+        .filter(l => l.trim() && !/@@HOLE/.test(l));
+      return keep.every(l => /class\s+\w+/.test(l) || /\(.*\)\s*\{|^}\s*$/.test(l.trim()));
+    })(),
+    JSON.stringify(blank.template.split('\n').filter(l => l.trim() && !/@@HOLE/.test(l))));
+  ok('空白解里没有多余的空行（方法体原空行已去掉）',
+    !/@@HOLE:3@@\n\s*\n\s*}/.test(blank.template),
+    JSON.stringify(blank.template));
 
-  // 空白档几乎每行都是空的。如果连 for / while / if 也挖掉，
-  // 人光看一个空猜不到该写哪个 —— 那是猜谜不是练习。所以关键字必须白送。
-  const withPrefix = blank.blanks.filter(b => b.prefix);
-  ok('空白档有「白送关键字」的空（否则就是猜谜）',
-    withPrefix.length > 0, `前缀数 ${withPrefix.length} / 空 ${blank.blanks.length}`);
+  // 白送关键字是「从参考解挖空」那三档的事 —— 挖走 for (...) { 之后
+  // 光看一个空猜不到该写 for 还是 if，那是猜谜不是练习。
+  //
+  // 空白解不挖任何东西（它就是一张白纸 + 三个空行），自然没有前缀可送。
+  // 所以这一节验的是 brute/hard，不是 blank。
+  // hard 档的设计是「控制流留着当骨架」——它压根不挖 for / if，所以没有前缀可送。
+  // 白送关键字只发生在 medium 档（那里会挖到控制流头）。
+  const prefixed = medium.blanks.filter(b => b.prefix);
+  ok('挖空档有「白送关键字」的空（否则就是猜谜）',
+    prefixed.length > 0, `前缀数 ${prefixed.length} / 空 ${medium.blanks.length}`);
   ok('白送的只能是控制流关键字',
-    withPrefix.every(b => /^(for|while|if|else if|switch|catch)$/.test(b.prefix)),
-    JSON.stringify(withPrefix.map(b => b.prefix)));
+    prefixed.every(b => /^(for|while|if|else if|switch|catch)$/.test(b.prefix)),
+    JSON.stringify(prefixed.map(b => b.prefix)));
   ok('关键字已经拼进模板了（前端不用再加一次，否则渲染成 for for）',
-    withPrefix.every(b => {
-      const l = (blank.template || '').split('\n')[b.line - 1] || '';
+    prefixed.every(b => {
+      const l = (medium.template || '').split('\n')[b.line - 1] || '';
       const at = l.indexOf('@@HOLE');
       return at >= 0 && l.slice(0, at).trim().endsWith(b.prefix);
-    }), JSON.stringify(withPrefix.map(b => (blank.template || '').split('\n')[b.line - 1])));
+    }), JSON.stringify(prefixed.map(b => (medium.template || '').split('\n')[b.line - 1])));
   ok('前端占位符对带关键字的空说的是「填括号里的条件」',
     read('static/app.js').includes('后面填括号里的条件'));
 
@@ -314,10 +332,12 @@ function balanced(src) {
   ok('题目页有入口链接', /#\/fill\/\$\{escAttr\(slug\)\}/.test(app));
   ok('交卷打的是 /fill/check', /\/fill\/check/.test(app));
   // 顺序是 困难 → 中等 → 简单，最狠的排第一个
-  ok('四档难度选择器在，且空白档排第一',
-    /const LEVELS = \[\['blank'/.test(app));
-  ok('默认就是空白档（挖最多）', /level: 'blank'/.test(app));
-  ok('三档解法选择器在', /const TIERS = \[\['brute'/.test(app));
+  ok('难度选择器还在，只剩三档（空白已搬去解法档）',
+    /const LEVELS = \[\['hard'/.test(app) && !/const LEVELS = \[\['blank'/.test(app));
+  ok('默认就落在空白解上（练的是从零写，不是填回别人挖的空）', /tier: 'blank'/.test(app));
+  ok('空白解下不显示难度条（那三档只对挖空有意义）', /style\.display = 'none'/.test(app));
+  ok('空白卷面的回车是真新增一行，不是跳下一个空', /st\.rows\.splice\(i \+ 1, 0, lead\)/.test(app));
+  ok('解法档选择器里空白排第一', /const TIERS = \[\['blank', '空白解'\]/.test(app));
   ok('回车跳下一个空', /inputs\[i \+ 1\]\.focus\(\)/.test(app));
   ok('清空重填不重拉接口', /btn-fill-reset/.test(app));
   ok('交卷结果不调用 renderGradeResult（那会带假锐评）',

@@ -1021,12 +1021,12 @@ async function viewPad(main) {
 }
 
 async function viewFill(main, slug) {
-  const TIERS = [['brute', '暴力解'], ['better', '进阶解'], ['optimal', '最优解']];
-  // 顺序是 困难 → 中等 → 简单，最狠的排第一个。
-  // 挖空数本身不动（那版改多了，已回滚），只调展示顺序和默认选中项。
-  // 最狠的排第一个：空白档只给 class 和 public 方法签名，方法体全留白。
-  // 那才是力扣编辑器刚打开的样子 —— 考的是「能不能从零写出来」，不是「记不记得某一行」。
-  const LEVELS = [['blank', '空白 · 只留 class 和签名'], ['hard', '困难 · 只留骨架'], ['medium', '中等 · 挖 3-5 行'], ['easy', '简单 · 挖 1 行']];
+  // 空白排在第一个：它不是「从某个参考解里挖几个空」，而是「力扣刚打开题目的那张纸」。
+  // 跟另外三种并列，但性质完全不同 —— 那两个有参考解，这个没有。
+  const TIERS = [['blank', '空白解'], ['brute', '暴力解'], ['better', '进阶解'], ['optimal', '最优解']];
+  // 难度只对「从参考解挖空」的三种解法有意义。
+  // 空白档没有参考解，摆着难度条只会让人点了发现没变化。
+  const LEVELS = [['hard', '困难 · 只留骨架'], ['medium', '中等 · 挖 3-5 行'], ['easy', '简单 · 挖 1 行']];
 
   let p;
   try {
@@ -1037,7 +1037,8 @@ async function viewFill(main, slug) {
     return;
   }
 
-  const st = { tier: 'brute', level: 'blank', sheet: null, answers: {} };
+  // 默认就落在「空白解」上 —— 用户要练的正是「从零写出来」，而不是「填回别人挖的空」。
+  const st = { tier: 'blank', level: 'hard', sheet: null, answers: {}, rows: null };
 
   // 草稿存在浏览器里，键带上 slug + 解法档 + 难度档 —— 换一档是另一套空，
   // 答案绝不能串过去（困难档 3 个空填的内容塞进简单档 1 个空，就是错的卷子）。
@@ -1078,8 +1079,40 @@ async function viewFill(main, slug) {
   const drawPicks = () => {
     $('#fill-tiers').innerHTML = TIERS.map(([k, label]) =>
       `<button class="fbtn${st.tier === k ? ' cur' : ''}" data-tier="${k}">${label}</button>`).join('');
-    $('#fill-levels').innerHTML = LEVELS.map(([k, label]) =>
-      `<button class="fbtn${st.level === k ? ' cur' : ''}" data-level="${k}">${label}</button>`).join('');
+    // 空白档没有「挖几个空」这回事，难度条整个不显示
+    if (st.tier === 'blank') {
+      $('#fill-levels').innerHTML = '';
+      $('#fill-levels').style.display = 'none';
+    } else {
+      $('#fill-levels').style.display = '';
+      $('#fill-levels').innerHTML = LEVELS.map(([k, label]) =>
+        `<button class="fbtn${st.level === k ? ' cur' : ''}" data-level="${k}">${label}</button>`).join('');
+    }
+  };
+
+  // 空白档的卷面行数存在浏览器里。和填空练习的 answers 分开：
+  // 那个是 {空号: 内容}，这个是 ["第一行","第二行"] —— 结构不同，混用会互相覆盖。
+  const rowsKey = () => 'lc.fill.rows.' + slug;
+
+  const readRows = () => {
+    try {
+      const raw = localStorage.getItem(rowsKey());
+      const o = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(o) && o.length) return o.map(x => (typeof x === 'string' ? x : ''));
+    } catch { /* 隐私模式下会抛，不能因此进不去页面 */ }
+    return null;
+  };
+
+  const saveRows = () => {
+    try { localStorage.setItem(rowsKey(), JSON.stringify(st.rows)); } catch { }
+  };
+
+  // 空白档的初始卷面：把后端给的模板按行拆开，方法体里那三个占位行变成三个空字符串。
+  // 其余行原样保留 —— 用户明确要求「不要有别的其他的任何内容」。
+  const blankSeed = () => {
+    const tpl = (st.sheet && st.sheet.template) || '';
+    return tpl.replace(/\r\n/g, '\n').split('\n').map(line =>
+      /@@HOLE:\d+@@/.test(line) ? '' : line);
   };
 
   async function load() {
@@ -1092,12 +1125,118 @@ async function viewFill(main, slug) {
       $('#fill-body').innerHTML = `<div class="notice">${esc(e.message)}</div>`;
       return;
     }
-    // 换档时把这一档的草稿捞回来，别把人的输入顺手清掉
-    st.answers = readDraft();
+    if (st.tier === 'blank') {
+      // 空白档：换档时把这一档的草稿捞回来，别把人的输入顺手清掉
+      st.rows = readRows() || blankSeed();
+    } else {
+      st.answers = readDraft();
+    }
     paint();
   }
 
+  /** 空白档的卷面：每行一个输入框，回车在下面插一行，退格在空行上删掉它。 */
+  function paintBlank() {
+    const rows = st.rows || [];
+    const html = `
+      <div class="fill-meta">空白解 · 从零写一遍 · ${rows.length} 行</div>
+      <div class="fill-code">${rows.map((v, i) => `
+        <div class="pad-row">
+          <span class="pad-no">${i + 1}</span>
+          <input class="pad-input" data-row="${i}" value="${escAttr(v)}"
+            spellcheck="false" autocomplete="off" autocapitalize="off"
+            placeholder="${i >= 3 ? '' : '写你的代码'}">
+        </div>`).join('')}</div>
+      <div class="row" style="margin-top:var(--s4)">
+        <div class="fixed"><button class="btn" id="btn-fill-check">交卷，检查对不对</button></div>
+        <div class="fixed"><button class="btn ghost" id="btn-fill-save">保存草稿</button></div>
+        <div class="fixed"><button class="btn ghost" id="btn-fill-reset">清空重写</button></div>
+        <div class="fixed"><span class="mono-sm">回车新增一行 · 空行上退格删掉它 · Tab 缩进 · 边打边自动存</span></div>
+      </div>`;
+    $('#fill-body').innerHTML = html;
+
+    const box = $('#fill-body');
+    const inputs = $$('.pad-input', box);
+    inputs.forEach((inp, i) => {
+      inp.addEventListener('input', () => {
+        st.rows[i] = inp.value;
+        saveRows();
+      });
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          // 空白卷面是无限的：回车必须真的长出新行，不能只是把光标挪到下一个空。
+          // 新行继承当前行缩进，写嵌套代码不用每行自己敲空格。
+          e.preventDefault();
+          const lead = (st.rows[i].match(/^\s*/) || [''])[0];
+          st.rows.splice(i + 1, 0, lead);
+          saveRows();
+          paintBlank();
+          const next = $$('.pad-input', box)[i + 1];
+          if (next) { next.focus(); next.setSelectionRange(lead.length, lead.length); }
+          return;
+        }
+        // 空行退格删一行。至少留一行，否则光标没地方放。
+        if (e.key === 'Backspace' && inp.value === '' && st.rows.length > 1) {
+          e.preventDefault();
+          st.rows.splice(i, 1);
+          saveRows();
+          paintBlank();
+          const prev = $$('.pad-input', box)[Math.max(0, i - 1)];
+          if (prev) { prev.focus(); prev.setSelectionRange(prev.value.length, prev.value.length); }
+          return;
+        }
+        // Tab 缩进。不拦的话浏览器拿它切焦点，人想敲缩进反而跳到别处。
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          const at = inp.selectionStart, end = inp.selectionEnd;
+          inp.value = inp.value.slice(0, at) + '    ' + inp.value.slice(end);
+          inp.setSelectionRange(at + 4, at + 4);
+          st.rows[i] = inp.value;
+          saveRows();
+        }
+      });
+    });
+    if (inputs.length) inputs[0].focus();
+
+    $('#btn-fill-check').addEventListener('click', submitBlank);
+    $('#btn-fill-save').addEventListener('click', () => {
+      saveRows();
+      toast('存好了，已写 ' + st.rows.filter(x => x.trim()).length + ' 行');
+    });
+    $('#btn-fill-reset').addEventListener('click', () => {
+      st.rows = blankSeed();
+      try { localStorage.removeItem(rowsKey()); } catch { }
+      $('#fill-out').innerHTML = '';
+      paintBlank();
+      toast('清空了');
+    });
+  }
+
+  /** 空白档交卷：把整段代码发给后端真跑判题。 */
+  async function submitBlank() {
+    const btn = $('#btn-fill-check');
+    const old = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '判题中…';
+    try {
+      const code = (st.rows || []).join('\n');
+      const res = await api('/problem/' + encodeURIComponent(slug) + '/fill/check', {
+        method: 'POST',
+        body: { tier: 'blank', level: 'blank', code },
+      });
+      $('#fill-out').innerHTML = renderFillResult(res, st.sheet);
+      $('#fill-out').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      toast(e.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+  }
+
   function paint() {
+    // 空白档是完全另一套渲染（行是无限的、没有"空号"、没有参考解可对照）
+    if (st.tier === 'blank') { paintBlank(); return; }
+
     $('#fill-body').innerHTML = fillSheetHtml(st.sheet, st.answers);
     const inputs = $$('.fl-input', $('#fill-body'));
     inputs.forEach(inp => {

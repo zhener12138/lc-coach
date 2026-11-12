@@ -38,10 +38,17 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PracticeService {
 
     /** 允许的难度档。easy 挖 1 行、medium 挖 3-5 行、hard 只留骨架。 */
-    public static final List<String> LEVELS = Arrays.asList("blank", "easy", "medium", "hard");
+    public static final List<String> LEVELS = Arrays.asList("hard", "medium", "easy");
 
     /** 允许的解法档。默认最优解；但「能从暴力解开始填」对新手更友好。 */
-    public static final List<String> TIERS = Arrays.asList("brute", "better", "optimal");
+    /**
+     * 解法档。blank 排第一 —— 它不是从参考解挖空出来的，而是力扣那张初始卷面本身。
+     *
+     * 为什么把它放在这里而不是难度档：用户要的是「跟力扣一样，只有 class 和 public 方法，
+     * 方法体里三个空行」。那是「自己从头写」这一档，和「从暴力解里挖空」「从最优解里挖空」
+     * 是并列的三种做法 —— 前者没有参考解，后两者有。挂在难度上说不通。
+     */
+    public static final List<String> TIERS = Arrays.asList("blank", "brute", "better", "optimal");
 
     private static final String HOLE_PREFIX = "@@HOLE:";
     private static final String HOLE_SUFFIX = "@@";
@@ -108,6 +115,18 @@ public class PracticeService {
         if (hit != null) return hit;
 
         Problem p = store.get(slug);
+        if (p == null) return null;
+
+        // 空白档不挖空 —— 卷面就是力扣给的初始模板，方法体里三个空行。
+        // 它跟难度无关（三个空行就是三个空行），所以 key 里 level 其实是固定的，
+        // 但用 level 拼 key 也没坏处：不同 level 得到同一份卷面，缓存多存两份而已。
+        if ("blank".equals(t)) {
+            Sheet b = buildBlank(p);
+            if (b == null) return null;
+            cache.put(key, b);
+            return b;
+        }
+
         Solution s = pickSolution(p, t);
         if (s == null || s.codeJava == null || s.codeJava.isBlank()) return null;
 
@@ -115,6 +134,51 @@ public class PracticeService {
         if (built == null) return null;
         cache.put(key, built);
         return built;
+    }
+
+    /**
+     * 空白档收卷。
+     *
+     * 和其他档的根本区别：这一档没有"参考解正确答案"可比 —— 用户自己从头写的，
+     * 写成什么样都可能对。所以不比对、不算 missing、不算 mismatch，只把代码交给评分器真跑。
+     *
+     * 唯一的检查是「不能全空」：一个字符都没写就去编译，报出来的语法错
+     * 会让人以为是自己写错了，其实是什么都没写。
+     *
+     * @param code 前端拼好的整段代码（含模板骨架和用户自己增删的行）
+     */
+    public Map<String, Object> checkBlank(String slug, String code) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("ok", true);
+        out.put("tier", "blank");
+        out.put("level", "blank");
+        out.put("missing", new ArrayList<Integer>());
+        out.put("blanks", new ArrayList<Map<String, Object>>());
+        out.put("mismatch", 0);
+        out.put("total", 0);
+
+        if (code == null || code.isBlank()) {
+            out.put("rebuilt", false);
+            out.put("message", "还一个字都没写呢。");
+            return out;
+        }
+        // 「有没有写东西」不能靠"剥掉符号看还剩不剩字母" —— 骨架里本来就有
+        // class Solution / public int f(...) 这些标识符，剥完照样非空，那条判据永远不成立。
+        // 正确做法：拿用户代码和骨架本身比。两边都去掉空行和占位行，一样就是没写。
+        Sheet base = sheet(slug, "blank", "blank");
+        if (base != null) {
+            String bar = skeletonOnly(base.template);
+            String mine = skeletonOnly(code);
+            if (bar.equals(mine)) {
+                out.put("rebuilt", false);
+                out.put("message", "只有骨架，还没写自己的代码。");
+                return out;
+            }
+        }
+
+        out.put("rebuilt", true);
+        out.put("code", code);
+        return out;
     }
 
     /**
@@ -187,6 +251,165 @@ public class PracticeService {
     }
 
     // ---------------------------------------------------------------- 出卷
+
+    /**
+     * 造空白卷面。
+     *
+     * 内容 = 题目自带的 javaTemplate（力扣编辑器里打开就是这个），在方法体的空行处
+     * 塞三个可写行。用户要求「不要有别的其他的任何内容」——所以除了模板本身和那三个空行，
+     * 一个字符都不加：不加注释、不加提示、不加答案。
+     *
+     * 找不到模板时退化成「从最优解里抽出类声明和方法签名」——总比 404 好，
+     * 至少人还能写。但那不是首选，因为签名是从答案里反推的，可能带多余的东西。
+     */
+    private Sheet buildBlank(Problem p) {
+        String tpl = p.javaTemplate;
+        if (tpl == null || tpl.isBlank()) {
+            // 120 题里有 6 题是早期做的，那时候还没存 javaTemplate。
+            // 不能因此让这 6 题没有空白解 —— 从最优解里把签名抠出来拼一份等价骨架。
+            tpl = skeletonFrom(p);
+        }
+        if (tpl == null || tpl.isBlank()) return null;
+        tpl = tpl.replace("\r\n", "\n");
+
+        List<String> lines = new ArrayList<>(Arrays.asList(tpl.split("\n", -1)));
+        while (!lines.isEmpty() && lines.get(lines.size() - 1).trim().isEmpty()) {
+            lines.remove(lines.size() - 1);
+        }
+        if (lines.isEmpty()) return null;
+
+        // 找方法体的那对花括号：第一个「以 { 结尾且不是类声明」的行是方法签名，
+        // 与之配平的那个 } 是方法体的出口。三个空行要塞在它们中间。
+        int bodyOpen = -1;
+        int depth = 0;
+        for (int i = 0; i < lines.size(); i++) {
+            String code = stripComment(lines.get(i)).trim();
+            if (bodyOpen < 0) {
+                if (code.endsWith("{") && !isTypeDecl(code) && openParens(code) == 0) {
+                    bodyOpen = i;
+                    depth = 1;
+                }
+            } else {
+                depth += openBraces(code);
+                if (depth <= 0) break;
+            }
+        }
+
+        Sheet sheet = new Sheet();
+        sheet.slug = p.slug;
+        sheet.tier = "blank";
+        sheet.tierName = "空白解 · 从零写";
+        sheet.level = "blank";
+
+        StringBuilder sb = new StringBuilder();
+        int id = 1;
+
+        if (bodyOpen < 0) {
+            // 模板里连方法体都没有（不该发生），退化：模板原样 + 末尾接三个空行
+            for (String line : lines) sb.append(line).append('\n');
+            for (int k = 0; k < 3; k++) {
+                Blank b = new Blank();
+                b.id = id++;
+                b.line = lines.size() + k + 1;
+                b.indent = 8;
+                b.around = "";
+                sb.append(spaces(8)).append(token(b.id)).append('\n');
+                sheet.blanks.add(b);
+            }
+        } else {
+            int indent = indentOf(lines.get(bodyOpen + 1 < lines.size() ? bodyOpen + 1 : bodyOpen));
+            if (indent <= 0) indent = indentOf(lines.get(bodyOpen)) + 4;
+
+            for (int i = 0; i <= bodyOpen; i++) sb.append(lines.get(i)).append('\n');
+            for (int k = 0; k < 3; k++) {
+                Blank b = new Blank();
+                b.id = id++;
+                b.line = bodyOpen + 2 + k;
+                b.indent = indent;
+                b.around = "";
+                sb.append(spaces(indent)).append(token(b.id)).append('\n');
+                sheet.blanks.add(b);
+            }
+            for (int i = bodyOpen + 1; i < lines.size(); i++) {
+                String inner = lines.get(i);
+                // 方法体里原本那行空行不要抄 —— 三个空行已经给了，再多一行是多余的内容。
+                // 但注释要留：有的模板方法体自带一行「// 你的代码」，那是有用的话。
+                if (inner.trim().isEmpty()) continue;
+                sb.append(inner).append('\n');
+            }
+        }
+
+        sheet.template = sb.toString();
+        sheet.totalLines = lines.size();
+        return sheet;
+    }
+
+    /**
+     * 从最优解里反推出一份「力扣打开题目时该长什么样」的骨架。
+     *
+     * 只做一件事：找到类声明那一行和方法签名那一行，其余全丢，方法体换成空的。
+     * 这样得到的骨架结构和 javaTemplate 一致，buildBlank 后面那套逻辑不用改。
+     * 找不到类声明或方法签名就返回 null —— 不瞎猜。
+     */
+    private static String skeletonFrom(Problem p) {
+        if (p == null || p.solutions == null || p.solutions.isEmpty()) return null;
+        Solution best = null;
+        for (Solution x : p.solutions) {
+            if ("optimal".equals(x.tier)) { best = x; break; }
+        }
+        if (best == null) best = p.solutions.get(0);
+        if (best == null || best.codeJava == null) return null;
+
+        String cls = null;
+        String sig = null;
+        for (String line : best.codeJava.replace("\r\n", "\n").split("\n")) {
+            String code = stripComment(line).trim();
+            if (code.isEmpty()) continue;
+            if (cls == null) {
+                if (isTypeDecl(code)) cls = code;
+                continue;
+            }
+            if (sig == null && code.endsWith("{") && openParens(code) == 0) {
+                sig = code;
+                break;
+            }
+        }
+        if (cls == null || sig == null) return null;
+
+        return String.join("\n",
+                cls,
+                "    " + sig,
+                "        ",
+                "    }",
+                "}");
+    }
+
+    /**
+     * 抹掉空行和挖空占位行，只留下"骨架"的正文。
+     *
+     * 用来判断「用户到底写了没有」：卷面模板和用户代码各跑一遍，
+     * 结果相等就说明一个字都没加。
+     */
+    private static String skeletonOnly(String s) {
+        if (s == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (String line : s.replace("\r\n", "\n").split("\n")) {
+            String t = line.trim();
+            if (t.isEmpty()) continue;
+            if (t.matches("@@HOLE:\\d+@@\\s*\\{")) continue;   // 「@@HOLE:1@@ {」这种
+            if (t.matches("@@HOLE:\\d+@@")) continue;
+            sb.append(line.replaceAll("\\s+$", "")).append('\n');
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 是不是类/接口/枚举/记录声明。用来把「class Solution {」和「public int f(int x) {」区分开 ——
+     * 前者是容器，后者才是方法体，三个空行要放在后者里面。
+     */
+    private static boolean isTypeDecl(String code) {
+        return code.matches("(?s).*\\b(class|interface|enum|record)\\s+\\w+.*");
+    }
 
     private Sheet build(String slug, String tier, String level, Solution s) {
         List<String> lines = new ArrayList<>(Arrays.asList(s.codeJava.replace("\r\n", "\n").split("\n", -1)));
