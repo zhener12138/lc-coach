@@ -1593,3 +1593,63 @@ label.field > span {
   margin: 0 6px 0 2px;
   flex: none;
 }
+
+
+/* ============================ 自由卷面 ============================ */
+
+/* 复制按钮要贴在卷面右上角，所以外层当定位容器 */
+.pad-wrap { position: relative; }
+
+.pad-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  background: var(--paper-raised);
+}
+
+/* 顶部留出按钮的高度，否则第一行会被压住看不见 */
+.pad-code {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 46px var(--s4) var(--s4);
+  font-family: var(--f-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+
+.pad-row { display: flex; align-items: center; gap: var(--s2); }
+
+/* 行号：力扣的报错是按行给的，没行号对不上 */
+.pad-no {
+  flex: none;
+  width: 2.4em;
+  text-align: right;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  user-select: none;
+}
+
+.pad-input {
+  flex: 1 1 auto;
+  min-width: 120px;
+  font-family: var(--f-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 1px 6px;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed transparent;
+  outline: none;
+}
+.pad-input:hover { border-bottom-color: var(--rule); }
+.pad-input:focus {
+  background: #fff;
+  border-bottom-color: var(--accent);
+  border-bottom-style: dashed;
+}
+.pad-input::placeholder { color: var(--ink-faint); opacity: .55; }

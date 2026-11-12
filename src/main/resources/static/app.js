@@ -253,6 +253,7 @@ async function render() {
     // 复习模式和看题共用 viewProblem，只多带一个错题 id，界面按 id 是否存在切换
     else if (view === 'problem') await viewProblem(main, param);
     else if (view === 'fill')    await viewFill(main, param);
+    else if (view === 'pad')     await viewPad(main);
     else if (view === 'review')  await viewProblem(main, param, param2);
     else if (view === 'library') await viewLibrary(main, param);
     else if (view === 'mistakes')await viewMistakes(main);
@@ -879,6 +880,146 @@ async function viewProblem(main, slug, reviewMistakeId) {
  *
  * 对错走真跑（后端 JudgeService），不跟参考解比字面 —— 写法不同但用例全过就是学会了。
  */
+/* ============================ 自由卷面 ============================ */
+
+/**
+ * 自由卷面：写「不合三种解法」的那条路子。
+ *
+ * 为什么单独一页：填空练习的卷面是从参考解挖出来的，骨架是给定的。
+ * 但真实写题，写法常常跟三种解法都不像，而且代码行数事先不知道 ——
+ * 那种代码没有骨架可给，只能给一张白纸。挖空行就是那张纸上的横线。
+ *
+ * 三条硬要求（少一条这页就白做）：
+ *   ① 回车能一直往下加行，写多长都接得上
+ *   ② 复制出来的东西粘进力扣能直接跑（行首缩进不许 trim，没填的行留成空行）
+ *   ③ 写到一半切走不丢（所以存草稿）
+ */
+async function viewPad(main) {
+  // 键名用 lc.pad.rows，和填空练习的 lc.fill.* 分开 ——
+  // 两者结构完全不同（一个是 {空号: 内容}，一个是 ["第一行","第二行"]），混用会互相覆盖。
+  const DRAFT = 'lc.pad.rows';
+
+  const load = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT);
+      const o = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(o) && o.length) return o.map(x => (typeof x === 'string' ? x : ''));
+    } catch {
+      // 隐私模式 / 存储被禁时 localStorage 会抛 —— 从空白开始，不能因此进不去页面
+    }
+    return null;
+  };
+
+  const save = rows => {
+    try { localStorage.setItem(DRAFT, JSON.stringify(rows)); } catch { }
+  };
+
+  // 初始固定三行（用户明确要求）。不写成常量数组共享，因为清空要能回到它。
+  const INITIAL = ['', '', ''];
+  let rows = load() || INITIAL.slice();
+
+  main.innerHTML = `
+    <div class="page-head">
+      <div class="eyebrow">自由卷面</div>
+      <h1>从零写一遍</h1>
+      <p class="sub">你自己的写法，跟三种解法不一样也没关系。回车换行，写完点右上角复制，粘到力扣就能跑。</p>
+    </div>
+    <div class="pad-wrap">
+      <button class="btn small ghost pad-copy" id="pad-copy">复制全部代码</button>
+      <div class="pad-code" id="pad-code"></div>
+    </div>
+    <div class="row" style="margin-top:var(--s4)">
+      <div class="fixed"><button class="btn ghost" id="pad-clear">清空重写</button></div>
+      <div class="fixed"><span class="mono-sm">回车新增一行 · 空行上按退格删掉它 · Tab 缩进</span></div>
+    </div>`;
+
+  const box = $('#pad-code', main);
+  let inputs = [];
+
+  const bindRow = (inp, i) => {
+    inp.addEventListener('input', () => {
+      rows[i] = inp.value;
+      save(rows);
+    });
+
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        // 新行继承当前行的行首缩进 —— 写嵌套代码时人不该每次都自己敲一遍空格
+        const lead = (rows[i].match(/^\s*/) || [''])[0];
+        rows.splice(i + 1, 0, lead);
+        save(rows);
+        paint();
+        const next = inputs[i + 1];
+        if (next) {
+          next.focus();
+          next.setSelectionRange(lead.length, lead.length);
+        }
+        return;
+      }
+      // 空行上按退格 = 删掉这一行。只能加不能删的话，敲错一行就没法收拾。
+      // 但至少留一行，否则整张纸变空、连光标都没地方放。
+      if (e.key === 'Backspace' && inp.value === '' && rows.length > 1) {
+        e.preventDefault();
+        rows.splice(i, 1);
+        save(rows);
+        paint();
+        const prev = inputs[Math.max(0, i - 1)];
+        if (prev) {
+          prev.focus();
+          prev.setSelectionRange(prev.value.length, prev.value.length);
+        }
+        return;
+      }
+      // Tab 缩进。不拦的话浏览器会拿它切焦点，人想敲缩进就跳到别处去了。
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const at = inp.selectionStart;
+        const end = inp.selectionEnd;
+        inp.value = inp.value.slice(0, at) + '    ' + inp.value.slice(end);
+        inp.setSelectionRange(at + 4, at + 4);
+        rows[i] = inp.value;
+        save(rows);
+      }
+    });
+  };
+
+  const paint = () => {
+    box.innerHTML = rows.map((v, i) => `
+      <div class="pad-row">
+        <span class="pad-no">${i + 1}</span>
+        <input class="pad-input" data-row="${i}" value="${escAttr(v)}"
+          spellcheck="false" autocomplete="off" autocapitalize="off"
+          placeholder="在这里写第 ${i + 1} 行">
+      </div>`).join('');
+    inputs = $$('.pad-input', box);
+    inputs.forEach((inp, i) => bindRow(inp, i));
+  };
+
+  paint();
+
+  $('#pad-copy', main).addEventListener('click', async e => {
+    e.stopPropagation();
+    const b = e.currentTarget;
+    // 直接 join('\n')：没填的行是空字符串，join 完自然就是「一个空行」。
+    // 绝对不能 trim —— 行首缩进是代码的一部分，trim 掉粘到力扣里就编译不过了。
+    if (await copyText(rows.join('\n'))) {
+      const old = b.textContent;
+      b.textContent = '已复制';
+      setTimeout(() => { b.textContent = old; }, 1600);
+    }
+  });
+
+  $('#pad-clear', main).addEventListener('click', e => {
+    e.stopPropagation();
+    rows = INITIAL.slice();
+    save(rows);
+    paint();
+    if (inputs[0]) inputs[0].focus();
+    toast('清空了');
+  });
+}
+
 async function viewFill(main, slug) {
   const TIERS = [['brute', '暴力解'], ['better', '进阶解'], ['optimal', '最优解']];
   // 顺序是 困难 → 中等 → 简单，最狠的排第一个。
