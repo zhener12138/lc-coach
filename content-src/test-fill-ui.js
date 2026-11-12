@@ -86,7 +86,7 @@ const sheet = {
 };
 
 let html = vm.runInContext('fillSheetHtml(' + JSON.stringify(sheet) + ', {})', ctx);
-ok('画出了 .fill-code 容器', html.includes('class="fill-code"'));
+ok('画出了 .fill-code 容器', /class="fill-code( |")/.test(html));
 ok('空位变成了输入框', html.includes('class="fl-input"'));
 ok('输入框带 data-hole 方便收集答案', /data-hole="1"/.test(html));
 ok('空位上标了编号', html.includes('#1') && html.includes('class="fl-tag"'));

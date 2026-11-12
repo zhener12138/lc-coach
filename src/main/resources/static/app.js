@@ -1141,17 +1141,24 @@ async function viewFill(main, slug) {
   }
 
   /** 空白档的卷面：每行一个输入框，回车在下面插一行，退格在空行上删掉它。 */
+  // 空白卷面「写下来的东西」到底长什么样 —— 交卷和复制必须用同一份拼法，
+  // 否则复制出来粘进力扣的，跟你刚才交上去判的那份不是同一个程序。
+  const blankCode = () => (st.rows || []).join('\n');
+
   function paintBlank() {
     const rows = st.rows || [];
     const html = `
       <div class="fill-meta">空白解 · 从零写一遍 · ${rows.length} 行</div>
-      <div class="fill-code">${rows.map((v, i) => `
+      <div class="pad-wrap">
+        <button class="btn small ghost pad-copy" id="btn-fill-copy">复制整份代码</button>
+        <div class="fill-code pad-code">${rows.map((v, i) => `
         <div class="pad-row">
           <span class="pad-no">${i + 1}</span>
           <input class="pad-input" data-row="${i}" value="${escAttr(v)}"
             spellcheck="false" autocomplete="off" autocapitalize="off"
             placeholder="${i >= 3 ? '' : '写你的代码'}">
         </div>`).join('')}</div>
+      </div>
       <div class="row" style="margin-top:var(--s4)">
         <div class="fixed"><button class="btn" id="btn-fill-check">交卷，检查对不对</button></div>
         <div class="fixed"><button class="btn ghost" id="btn-fill-save">保存草稿</button></div>
@@ -1161,7 +1168,8 @@ async function viewFill(main, slug) {
     $('#fill-body').innerHTML = html;
 
     const box = $('#fill-body');
-    const inputs = $$('.pad-input', box);
+    $('#btn-fill-copy', box).addEventListener('click', copySheet);
+    const inputs = $('.pad-input', box);
     inputs.forEach((inp, i) => {
       inp.addEventListener('input', () => {
         st.rows[i] = inp.value;
@@ -1224,7 +1232,7 @@ async function viewFill(main, slug) {
     btn.disabled = true;
     btn.textContent = '判题中…';
     try {
-      const code = (st.rows || []).join('\n');
+      const code = blankCode();
       const res = await api('/problem/' + encodeURIComponent(slug) + '/fill/check', {
         method: 'POST',
         body: { tier: 'blank', level: 'blank', code },
@@ -1239,12 +1247,31 @@ async function viewFill(main, slug) {
     }
   }
 
+  // 挖空卷面的完整程序：模板里的 @@HOLE:n@@ 换成填进去的东西。
+  // 没填的空留成空串 —— 复制出去仍然是一份结构完整的代码，粘进力扣能看到还差哪几行。
+  function sheetCode() {
+    const tpl = String((st.sheet && st.sheet.template) || '');
+    return tpl.replace(/@@HOLE:(\d+)@@/g, (whole, id) => {
+      const v = (st.answers && st.answers[id]) || '';
+      return v;
+    });
+  }
+
+  function currentCode() {
+    return st.tier === 'blank' ? blankCode() : sheetCode();
+  }
+
+  async function copySheet() {
+    if (await copyText(currentCode())) toast('整份代码已复制，粘进力扣就能跑');
+  }
+
   function paint() {
     // 空白档是完全另一套渲染（行是无限的、没有"空号"、没有参考解可对照）
     if (st.tier === 'blank') { paintBlank(); return; }
 
     $('#fill-body').innerHTML = fillSheetHtml(st.sheet, st.answers);
-    const inputs = $$('.fl-input', $('#fill-body'));
+    $('#btn-fill-copy').addEventListener('click', copySheet);
+    const inputs = $('.fl-input', $('#fill-body'));
     inputs.forEach(inp => {
       // 只记答案、不重绘：重绘会把光标和已输入的内容顶掉。
       // 顺手写一份到本地 —— 人不会记得点保存，切走再回来发现全没了那是最伤人的。
@@ -1353,7 +1380,10 @@ function fillSheetHtml(sheet, answers) {
 
   return `
     <div class="fill-meta">${esc(sheet.tierName || '')} · 共 ${sheet.totalLines} 行 · 挖了 ${(sheet.blanks || []).length} 个空</div>
-    <div class="fill-code">${rows}</div>
+    <div class="pad-wrap">
+      <button class="btn small ghost pad-copy" id="btn-fill-copy">复制整份代码</button>
+      <div class="fill-code pad-code">${rows}</div>
+    </div>
     <details class="fill-hints">
       <summary>看不出该填什么？这里有位置提示（不含答案）</summary>
       <ul>${hints}</ul>
