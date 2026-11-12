@@ -336,6 +336,10 @@ function balanced(src) {
     /const LEVELS = \[\['hard'/.test(app) && !/const LEVELS = \[\['blank'/.test(app));
   ok('默认就落在空白解上（练的是从零写，不是填回别人挖的空）', /tier: 'blank'/.test(app));
   ok('空白解下不显示难度条（那三档只对挖空有意义）', /style\.display = 'none'/.test(app));
+  ok('空白卷面按模板行拆出来，拼回去和模板一致',
+    /const blankSeed = \(\) =>/.test(app) && app.includes('@@HOLE:'));
+  ok('尾部多出来的空行会被去掉（后端模板以 \\n 结尾，split 会多一个空串）',
+    /while \(lines\.length && lines\[lines\.length - 1\]\.trim\(\) === ''\) lines\.pop\(\)/.test(app));
   ok('空白卷面的回车是真新增一行，不是跳下一个空', /st\.rows\.splice\(i \+ 1, 0, lead\)/.test(app));
   ok('解法档选择器里空白排第一', /const TIERS = \[\['blank', '空白解'\]/.test(app));
   ok('回车跳下一个空', /inputs\[i \+ 1\]\.focus\(\)/.test(app));

@@ -1111,8 +1111,12 @@ async function viewFill(main, slug) {
   // 其余行原样保留 —— 用户明确要求「不要有别的其他的任何内容」。
   const blankSeed = () => {
     const tpl = (st.sheet && st.sheet.template) || '';
-    return tpl.replace(/\r\n/g, '\n').split('\n').map(line =>
-      /@@HOLE:\d+@@/.test(line) ? '' : line);
+    const lines = tpl.replace(/\r\n/g, '\n').split('\n')
+      .map(line => /@@HOLE:\d+@@/.test(line) ? '' : line);
+    // 后端模板以 \n 结尾，split 会多出一个空串 —— 那会变成一行凭空多出来的空行，
+    // 用户要的是「三个空行，不要有别的其他的任何内容」，所以把尾部空行去掉。
+    while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+    return lines.length ? lines : [''];
   };
 
   async function load() {
