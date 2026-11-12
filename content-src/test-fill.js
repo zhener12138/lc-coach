@@ -332,6 +332,8 @@ function balanced(src) {
   ok('题目页有入口链接', /#\/fill\/\$\{escAttr\(slug\)\}/.test(app));
   ok('交卷打的是 /fill/check', /\/fill\/check/.test(app));
   // 顺序是 困难 → 中等 → 简单，最狠的排第一个
+  ok('难度按钮上只写困难/中等/简单三个字，不带解释',
+    /const LEVELS = \[\['hard', '困难'\], \['medium', '中等'\], \['easy', '简单'\]\];/.test(app));
   ok('难度选择器还在，只剩三档（空白已搬去解法档）',
     /const LEVELS = \[\['hard'/.test(app) && !/const LEVELS = \[\['blank'/.test(app));
   ok('默认就落在空白解上（练的是从零写，不是填回别人挖的空）', /tier: 'blank'/.test(app));
@@ -349,6 +351,10 @@ function balanced(src) {
   ok('空位用 @@HOLE:n@@ 占位', /\@\@HOLE:\(\\d\+\)\@\@/.test(app));
 
   const css = read('static/app.css');
+  ok('解法档和难度档是竖排两行，不靠 flex-wrap 自动折行',
+    /\.fill-bar \{[\s\S]{0,300}flex-direction: column/.test(css) &&
+    !/\.fill-bar \{[\s\S]{0,120}flex-wrap: wrap/.test(css));
+  ok('空白解下难度档整行不占位', /\.fill-pick:empty \{ display: none; \}/.test(css));
   for (const cls of ['.fill-code', '.fl-row', '.fl-input', '.fl-tag', '.fill-res', '.fr-head',
     '.fr-line', '.fr-fail', '.fbtn', '.fill-hints', '.fr-note']) {
     ok('CSS 有 ' + cls, css.includes(cls));

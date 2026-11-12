@@ -1455,11 +1455,17 @@ label.field > span {
 
 .fill-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--s4);
+  /* 竖着排：解法档一行、难度档一行。
+     原来用 flex-wrap 横排，四个解法档 + 三个难度档挤在一行自动折行，
+     折在哪取决于屏幕宽度 —— 同一个页面在别人机器上是另一个样子。 */
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s3);
   margin-bottom: var(--s4);
 }
 .fill-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+/* 没有内容时整行不占位 —— 空白解下没有难度档，不该留一段空白 */
+.fill-pick:empty { display: none; }
 
 .fbtn {
   font-family: var(--f-mono);

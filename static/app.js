@@ -1026,7 +1026,9 @@ async function viewFill(main, slug) {
   const TIERS = [['blank', '空白解'], ['brute', '暴力解'], ['better', '进阶解'], ['optimal', '最优解']];
   // 难度只对「从参考解挖空」的三种解法有意义。
   // 空白档没有参考解，摆着难度条只会让人点了发现没变化。
-  const LEVELS = [['hard', '困难 · 只留骨架'], ['medium', '中等 · 挖 3-5 行'], ['easy', '简单 · 挖 1 行']];
+  // 按钮上只写「困难 / 中等 / 简单」三个字。
+  // 后面那些「挖 3-5 行」的说法对人没用 —— 他要的是直接点，不是先读懂我的分档规则。
+  const LEVELS = [['hard', '困难'], ['medium', '中等'], ['easy', '简单']];
 
   let p;
   try {
