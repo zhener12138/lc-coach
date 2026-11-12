@@ -231,8 +231,8 @@ async function main() {
   {
     ok('viewPad 函数存在', sliceFn(APP, 'viewPad').length > 400, sliceFn(APP, 'viewPad').length + ' 字符');
     ok('路由里有 pad 分支', /else if \(view === 'pad'\)\s+await viewPad\(main\)/.test(APP));
-    ok('侧栏有「自由卷面」入口', /data-view="pad"/.test(HTML));
-    ok('入口在导航里（不是散落在正文）', /<nav class="nav"[\s\S]{0,1400}data-view="pad"/.test(HTML));
+ok('导航里不再有「自由卷面」（它的用途被空白解覆盖了，留着是重复入口）', !/data-view="pad"/.test(HTML));
+ok('但路由还在 —— 直接敲 #/pad 还能用', /view === 'pad'/.test(APP));
   }
 
   // ============================================================
