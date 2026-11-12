@@ -105,13 +105,6 @@ public class AihotService {
         return fetch("/api/v1/monthlies/latest");
     }
 
-    /** 单个事件（hot-topics 里的 links.story 是 HTML 页面，要取末段当 publicId 再进这里） */
-    public Result story(String publicId) {
-        if (publicId == null || publicId.isBlank()) {
-            return new Result(null, false, false, null, "缺少故事 ID");
-        }
-        return fetch("/api/v1/stories/" + enc(publicId));
-    }
 
     // ---------------- 核心：带缓存的取数 ----------------
 

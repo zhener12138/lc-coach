@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.*;
 import java.time.LocalDate;
@@ -42,7 +41,6 @@ public class PlanService {
         }
     }
 
-    public LocalDate startDate() { return startDate; }
 
     /** 今天是计划的第几天（1-based）。早于开始日返回 0 */
     public int todayDayNo() {

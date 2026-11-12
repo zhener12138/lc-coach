@@ -842,19 +842,6 @@ public class CodeGrader {
         return RANK_NAME.getOrDefault(r, "O(n^k)");
     }
 
-    /** 把参考解里写的时间复杂度字符串映射成可比大小的档位。 */
-    private static int rank(String timeComplexity) {
-        if (timeComplexity == null) return 2;
-        String t = timeComplexity.toLowerCase().replace(" ", "");
-        if (t.contains("1)")) return 0;
-        if (t.contains("logn") && (t.contains("n)") || t.contains("nlogn"))) return 3;
-        if (t.contains("logn")) return 1;
-        if (t.contains("n^3") || t.contains("n³")) return 5;
-        if (t.contains("n^2") || t.contains("n²")) return 4;
-        if (t.contains("2^") || t.contains("n!")) return 6;
-        if (t.contains("n)")) return 2;
-        return 2;
-    }
 
     private static List<String> singleLetterVars(String s) {
         Set<String> ok = Set.of("i", "j", "k", "n", "m", "x", "y", "s", "t", "p", "q", "r", "c", "a", "b", "v", "w");
