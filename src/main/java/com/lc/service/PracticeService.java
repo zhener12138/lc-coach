@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PracticeService {
 
     /** 允许的难度档。easy 挖 1 行、medium 挖 3-5 行、hard 只留骨架。 */
-    public static final List<String> LEVELS = Arrays.asList("easy", "medium", "hard");
+    public static final List<String> LEVELS = Arrays.asList("blank", "easy", "medium", "hard");
 
     /** 允许的解法档。默认最优解；但「能从暴力解开始填」对新手更友好。 */
     public static final List<String> TIERS = Arrays.asList("brute", "better", "optimal");
@@ -67,6 +67,18 @@ public class PracticeService {
         public String around;
         @JsonIgnore
         public String answer;
+        /**
+         * 这个空挖掉的行是不是以 { 结尾。
+         * 是的话卷面上行尾那个 { 是白送的，人不用也不该再打一个。
+         */
+        public boolean branch;
+        /**
+         * 白送在卷面上的关键字，比如 for / while / if / else if。
+         * 空白档几乎每行都是空的，如果连关键字也挖掉，人光看一个空猜不到该写 for 还是 if ——
+         * 那就是猜谜。所以关键字留在卷面上，只让人填括号里的条件。
+         * 它不是答案的一部分：check 比对前会先把它从人的输入里剥掉。
+         */
+        public String prefix;
     }
 
     /** 一张卷子。 */
@@ -129,9 +141,9 @@ public class PracticeService {
             String v = answers == null ? "" : answers.getOrDefault(String.valueOf(b.id), "");
             if (v == null) v = "";
             if (v.isBlank()) missing.add(b.id);
-            code = code.replace(token(b.id), v);
+            code = code.replace(token(b.id), rebuildWith(b, v));
 
-            boolean match = norm(v).equals(norm(b.answer));
+            boolean match = matchKey(v).equals(matchKey(b.answer));
             if (!match) mismatch++;
             Map<String, Object> one = new LinkedHashMap<>();
             one.put("id", b.id);
@@ -169,7 +181,7 @@ public class PracticeService {
         for (Blank b : sheet.blanks) {
             String v = answers == null ? "" : answers.getOrDefault(String.valueOf(b.id), "");
             if (v == null || v.isBlank()) return null;
-            code = code.replace(token(b.id), v);
+            code = code.replace(token(b.id), rebuildWith(b, v));
         }
         return code;
     }
@@ -183,7 +195,9 @@ public class PracticeService {
         }
         if (lines.isEmpty()) return null;
 
-        List<Integer> holes = pick(lines, level, seed(slug, tier, level));
+        List<Integer> holes = "blank".equals(level)
+                ? blankEveryLine(lines)
+                : pick(lines, level, seed(slug, tier, level));
         if (holes.isEmpty()) return null;
 
         Sheet sheet = new Sheet();
@@ -204,9 +218,32 @@ public class PracticeService {
                 b.indent = indentOf(line);
                 b.shape = shapeOf(lines, i);
                 b.around = aroundOf(lines, i);
-                b.answer = line.substring(Math.min(b.indent, line.length()));
+                String body = line.trim();
+                // 先剥掉行尾注释再判断。for (int j = 0; j < n; j++) {   // 注释
+                // 这一行直接 endsWith("{") 是 false，会被当成普通行挖走，{ 跟着消失，
+                // 后面的 } 就错配到外层去了 —— 卷面直接坏掉。
+                String codeOnly = stripComment(body).trim();
+                String tailComment = body.substring(stripComment(body).length()).trim();
+                b.branch = codeOnly.endsWith("{");
+                String answerText = b.branch
+                        ? codeOnly.substring(0, codeOnly.length() - 1).trim()
+                        : codeOnly;
+                // 控制流头把关键字白送出去：for (int j = ...; j < n; j++) 只让人填括号里的部分。
+                // 只对「以 { 结尾的控制流头」做 —— 普通语句没有前缀可送。
+                int k = b.branch ? keywordEnd(answerText) : 0;
+                if (k > 0) {
+                    b.prefix = answerText.substring(0, k);
+                    answerText = answerText.substring(k).trim();
+                }
+                b.answer = answerText;
                 sheet.blanks.add(b);
-                sb.append(spaces(b.indent)).append(token(id)).append('\n');
+                sb.append(spaces(b.indent))
+                        .append(b.prefix == null ? "" : b.prefix + " ")
+                        .append(token(id))
+                        .append(b.branch ? " {" : "")
+                        // 注释解释「为什么这么写」，是提示不是答案，留在卷面上人还能看懂
+                        .append(tailComment.isEmpty() ? "" : "  " + tailComment)
+                        .append('\n');
                 id++;
             } else {
                 sb.append(line).append('\n');
@@ -214,6 +251,145 @@ public class PracticeService {
         }
         sheet.template = sb.toString();
         return sheet;
+    }
+
+    /**
+     * 空白档：只留 class 声明、public 方法签名、纯括号行和注释，方法体一行都不给。
+     * 这是「力扣编辑器刚打开」那个样子 —— 它不考你记不记得某一行，
+     * 它考你能不能从零把这道题的解法写出来。
+     */
+    private List<Integer> blankEveryLine(List<String> lines) {
+        List<Integer> out = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            String s = lines.get(i).trim();
+            if (s.isEmpty()) continue;
+            if (s.startsWith("//") || s.startsWith("/*") || s.startsWith("*") || s.startsWith("*/")) continue;
+            if (s.startsWith("import ") || s.startsWith("package ") || s.startsWith("@")) continue;
+            // 类声明留着
+            if (s.contains(" class ") || s.startsWith("class ") || s.startsWith("public class ")
+                    || s.startsWith("interface ") || s.startsWith("enum ")) continue;
+            // 方法签名留着 —— 用户说的「只保留 class 和 public」就是这一行
+            if (isSignature(stripComment(s).trim())) continue;
+            // 纯括号行留着：} 挖走了这一层块就没尽头了
+            String code = stripComment(s).trim();
+            if (code.matches("[{}\\[\\]();]+")) continue;
+            // 跨行结构（多行数组初始化）的任一行都不能挖 —— 挖了另一半就成了孤儿
+            if (!braceHead(code) && openBraces(code) != 0) continue;
+            // 行首是 } 的一律不挖：它关的是上一层块，挖了模板就少一个 }
+            if (code.startsWith("}")) continue;
+            // 括号没闭合的跨行签名不挖
+            if (openParens(code) != 0) continue;
+            out.add(i);
+        }
+        return out;
+    }
+
+    /**
+     * 剥掉行尾的 // 注释，字符串和字符字面量里的 // 不算。
+     * 注释里可能写着条件（「不是 <=」），直接拿来判断会把控制流头当成普通行。
+     */
+    private static String stripComment(String raw) {
+        if (raw == null) return "";
+        boolean inStr = false, inChar = false;
+        for (int i = 0; i < raw.length(); i++) {
+            char c = raw.charAt(i);
+            if (inStr || inChar) {
+                if (c == '\\') { i++; continue; }
+                if (inStr && c == '"') inStr = false;
+                else if (inChar && c == '\'') inChar = false;
+                continue;
+            }
+            if (c == '"') { inStr = true; continue; }
+            if (c == '\'') { inChar = true; continue; }
+            if (c == '/' && i + 1 < raw.length() && raw.charAt(i + 1) == '/') {
+                return raw.substring(0, i);
+            }
+        }
+        return raw;
+    }
+
+    /** 这一行里 { 和 } 的净增量。 */
+    private static int openBraces(String s) {
+        int n = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '{') n++;
+            else if (c == '}') n--;
+        }
+        return n;
+    }
+
+    /** 这一行里 ( [ 和 ) ] 的净增量。不为 0 说明括号跨行了。 */
+    private static int openParens(String s) {
+        int n = 0;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '(' || c == '[') n++;
+            else if (c == ')' || c == ']') n--;
+        }
+        return n;
+    }
+
+    /** 是控制流头（for / if / while ... 且以 { 结尾）。 */
+    private static boolean braceHead(String s) {
+        return skeleton(s) && s.endsWith("{");
+    }
+
+    /** 方法签名：有括号、有返回类型，而且不是控制流。 */
+    private static boolean isSignature(String s) {
+        if (skeleton(s)) return false;
+        if (!s.endsWith("{")) return false;
+        int open = s.indexOf('(');
+        if (open <= 0) return false;
+        // 「返回类型 + 方法名」至少两个词；控制流已经被 skeleton 挡掉了
+        return s.substring(0, open).trim().split("\\s+").length >= 2;
+    }
+
+    /** 人习惯把整行打全（连行尾的 { 也打上），不能因此算错。 */
+    private static String stripTailBrace(String s) {
+        String t = s == null ? "" : s.trim();
+        return t.endsWith("{") ? t.substring(0, t.length() - 1).trim() : t;
+    }
+
+    /** 比对用的键：空白归一 + 去掉行尾的 {。 */
+    /**
+     * 这一行开头有多少个字符是「白送的关键字」。
+     *
+     * 只认控制流关键字，而且必须跟一个左括号 ——
+     * else if 要排在 if 前面判断，否则 "else if (x)" 会被 "if" 抢走前面的 else。
+     * 找不到返回 0（普通语句没有前缀可送）。
+     */
+    private static int keywordEnd(String s) {
+        String t = s.trim();
+        for (String kw : new String[]{"else if", "while", "for", "if", "switch", "catch"}) {
+            if (t.startsWith(kw)) {
+                int open = t.indexOf('(', kw.length());
+                if (open > 0 && t.substring(kw.length(), open).trim().isEmpty()) {
+                    return kw.length();
+                }
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * 把人的输入拼回代码。两件事要做：
+     *
+     * 1. 剥掉人自己打的关键字。卷面上已经给了 for，人可能习惯性把整行打全
+     *    （for (int j = ...; j < n; j++)）—— 那不是错，只是多打了。
+     *    不剥的话拼出来是 for for (...) { { ，编译都过不了。
+     * 2. 剥掉行尾多打的 {。那个 { 卷面上已经留着了，人再打一个是重复的。
+     */
+    private static String rebuildWith(Blank b, String raw) {
+        String v = raw == null ? "" : raw.trim();
+        if (b.prefix != null && !b.prefix.isEmpty() && v.startsWith(b.prefix)) {
+            v = v.substring(b.prefix.length()).trim();
+        }
+        return b.branch ? stripTailBrace(v) : v;
+    }
+
+    private static String matchKey(String s) {
+        return stripTailBrace(norm(s));
     }
 
     /** 挑出这一档要挖哪些行。 */
@@ -257,7 +433,10 @@ public class PracticeService {
     /** 这一行值不值得挖。太重要的（签名、括号）挖了就没骨架了，太没用的（注释）挖了没意义。 */
     private static boolean blankable(String raw) {
         String s = raw.trim();
-        if (s.isEmpty()) return false;
+        // 用剥掉行尾注释后的代码判断，而不是原始行。
+        // 「while (left < right) {   // 不是 <=」直接 endsWith("{") 是 false。
+        String code = stripComment(s).trim();
+        if (s.isEmpty() || code.isEmpty()) return false;
         if (s.startsWith("//") || s.startsWith("/*") || s.startsWith("*") || s.startsWith("*/")) return false;
         if (s.startsWith("import ") || s.startsWith("package ")) return false;
         if (s.startsWith("@")) return false;
@@ -267,11 +446,17 @@ public class PracticeService {
         // 后面的 } 会错配到外层去 —— 挖完的模板看上去就是坏的，人没法填。
         // （之前这里写成「以 { 结尾且不含 =」，而 for (int j = i + 1; ...) { 正好含 =，
         //   于是被当成可挖行，模板里就多出孤零零的 }，撑坏了整个结构。）
-        if (s.endsWith("{")) return false;
-        if (s.equals("}") || s.equals("};") || s.equals("} else {")) return false;
-        if (s.startsWith("} catch") || s.startsWith("catch ") || s.equals("try {")) return false;
-        if (s.startsWith("finally") || s.startsWith("switch ") || s.startsWith("case ") || s.startsWith("default:")) return false;
-        if (s.equals("do {")) return false;
+        if (!braceHead(code) && openBraces(code) != 0) return false;
+        // 行首是 } 的一律不挖。哪怕净增量为 0（} else if (...) { 就是这样），
+        // 开头那个 } 关的是上一层块 —— 挖走之后模板里就少一个 }，怎么填都配不平。
+        if (code.startsWith("}")) return false;
+        if (code.startsWith("catch ") || code.equals("try {")) return false;
+        if (code.startsWith("finally") || code.startsWith("switch ")
+                || code.startsWith("case ") || code.startsWith("default:")) return false;
+        if (code.equals("do {")) return false;
+        // 圆括号/方括号没闭合的行不挖：那是跨行的方法签名或跨行调用，
+        // 只挖第一行会把后面的参数行变成孤儿。
+        if (openParens(code) != 0) return false;
         return true;
     }
 

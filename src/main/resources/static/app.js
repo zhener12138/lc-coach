@@ -881,7 +881,11 @@ async function viewProblem(main, slug, reviewMistakeId) {
  */
 async function viewFill(main, slug) {
   const TIERS = [['brute', '暴力解'], ['better', '进阶解'], ['optimal', '最优解']];
-  const LEVELS = [['easy', '简单 · 挖 1 行'], ['medium', '中等 · 挖 3-5 行'], ['hard', '困难 · 只留骨架']];
+  // 顺序是 困难 → 中等 → 简单，最狠的排第一个。
+  // 挖空数本身不动（那版改多了，已回滚），只调展示顺序和默认选中项。
+  // 最狠的排第一个：空白档只给 class 和 public 方法签名，方法体全留白。
+  // 那才是力扣编辑器刚打开的样子 —— 考的是「能不能从零写出来」，不是「记不记得某一行」。
+  const LEVELS = [['blank', '空白 · 只留 class 和签名'], ['hard', '困难 · 只留骨架'], ['medium', '中等 · 挖 3-5 行'], ['easy', '简单 · 挖 1 行']];
 
   let p;
   try {
@@ -892,7 +896,28 @@ async function viewFill(main, slug) {
     return;
   }
 
-  const st = { tier: 'brute', level: 'easy', sheet: null, answers: {} };
+  const st = { tier: 'brute', level: 'blank', sheet: null, answers: {} };
+
+  // 草稿存在浏览器里，键带上 slug + 解法档 + 难度档 —— 换一档是另一套空，
+  // 答案绝不能串过去（困难档 3 个空填的内容塞进简单档 1 个空，就是错的卷子）。
+  const draftKey = (t, l) => 'lc.fill.' + slug + '.' + t + '.' + l;
+
+  const readDraft = () => {
+    try {
+      const raw = localStorage.getItem(draftKey(st.tier, st.level));
+      const o = raw ? JSON.parse(raw) : null;
+      return o && typeof o === 'object' ? o : {};
+    } catch {
+      // 隐私模式 / 存储被禁时 localStorage 会抛异常 —— 存不了就算了，不能因此进不去页面
+      return {};
+    }
+  };
+
+  const saveDraft = () => {
+    try {
+      localStorage.setItem(draftKey(st.tier, st.level), JSON.stringify(st.answers));
+    } catch { /* 同上，静默失败 */ }
+  };
 
   main.innerHTML = `
     <a class="back-link" href="#/problem/${escAttr(slug)}">← 回到题目</a>
@@ -919,7 +944,6 @@ async function viewFill(main, slug) {
   async function load() {
     $('#fill-body').innerHTML = '<div class="loading">正在出题…</div>';
     $('#fill-out').innerHTML = '';
-    st.answers = {};
     try {
       st.sheet = await api('/problem/' + encodeURIComponent(slug) +
         '/fill?tier=' + encodeURIComponent(st.tier) + '&level=' + encodeURIComponent(st.level));
@@ -927,6 +951,8 @@ async function viewFill(main, slug) {
       $('#fill-body').innerHTML = `<div class="notice">${esc(e.message)}</div>`;
       return;
     }
+    // 换档时把这一档的草稿捞回来，别把人的输入顺手清掉
+    st.answers = readDraft();
     paint();
   }
 
@@ -934,8 +960,12 @@ async function viewFill(main, slug) {
     $('#fill-body').innerHTML = fillSheetHtml(st.sheet, st.answers);
     const inputs = $$('.fl-input', $('#fill-body'));
     inputs.forEach(inp => {
-      // 只记答案、不重绘：重绘会把光标和已输入的内容顶掉
-      inp.addEventListener('input', () => { st.answers[inp.dataset.hole] = inp.value; });
+      // 只记答案、不重绘：重绘会把光标和已输入的内容顶掉。
+      // 顺手写一份到本地 —— 人不会记得点保存，切走再回来发现全没了那是最伤人的。
+      inp.addEventListener('input', () => {
+        st.answers[inp.dataset.hole] = inp.value;
+        saveDraft();
+      });
       inp.addEventListener('keydown', e => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
@@ -946,8 +976,14 @@ async function viewFill(main, slug) {
     });
     if (inputs.length) inputs[0].focus();
     $('#btn-fill-check').addEventListener('click', submit);
+    $('#btn-fill-save').addEventListener('click', () => {
+      saveDraft();
+      const n = Object.values(st.answers).filter(v => v && v.trim()).length;
+      toast(n ? `存好了，已填 ${n} / ${(st.sheet.blanks || []).length} 个空` : '存好了（还一个空都没填）');
+    });
     $('#btn-fill-reset').addEventListener('click', () => {
       st.answers = {};
+      try { localStorage.removeItem(draftKey(st.tier, st.level)); } catch { /* 忽略 */ }
       $('#fill-out').innerHTML = '';
       paint();
     });
@@ -1006,13 +1042,22 @@ function fillSheetHtml(sheet, answers) {
     if (!m) return `<div class="fl-row"><pre class="fl-txt">${esc(line) || ' '}</pre></div>`;
     const id = m[1];
     const b = byId[id] || {};
-    const indent = line.slice(0, line.indexOf('@@HOLE'));
+    const at = line.indexOf('@@HOLE');
+    const indent = line.slice(0, at);
+    // 洞后面的尾巴要留着 —— 控制流头那一档，行尾的 { 就在这里。
+    // 丢掉了它，卷面上的花括号就配不上，人以为模板是坏的。
+    const tail = line.slice(at + m[0].length);
     const val = (answers && answers[id]) || '';
     const tip = [b.shape, b.around].filter(Boolean).join(' · ');
+    // 卷面上白送的关键字（for / while / if）已经在模板里了（后端拼的），
+    // 所以这里只把它用在占位提示上。再往 <pre> 里加一次就会变成「for for」。
+    const pre = b.prefix ? b.prefix : '';
+    const ph = pre ? `${pre} 后面填括号里的条件` : '把这一行写出来';
     return `<div class="fl-row fl-hole">
       <pre class="fl-txt">${esc(indent)}</pre>
       <input class="fl-input" data-hole="${escAttr(id)}" value="${escAttr(val)}"
-        spellcheck="false" autocomplete="off" placeholder="填这一行" title="${escAttr(tip)}">
+        spellcheck="false" autocomplete="off" placeholder="${escAttr(ph)}" title="${escAttr(tip)}">
+      ${tail.trim() ? `<pre class="fl-tail">${esc(tail)}</pre>` : ''}
       <span class="fl-tag">#${esc(id)}</span>
     </div>`;
   }).join('');
@@ -1029,8 +1074,9 @@ function fillSheetHtml(sheet, answers) {
     </details>
     <div class="row" style="margin-top:var(--s4)">
       <div class="fixed"><button class="btn" id="btn-fill-check">交卷，检查对不对</button></div>
+      <div class="fixed"><button class="btn ghost" id="btn-fill-save">保存草稿</button></div>
       <div class="fixed"><button class="btn ghost" id="btn-fill-reset">清空重填</button></div>
-      <div class="fixed"><span class="mono-sm">回车跳下一个空</span></div>
+      <div class="fixed"><span class="mono-sm">边打边自动存 · 回车跳下一个空</span></div>
     </div>`;
 }
 

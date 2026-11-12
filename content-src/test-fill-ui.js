@@ -20,20 +20,24 @@ function ok(name, cond, extra) {
   else { fail++; console.log('  ✘ ' + name + (extra ? '  → ' + extra : '')); }
 }
 
-/** 从源码里按名字切出一个函数（按花括号配平，不会被里面的 }) 骗到） */
+/**
+ * 从源码里按名字切出一个顶层函数。
+ *
+ * 不用「数花括号」：app.js 的注释里就写着裸的 { （解释行尾那个花括号为什么留着），
+ * 计数器把它当代码算进去，永远配不平，切出 0 字符 —— 而且报错信息只会说「切得出 X → 0 字符」，
+ * 看的人根本猜不到是注释里的一个字符干的。
+ *
+ * 改成按行切：顶层函数以顶格的 } 结尾。这依赖一个稳定事实（app.js 的顶层函数都顶格写），
+ * 比「注释里不能出现某个字符」这种约定可靠得多。
+ * 行尾的 \r 要先去掉 —— 这个仓库里的文件是 CRLF。
+ */
 function sliceFn(src, name) {
-  const start = src.indexOf('function ' + name + '(');
+  const lines = src.replace(/\r\n/g, '\n').split('\n');
+  const sig = 'function ' + name + '(';
+  const start = lines.findIndex(l => l.startsWith(sig));
   if (start < 0) return '';
-  const brace = src.indexOf('{', start);
-  if (brace < 0) return '';
-  let depth = 0;
-  for (let i = brace; i < src.length; i++) {
-    const c = src[i];
-    if (c === '{') depth++;
-    else if (c === '}') {
-      depth--;
-      if (depth === 0) return src.slice(start, i + 1);
-    }
+  for (let i = start + 1; i < lines.length; i++) {
+    if (lines[i] === '}') return lines.slice(start, i + 1).join('\n');
   }
   return '';
 }
@@ -107,7 +111,59 @@ const xss = vm.runInContext('fillSheetHtml(' + JSON.stringify(xssSheet) + ', {})
 ok('提示文字做了转义（不会把标签当 HTML 渲染）',
   xss.includes('&lt;script&gt;') && !xss.includes('<script>alert'));
 
-console.log('\n=== 【3】renderFillResult 的四种结果 ===');
+console.log('\n=== 【2b】空白档：关键字白送、行尾花括号和注释留在卷面 ===');
+
+// 空白档几乎每行都是空的。如果把 `for` `if` 这些关键字也挖掉，人光看一个空
+// 根本猜不到该写 for 还是 if —— 那是猜谜不是练习。所以：
+//   · prefix（for/while/if…）白送，只让人填括号里的条件
+//   · 行尾的 { 留在卷面上，人不用也不该再打一个
+//   · 行尾的 // 注释留着（注释解释「为什么这么写」，是提示不是答案）
+const blankSheet = {
+  slug: 'two-sum', tier: 'brute', level: 'blank',
+  // 关键字在模板里 —— 后端拼的，前端直接照画。
+  // 这是线上真实返回的形状：第 4 行就是 'for @@HOLE:2@@ {'。
+  template: [
+    'class Solution {',
+    '    public int[] twoSum(int[] nums, int target) {',
+    '        int n = nums.length;',
+    '        for @@HOLE:1@@ {',
+    '            if @@HOLE:2@@ {',
+    '                @@HOLE:3@@',
+    '            }',
+    '        }',
+    '        while @@HOLE:4@@ {  // 收敛点',
+    '        }',
+    '        return new int[0];',
+    '    }',
+    '}',
+    '',
+  ].join('\n'),
+  blanks: [
+    { id: 1, line: 4, indent: 8, prefix: 'for', branch: true, shape: '在方法体里' },
+    { id: 2, line: 5, indent: 12, prefix: 'if', branch: true, shape: '在「for」里面' },
+    { id: 3, line: 6, indent: 16, branch: false, shape: '在「if」里面' },
+    { id: 4, line: 9, indent: 8, prefix: 'while', branch: true, shape: '在方法体里' },
+  ],
+};
+const bh = vm.runInContext('fillSheetHtml(' + JSON.stringify(blankSheet) + ', {})', ctx);
+ok('空白档：四个空都变成输入框', (bh.match(/class="fl-input"/g) || []).length === 4);
+ok('空白档：for 关键字在卷面上（缩进 + 关键字 + 输入框）',
+  /<pre class="fl-txt">        for <\/pre>\s*<input/.test(bh), bh.slice(0, 500));
+ok('空白档：if 关键字在卷面上',
+  /<pre class="fl-txt">            if <\/pre>\s*<input/.test(bh));
+ok('空白档：while 关键字在卷面上',
+  /<pre class="fl-txt">        while <\/pre>\s*<input/.test(bh));
+ok('空白档：带了关键字的空，占位符说的是「填括号里的条件」',
+  bh.includes('for 后面填括号里的条件'), '占位符没跟着变');
+ok('空白档：行尾的 { 留在卷面上（人不用再打一个）',
+  /<pre class="fl-tail">\s*\{<\/pre>/.test(bh), (bh.match(/class="fl-tail"[^>]*>[^<]*/g) || []).join(' | '));
+ok('空白档：行尾注释留在卷面上（注释是提示不是答案）',
+  bh.includes('// 收敛点'), '找不到行尾注释');
+ok('空白档：占位符自己不带 for/if 前缀（否则会重复）',
+  !/@@HOLE:/.test(bh));
+ok('空白档：提示文案说的是「把这一行写出来」', bh.includes('把这一行写出来'));
+
+
 const passedRes = {
   ok: true, rebuilt: true, passedJudge: true, mismatch: 0,
   blanks: [{ id: 1, line: 5, filled: true, matches: true }],

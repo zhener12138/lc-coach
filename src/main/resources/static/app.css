@@ -1584,3 +1584,12 @@ label.field > span {
   line-height: 1.7;
 }
 .fr-note b { color: var(--ink); font-family: var(--f-mono); }
+
+.fl-tail {
+  font-family: var(--f-mono);
+  font-size: 13px;
+  color: var(--ink-soft);
+  opacity: .55;
+  margin: 0 6px 0 2px;
+  flex: none;
+}

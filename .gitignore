@@ -25,3 +25,6 @@ node_modules/
 
 # 提交信息草稿（用 git commit -F 读，不入库）
 content-src/_commit-msg.txt
+
+# 备用构建目录（target 被锁时用来打包，不该入库）
+build2/

@@ -284,6 +284,11 @@ public class ApiController {
             one.put("indent", b.indent);
             one.put("shape", b.shape);
             one.put("around", b.around);
+            // 控制流头把关键字（for / while / if）白送出去，人只填括号里的条件。
+            // 前端拿它画在卷面上；check 时后端会剥掉人重复打的那一份。
+            if (b.prefix != null && !b.prefix.isEmpty()) one.put("prefix", b.prefix);
+            // 挖掉的行是不是以 { 结尾 —— 是的话卷面上那个 { 已经留着了，人不用再打
+            if (b.branch) one.put("branch", true);
             blanks.add(one);   // 刻意不带 answer
         }
         out.put("blanks", blanks);

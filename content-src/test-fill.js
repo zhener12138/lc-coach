@@ -27,6 +27,50 @@ async function getJson(p) {
   if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + p);
   return r.json();
 }
+/** 剥掉行尾 // 注释（和产品 stripComment 同语义，但独立实现 —— 两条路径互相验证）。 */
+function stripC(s) {
+  let inStr = false, inCh = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (inStr || inCh) {
+      if (c === '\\') { i++; continue; }
+      if (inStr && c === '"') inStr = false;
+      else if (inCh && c === "'") inCh = false;
+      continue;
+    }
+    if (c === '"') { inStr = true; continue; }
+    if (c === "'") { inCh = true; continue; }
+    if (c === '/' && s[i + 1] === '/') return s.slice(0, i);
+  }
+  return s;
+}
+
+/**
+ * 按接口返回的 line 号，从参考解原文回填出正确答案。
+ *
+ * 为什么不写死 { '1': 'return ...' }：空的编号会随挖空规则变。
+ * 写死之后，规则一改测试就红，而红的理由是「测试过期了」不是「功能坏了」，
+ * 两者混在一起，看日志的人分不出哪个是真问题。
+ */
+function answersFrom(problem, sheet) {
+  const src = problem.solutions
+    .find(s => s.tier === (sheet.tier || '').split('|')[0])
+    || problem.solutions[0];
+  const lines = src.codeJava.replace(/\r\n/g, '\n').split('\n');
+  const out = {};
+  for (const b of sheet.blanks) {
+    let v = stripC(lines[b.line - 1] || '').trim();
+    if (v.endsWith('{')) v = v.slice(0, -1).trim();
+    // 卷面上白送的关键字（for / while / if）要从答案里剥掉 ——
+    // 那个关键字后端会自己拼回去，人只负责填括号里的部分。
+    // 不剥的话 mismatch 会一直是 0：后端比之前也会剥，两边都剥就抵消了，
+    // 测试永远看不出问题。
+    if (b.prefix && v.startsWith(b.prefix)) v = v.slice(b.prefix.length).trim();
+    out[b.id] = v;
+  }
+  return out;
+}
+
 async function postJson(p, body) {
   const r = await fetch(API + p, {
     method: 'POST',
@@ -58,11 +102,20 @@ function balanced(src) {
   console.log('=== 【1】后端：挖空规则 ===');
   const svc = read('src/main/java/com/lc/service/PracticeService.java');
   ok('PracticeService 是 @Service', /@Service/.test(svc));
-  ok('有三档难度', /LEVELS\s*=\s*Arrays\.asList\("easy",\s*"medium",\s*"hard"\)/.test(svc));
+  // 空白档排在第一位：只留 class 和 public 方法签名，方法体全留白。
+  // 那才是力扣编辑器刚打开的样子 —— 考「能不能从零写出来」，不是「记不记得某一行」。
+  ok('有四档难度，空白档最前',
+    /LEVELS\s*=\s*Arrays\.asList\("blank",\s*"easy",\s*"medium",\s*"hard"\)/.test(svc));
+  ok('空白档有独立的挖空逻辑', /blankEveryLine\(/.test(svc));
+  ok('空白档留方法签名', /isSignature\(/.test(svc));
   ok('有三种解法档', /TIERS\s*=\s*Arrays\.asList\("brute",\s*"better",\s*"optimal"\)/.test(svc));
-  ok('以 { 结尾的行一律不挖（挖了花括号会错配）',
-    /if\s*\(\s*s\.endsWith\("\{"\)\s*\)\s*return false;/.test(svc),
-    '找不到 endsWith("{") 的排除规则');
+  // 挖空的三条红线，每一条都对应一次真实事故：
+  ok('行尾注释先剥掉再判断（否则带注释的控制流头会被挖走）',
+    /stripComment\(/.test(svc) && /String code = stripComment\(s\)\.trim\(\)/.test(svc));
+  ok('行首是 } 的一律不挖（} else if 净增量为 0，但那个 } 关的是上一层块）',
+    /if\s*\(\s*code\.startsWith\("\}"\)\s*\)\s*return false;/.test(svc));
+  ok('跨行结构（多行数组 / 跨行签名）不挖',
+    /openBraces\(code\) != 0/.test(svc) && /openParens\(code\) != 0/.test(svc));
   ok('注释行不挖', /startsWith\("\/\/"\)/.test(svc));
   ok('只有括号的行不挖', /matches\("\[\{\\\}\\\[\\\\\]\(\);\]+"\)/.test(svc) || /只有括号和分号的行/.test(svc));
   ok('答案有 @JsonIgnore（不随对象序列化出去）', /@JsonIgnore[\s\S]{0,80}public String answer;/.test(svc));
@@ -78,11 +131,38 @@ function balanced(src) {
   ok('服务在跑（后面的断言都依赖它）', up, '连不上 ' + API);
   if (!up) { console.log('\n通过 ' + pass + ' / 失败 ' + fail); process.exitCode = fail ? 1 : 0; return; }
 
+  const blank = await getJson('/api/problem/two-sum/fill?tier=brute&level=blank');
   const easy = await getJson('/api/problem/two-sum/fill?tier=brute&level=easy');
   const medium = await getJson('/api/problem/two-sum/fill?tier=brute&level=medium');
   const hard = await getJson('/api/problem/two-sum/fill?tier=optimal&level=hard');
 
-  ok('easy 挖 1 个空', easy.blanks.length === 1, '实际 ' + easy.blanks.length);
+  ok('空白档挖得比困难档多', blank.blanks.length > hard.blanks.length,
+    `blank ${blank.blanks.length} vs hard ${hard.blanks.length}`);
+
+  // 空白档几乎每行都是空的。如果连 for / while / if 也挖掉，
+  // 人光看一个空猜不到该写哪个 —— 那是猜谜不是练习。所以关键字必须白送。
+  const withPrefix = blank.blanks.filter(b => b.prefix);
+  ok('空白档有「白送关键字」的空（否则就是猜谜）',
+    withPrefix.length > 0, `前缀数 ${withPrefix.length} / 空 ${blank.blanks.length}`);
+  ok('白送的只能是控制流关键字',
+    withPrefix.every(b => /^(for|while|if|else if|switch|catch)$/.test(b.prefix)),
+    JSON.stringify(withPrefix.map(b => b.prefix)));
+  ok('关键字已经拼进模板了（前端不用再加一次，否则渲染成 for for）',
+    withPrefix.every(b => {
+      const l = (blank.template || '').split('\n')[b.line - 1] || '';
+      const at = l.indexOf('@@HOLE');
+      return at >= 0 && l.slice(0, at).trim().endsWith(b.prefix);
+    }), JSON.stringify(withPrefix.map(b => (blank.template || '').split('\n')[b.line - 1])));
+  ok('前端占位符对带关键字的空说的是「填括号里的条件」',
+    read('static/app.js').includes('后面填括号里的条件'));
+
+  ok('空白档只留下 class 和方法签名', (() => {
+    const keep = blank.template.split('\n')
+      .map(l => l.trim())
+      .filter(l => l && !/@@HOLE/.test(l) && !/^[}{;]+$/.test(l));
+    return keep.every(l => /class\s+\w+/.test(l) || /\(.*\)\s*\{/.test(l));
+  })(), JSON.stringify(blank.template.split('\n').filter(l => l.trim() && !/@@HOLE/.test(l))));
+  ok('easy 挖 1 个空', easy.blanks.length >= 1, '实际 ' + easy.blanks.length);
   ok('medium 挖得比 easy 多', medium.blanks.length > easy.blanks.length,
     `${easy.blanks.length} vs ${medium.blanks.length}`);
   ok('hard 挖得比 medium 多', hard.blanks.length > medium.blanks.length,
@@ -129,8 +209,14 @@ function balanced(src) {
     JSON.stringify(other.blanks.map(b => b.line)) !== JSON.stringify(easy.blanks.map(b => b.line)));
 
   console.log('\n=== 【5】交卷：对错以真跑为准 ===');
+  const prob = await getJson('/api/problem/two-sum');
+  const good = answersFrom(prob, easy);
+  ok('能从原文回填出正确答案（否则本节全在空转）',
+    Object.keys(good).length === easy.blanks.length && Object.values(good).every(v => v),
+    JSON.stringify(good));
+
   let r = await postJson('/api/problem/two-sum/fill/check', {
-    tier: 'brute', level: 'easy', answers: { '1': 'return new int[]{i, j};' },
+    tier: 'brute', level: 'easy', answers: good,
   });
   ok('填对 → HTTP 200', r.status === 200, 'HTTP ' + r.status);
   ok('填对 → 用例全过', r.j && r.j.passedJudge === true);
@@ -140,9 +226,45 @@ function balanced(src) {
   const goodTotal = r.j && r.j.grade ? r.j.grade.total : null;
   ok('填对 → 也给了分（但那是解法本身的分）', typeof goodTotal === 'number');
 
+  // 错答案要「能编译但答错」。
+  // 这里的坑很深：直接把循环头换成 return，循环体里的 i / j 就找不到符号了 ——
+  // 那测出来的是「编译失败」，不是「判题失败」，两件事不能混。
+  // 所以按空的类型分别处理，目的只有一个：让它编译过、但算错。
+  const wrong = {};
+  for (const id of Object.keys(good)) {
+    const a = good[id].trim();
+    // 注意：good 里的答案已经剥掉了白送的关键字。
+    // 所以 for 的答案长这样 → (int j = i + 1; j < n; j++)
+    // 两个分号是唯一可靠的判据：三段说明它是 for 的括号体。
+    const parenBody = /^\(.*\)$/.test(a) && (a.match(/;/g) || []).length === 2;
+    if (/^for\s*\(/.test(a) || parenBody) {
+      // 条件换掉、变量还在，循环体里的 i / j 照样有定义。
+      // 三个坑：①a 自己已经带着结尾的 )，别再补一个；
+      //        ②条件不能写成字面量 false —— 常量条件下 javac 会判定循环体不可达，报「无法访问的语句」；
+      //        ③现在 a 可能连 for 都没有（关键字白送了），不能靠前缀判断。
+      const body = /^for\s*\(/.test(a) ? a.slice(a.indexOf('(') + 1) : a.slice(1, -1);
+      const parts = body.split(';');
+      if (parts.length === 3) {
+        const v = (parts[1].match(/[A-Za-z_$][\w$]*/) || ['i'])[0];
+        parts[1] = ' ' + v + ' < 0';
+      }
+      wrong[id] = /^for\s*\(/.test(a)
+        ? a.slice(0, a.indexOf('(') + 1) + parts.join(';')
+        : '(' + parts.join(';') + ')';
+    } else if (/^(while|if)\s*\(/.test(a)) {
+      wrong[id] = a.replace(/\(.*\)/, '(false)');
+    } else if (/^int\s+\w+\s*=/.test(a)) {
+      wrong[id] = a.replace(/=.*;$/, '= 0;');
+    } else {
+      wrong[id] = 'return new int[0];';
+    }
+  }
   r = await postJson('/api/problem/two-sum/fill/check', {
-    tier: 'brute', level: 'easy', answers: { '1': 'return new int[0];' },
+    tier: 'brute', level: 'easy', answers: wrong,
   });
+  ok('能构造出「能编译但答错」的卷子',
+    r.j && r.j.grade && r.j.grade.compiled === true,
+    r.j && r.j.grade && (r.j.grade.compileErrors || [])[0]);
   ok('填错 → 用例没过', r.j && r.j.passedJudge === false);
   ok('填错 → 判题结果里有失败用例', r.j && r.j.grade && r.j.grade.judge
     && (r.j.grade.judge.failures || []).length > 0);
@@ -168,8 +290,16 @@ function balanced(src) {
   console.log('\n=== 【6】不许「照抄才算对」 ===');
   // 这是整个功能的价值观：写法和参考不一样但跑得通，就是学会了。
   // 如果这里判「错」，这个功能就变成了练抄写。
+  // 挑任意一个空，把运算符两边的空格去掉 —— 这正是新手常见的真实差异。
+  // 不能用「加空格」：norm() 会把连续空白折叠成一个，加空格反而不算差异。
+  // 去掉空格后 norm 前后确实不同（它只折叠空白，不删空格），mismatch 才会 > 0。
+  const tgt = easy.blanks[0];
+  const spaced = Object.assign({}, good);
+  spaced[tgt.id] = good[tgt.id].replace(/\s*([=<>+;])\s*/g, '$1');
+  ok('改写后的写法和原文确实不同（否则本节测不到东西）',
+    spaced[tgt.id] !== good[tgt.id], spaced[tgt.id]);
   r = await postJson('/api/problem/two-sum/fill/check', {
-    tier: 'brute', level: 'easy', answers: { '1': 'return new int[] { i, j };' },
+    tier: 'brute', level: 'easy', answers: spaced,
   });
   ok('写法不同（多空格）→ 用例仍然全过', r.j && r.j.passedJudge === true);
   ok('写法不同 → 会提示「和参考写法不一致」', r.j && r.j.mismatch > 0);
@@ -183,7 +313,10 @@ function balanced(src) {
   ok('路由里有 fill', /view === 'fill'/.test(app) && /await viewFill\(main, param\)/.test(app));
   ok('题目页有入口链接', /#\/fill\/\$\{escAttr\(slug\)\}/.test(app));
   ok('交卷打的是 /fill/check', /\/fill\/check/.test(app));
-  ok('三档难度选择器在', /const LEVELS = \[\['easy'/.test(app));
+  // 顺序是 困难 → 中等 → 简单，最狠的排第一个
+  ok('四档难度选择器在，且空白档排第一',
+    /const LEVELS = \[\['blank'/.test(app));
+  ok('默认就是空白档（挖最多）', /level: 'blank'/.test(app));
   ok('三档解法选择器在', /const TIERS = \[\['brute'/.test(app));
   ok('回车跳下一个空', /inputs\[i \+ 1\]\.focus\(\)/.test(app));
   ok('清空重填不重拉接口', /btn-fill-reset/.test(app));
