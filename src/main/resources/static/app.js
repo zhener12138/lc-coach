@@ -1169,7 +1169,7 @@ async function viewFill(main, slug) {
 
     const box = $('#fill-body');
     $('#btn-fill-copy', box).addEventListener('click', copySheet);
-    const inputs = $('.pad-input', box);
+    const inputs = $$('.pad-input', box);
     inputs.forEach((inp, i) => {
       inp.addEventListener('input', () => {
         st.rows[i] = inp.value;
@@ -1271,7 +1271,7 @@ async function viewFill(main, slug) {
 
     $('#fill-body').innerHTML = fillSheetHtml(st.sheet, st.answers);
     $('#btn-fill-copy').addEventListener('click', copySheet);
-    const inputs = $('.fl-input', $('#fill-body'));
+    const inputs = $$('.fl-input', $('#fill-body'));
     inputs.forEach(inp => {
       // 只记答案、不重绘：重绘会把光标和已输入的内容顶掉。
       // 顺手写一份到本地 —— 人不会记得点保存，切走再回来发现全没了那是最伤人的。
